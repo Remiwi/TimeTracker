@@ -1,5 +1,9 @@
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 
 export default function Page() {
-  return <Text>Hello World</Text>;
+  return (
+    <View className="p-4 pt-16">
+      <Text>Hello World</Text>
+    </View>
+  );
 }
