@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 
 export default function MyDropDown(props: {
-  label: string;
+  label?: string;
   options: string[];
   value?: string;
   onChange?: (text: string) => void;
@@ -29,23 +29,25 @@ export default function MyDropDown(props: {
               : {},
           ]}
         >
-          <Text
-            className="absolute -top-3 left-2 z-10 rounded-sm bg-gray-50 px-1 text-sm text-slate-600"
-            style={[
-              props.labelColor
-                ? {
-                    color: props.labelColor,
-                  }
-                : {},
-              props.bgColor
-                ? {
-                    backgroundColor: props.bgColor || "undefined",
-                  }
-                : {},
-            ]}
-          >
-            {props.label}
-          </Text>
+          {props.label && (
+            <Text
+              className="absolute -top-3 left-2 z-10 rounded-sm bg-gray-50 px-1 text-sm text-slate-600"
+              style={[
+                props.labelColor
+                  ? {
+                      color: props.labelColor,
+                    }
+                  : {},
+                props.bgColor
+                  ? {
+                      backgroundColor: props.bgColor || "undefined",
+                    }
+                  : {},
+              ]}
+            >
+              {props.label}
+            </Text>
+          )}
           <View className="overflow-hidden rounded-sm">
             <TouchableNativeFeedback
               onPress={() => setOptionsShown(!optionsShown)}

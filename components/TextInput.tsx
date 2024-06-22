@@ -1,7 +1,7 @@
 import { Text, View, TextInput } from "react-native";
 
 export default function StyledTextInput(props: {
-  label: string;
+  label?: string;
   placeholder?: string;
   value?: string;
   onChange?: (text: string) => void;
@@ -24,23 +24,25 @@ export default function StyledTextInput(props: {
             : {},
         ]}
       >
-        <Text
-          className="absolute -top-3 left-2 bg-gray-50 px-1 text-sm text-slate-600"
-          style={[
-            props.labelColor
-              ? {
-                  color: props.labelColor,
-                }
-              : {},
-            props.bgColor
-              ? {
-                  backgroundColor: props.bgColor || "undefined",
-                }
-              : {},
-          ]}
-        >
-          {props.label}
-        </Text>
+        {props.label && (
+          <Text
+            className="absolute -top-3 left-2 bg-gray-50 px-1 text-sm text-slate-600"
+            style={[
+              props.labelColor
+                ? {
+                    color: props.labelColor,
+                  }
+                : {},
+              props.bgColor
+                ? {
+                    backgroundColor: props.bgColor || "undefined",
+                  }
+                : {},
+            ]}
+          >
+            {props.label}
+          </Text>
+        )}
         <TextInput
           placeholder={props.placeholder}
           placeholderTextColor={props.placeholderColor || "#aaaaaa"}

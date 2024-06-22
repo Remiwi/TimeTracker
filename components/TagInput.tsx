@@ -3,6 +3,9 @@ import { View, Text, TextInput, TouchableNativeFeedback } from "react-native";
 
 export default function MyTagInput(props: {
   placeholder?: string;
+  label?: string;
+  labelColor?: string;
+  bgColor?: string;
   value?: string[];
   onChange?: (text: string[]) => void;
   borderColor?: string;
@@ -25,6 +28,25 @@ export default function MyTagInput(props: {
             : {},
         ]}
       >
+        {props.label && (
+          <Text
+            className="absolute -top-3 left-2 bg-gray-50 px-1 text-sm text-slate-600"
+            style={[
+              props.labelColor
+                ? {
+                    color: props.labelColor,
+                  }
+                : {},
+              props.bgColor
+                ? {
+                    backgroundColor: props.bgColor || "undefined",
+                  }
+                : {},
+            ]}
+          >
+            {props.label}
+          </Text>
+        )}
         <View className="flex flex-row flex-wrap gap-2">
           {[...tags, ""].map((tag, i) => {
             if (i === tags.length) {
