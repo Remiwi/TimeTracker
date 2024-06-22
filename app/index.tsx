@@ -22,12 +22,20 @@ type TemplateStuff = {
 
 export default function Page() {
   const [templateModalShown, setTemplateModalShown] = useState(false);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateStuff[]>([]);
 
-  const small = true;
+  const small = false;
   return (
     <>
-      {templateModalShown && <NewTemplateModal />}
+      {templateModalShown && (
+        <NewTemplateModal
+          onCancel={() => setTemplateModalShown(false)}
+          onDone={(t) => {
+            setTemplates([...templates, t]);
+            setTemplateModalShown(false);
+          }}
+        />
+      )}
       <View className="flex h-full pt-20">
         <View className="pb-6">
           <View className="flex flex-row items-end justify-between px-4 pb-1">
@@ -56,9 +64,9 @@ export default function Page() {
             <FlatList
               numColumns={3}
               key={3}
-              data={[...templates, 0]}
+              data={[...templates, 0] as (TemplateStuff | 0)[]}
               renderItem={(data) => {
-                if (data.index === templates.length) {
+                if (data.item === 0) {
                   return (
                     <View className="h-22 w-1/3 overflow-hidden rounded-lg bg-gray-50">
                       <TouchableNativeFeedback
@@ -76,7 +84,7 @@ export default function Page() {
 
                 return (
                   <View className="w-1/3">
-                    <ItemSmall num={data.index} />
+                    <ItemSmall templateStuff={data.item} />
                   </View>
                 );
               }}
@@ -87,11 +95,27 @@ export default function Page() {
             <FlatList
               numColumns={2}
               key={2}
-              data={templates}
+              data={[...templates, 0] as (TemplateStuff | 0)[]}
               renderItem={(data) => {
+                if (data.item === 0) {
+                  return (
+                    <View className="h-29 w-1/2 overflow-hidden rounded-lg bg-gray-50">
+                      <TouchableNativeFeedback
+                        onPress={() => setTemplateModalShown(true)}
+                      >
+                        <View className="flex h-full w-full justify-center rounded-lg border-2 border-dashed border-gray-200">
+                          <Text className="text-center text-sm text-gray-400">
+                            New Template
+                          </Text>
+                        </View>
+                      </TouchableNativeFeedback>
+                    </View>
+                  );
+                }
+
                 return (
                   <View className="w-1/2">
-                    <ItemMedium num={data.index} />
+                    <ItemMedium templateStuff={data.item} />
                   </View>
                 );
               }}
@@ -105,31 +129,35 @@ export default function Page() {
   );
 }
 
-function ItemSmall(props: { num: number }) {
+function ItemSmall(props: { templateStuff: TemplateStuff }) {
   return (
     <View className="flex h-22 px-1">
       <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
       <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
-        <View className="h-full w-full rounded-full bg-blue-500" />
+        <View
+          className={"h-full w-full rounded-full " + props.templateStuff.color}
+        />
       </View>
       <View className="-top-21 flex h-14 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
         <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
-        <Text className="text-sm">Template {props.num}</Text>
+        <Text className="text-sm">{props.templateStuff.name}</Text>
       </View>
     </View>
   );
 }
 
-function ItemMedium(props: { num: number }) {
+function ItemMedium(props: { templateStuff: TemplateStuff }) {
   return (
     <View className="flex h-29 px-1">
       <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
       <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
-        <View className="h-full w-full rounded-full bg-green-500" />
+        <View
+          className={"h-full w-full rounded-full " + props.templateStuff.color}
+        />
       </View>
       <View className="-top-29 flex h-20 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
         <Text className="text-md self-end pb-6">XX:XX:XX</Text>
-        <Text>Template Name {props.num}</Text>
+        <Text>{props.templateStuff.name}</Text>
       </View>
     </View>
   );
@@ -152,11 +180,59 @@ function Folder(props: { active?: boolean }) {
   );
 }
 
-function NewTemplateModal() {
-  const [text, setText] = useState("");
-  const [option, setOption] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+function NewTemplateModal(props: {
+  onCancel: () => void;
+  onDone: (t: TemplateStuff) => void;
+}) {
+  const [name, setName] = useState("");
   const [color, setColor] = useState("bg-indigo-600");
+  const [iconName, setIconName] = useState("");
+  const [project, setProject] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+
+  const iconOptions = [
+    "AcademicCap",
+    "Computer",
+    "Dumbbell",
+    "Film",
+    "MusicNote",
+    "Book",
+    "ShoppingCart",
+  ];
+
+  const projectOptions = ["Project 1", "Project 2", "Project 3"];
+
+  const onCancel = () => {
+    setName("");
+    setColor("bg-indigo-600");
+    setIconName("");
+    setProject("");
+    setDescription("");
+    setTags([]);
+    props.onCancel();
+  };
+  const onDone = () => {
+    setName("");
+    setColor("bg-indigo-600");
+    setIconName("");
+    setProject("");
+    setDescription("");
+    setTags([]);
+
+    if (name === "") return;
+    if (iconName === "") return;
+    if (project === "") return;
+
+    props.onDone({
+      name,
+      color,
+      icon: iconName,
+      project,
+      description,
+      tags,
+    });
+  };
 
   return (
     <Modal animationType="slide" transparent>
@@ -164,40 +240,66 @@ function NewTemplateModal() {
         className="flex h-full w-full items-center justify-center p-16"
         style={{ backgroundColor: "#00000088" }}
       >
-        <View className="w-full rounded-xl bg-gray-50 p-4">
-          <Text className="pb-4 text-xl">New Template</Text>
+        <View className="w-full rounded-2xl bg-gray-50 p-4">
+          <Text className="pb-4 text-xl">Template Properties</Text>
           <MyTextInput
-            label="Input Label"
-            placeholder="hi"
-            value={text}
-            onChange={(t) => setText(t)}
-            className="pb-4"
+            label="Name"
+            placeholder=""
+            value={name}
+            onChange={(t) => setName(t)}
+            className="pb-2"
+          />
+          <View className="z-50 flex flex-row gap-4">
+            <ColorSelector value={color} onChange={(c) => setColor(c)} />
+            <MyDropDown
+              className="flex-grow"
+              options={iconOptions}
+              value={iconName}
+              onChange={(name) => setIconName(name)}
+              placeholder="Icon"
+            />
+          </View>
+          <View className="flex flex-grow items-center justify-center pb-4 pt-8">
+            <View className="h-0.5 w-full rounded-full bg-gray-300" />
+          </View>
+          <Text className="pb-4 text-lg">Entry Properties</Text>
+          <MyTextInput
+            label="Description"
+            value={description}
+            onChange={(t) => setDescription(t)}
+            className="pb-2"
           />
           <MyDropDown
-            label="Dropdown Label"
-            options={[
-              "Yes",
-              "No",
-              "Maybe",
-              "I don't know",
-              "Can you repeat that question",
-            ]}
-            value={option}
-            placeholder="Select an option"
-            onChange={(t) => setOption(t)}
-            className="pb-4"
-          />
-          <ColorSelector
-            value={color}
-            onChange={(c) => setColor(c)}
-            className="pb-4"
+            placeholder="Project"
+            options={projectOptions}
+            value={project}
+            onChange={(t) => {
+              setProject(t);
+            }}
+            className="z-40 pb-2"
           />
           <MyTagInput
-            placeholder="Enter tags"
+            placeholder="Tags"
             value={tags}
-            onChange={(tags) => setTags(tags)}
+            onChange={(t) => setTags(t)}
             className="pb-4"
           />
+          <View className="flex flex-grow flex-row justify-between">
+            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
+              <TouchableNativeFeedback onPress={onCancel}>
+                <View className="flex w-28 items-center rounded-full bg-gray-100 p-2">
+                  <Text className="font-bold">Cancel</Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
+              <TouchableNativeFeedback onPress={onDone}>
+                <View className="flex w-28 items-center rounded-full bg-slate-200 p-2">
+                  <Text className="font-bold">Done</Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
