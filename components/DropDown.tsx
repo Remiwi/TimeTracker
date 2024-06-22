@@ -4,6 +4,7 @@ import { Text, TouchableNativeFeedback, View } from "react-native";
 
 export default function MyDropDown(props: {
   label?: string;
+  placeholder?: string;
   options: string[];
   value?: string;
   onChange?: (text: string) => void;
@@ -52,14 +53,22 @@ export default function MyDropDown(props: {
             <TouchableNativeFeedback
               onPress={() => setOptionsShown(!optionsShown)}
             >
-              <View className="flex flex-row items-center justify-between p-2">
-                <Text className="py-1">{props.value}</Text>
+              <View className="flex flex-row-reverse items-center justify-between p-2">
                 <MaterialIcons
                   name="keyboard-arrow-down"
                   size={24}
                   color={props.borderColor || "aaaaaa"}
                   className="h-8 w-8"
                 />
+                {props.placeholder && !props.value && (
+                  <Text
+                    className="py-1"
+                    style={{ color: props.placeholderColor || "#aaaaaa" }}
+                  >
+                    {props.placeholder}
+                  </Text>
+                )}
+                {props.value && <Text className="py-1">{props.value}</Text>}
               </View>
             </TouchableNativeFeedback>
           </View>

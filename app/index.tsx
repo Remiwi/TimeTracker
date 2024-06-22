@@ -181,6 +181,7 @@ function NewTemplateModal() {
               "Can you repeat that question",
             ]}
             value={option}
+            placeholder="Select an option"
             onChange={(t) => setOption(t)}
             className="pb-4"
           />
