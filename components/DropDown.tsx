@@ -17,7 +17,7 @@ export default function MyDropDown(props: {
   const [optionsShown, setOptionsShown] = useState(false);
 
   return (
-    <View className={props.className}>
+    <View className={props.className + " z-50"}>
       <View className="relative">
         <View
           className="rounded-md border-2 border-slate-500"

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
+import MyTagInput from "@/components/TagInput";
 
 type TemplateStuff = {
   name: string;
@@ -153,6 +154,7 @@ function Folder(props: { active?: boolean }) {
 function NewTemplateModal() {
   const [text, setText] = useState("");
   const [option, setOption] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
 
   return (
     <Modal animationType="slide" transparent>
@@ -180,6 +182,13 @@ function NewTemplateModal() {
             ]}
             value={option}
             onChange={(t) => setOption(t)}
+            className="pb-4"
+          />
+          <MyTagInput
+            placeholder="Enter tags"
+            value={tags}
+            onChange={(tags) => setTags(tags)}
+            className="pb-4"
           />
         </View>
       </View>
