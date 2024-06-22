@@ -62,7 +62,10 @@ export default function MyTagInput(props: {
             }
 
             return (
-              <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
+              <View
+                className="overflow-hidden rounded-full shadow-sm shadow-slate-800"
+                key={tag}
+              >
                 <TouchableNativeFeedback
                   onPress={() => {
                     props.onChange?.([
@@ -71,10 +74,7 @@ export default function MyTagInput(props: {
                     ]);
                   }}
                 >
-                  <View
-                    className="flex flex-row items-center justify-center gap-1 bg-gray-100 px-3 pt-1"
-                    key={tag}
-                  >
+                  <View className="flex flex-row items-center justify-center gap-1 bg-gray-100 px-3 pt-1">
                     <Text className="pb-1.5">{tag}</Text>
                   </View>
                 </TouchableNativeFeedback>
