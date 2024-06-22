@@ -9,6 +9,7 @@ import {
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
+import ColorSelector from "@/components/ColorSelector";
 
 type TemplateStuff = {
   name: string;
@@ -155,6 +156,7 @@ function NewTemplateModal() {
   const [text, setText] = useState("");
   const [option, setOption] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [color, setColor] = useState("bg-indigo-600");
 
   return (
     <Modal animationType="slide" transparent>
@@ -183,6 +185,11 @@ function NewTemplateModal() {
             value={option}
             placeholder="Select an option"
             onChange={(t) => setOption(t)}
+            className="pb-4"
+          />
+          <ColorSelector
+            value={color}
+            onChange={(c) => setColor(c)}
             className="pb-4"
           />
           <MyTagInput
