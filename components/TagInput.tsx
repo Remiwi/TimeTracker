@@ -40,7 +40,6 @@ export default function MyTagInput(props: {
                       nativeEvent.key === "," ||
                       nativeEvent.key === "Enter"
                     ) {
-                      console.log("enter");
                       setText("");
                       if (text.trim() !== "") {
                         props.onChange?.([...tags, text.trim()]);
