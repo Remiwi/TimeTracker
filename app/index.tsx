@@ -11,10 +11,14 @@ import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
 import ColorSelector from "@/components/ColorSelector";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import Toggl from "@/apis/toggl";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { default as DB } from "@/apis/db";
 
 type TemplateStuff = {
   name: string;
   project: string;
+  projectID: number;
   description: string;
   tags: string[];
   color: string;
@@ -24,6 +28,7 @@ type TemplateStuff = {
 const exampleTemplate = {
   name: "Example",
   project: "Project 1",
+  projectID: 123456,
   description: "This is an example template",
   tags: ["tag1", "tag2"],
   color: "bg-indigo-600",
@@ -31,12 +36,37 @@ const exampleTemplate = {
 } as TemplateStuff;
 
 export default function Page() {
+  const qc = useQueryClient();
+
   const [templateModalShown, setTemplateModalShown] = useState(false);
-  const [templates, setTemplates] = useState<TemplateStuff[]>([
-    exampleTemplate,
-    exampleTemplate,
-  ]);
   const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
+
+  const templatesQuery = useQuery({
+    queryKey: ["templates"],
+    queryFn: DB.getTemplates,
+  });
+  const { mutate: mutateTemplates } = useMutation({
+    mutationFn: DB.setTemplates,
+    onError: (error, _, context) => {
+      console.error(error);
+      if (context) {
+        qc.setQueryData(["templates"], context);
+      }
+    },
+    onMutate: (newTemplates: TemplateStuff[]) => {
+      const oldTemplates = templatesQuery.data as TemplateStuff[];
+      qc.setQueryData(["templates"], newTemplates);
+      return oldTemplates;
+    },
+  });
+  if (templatesQuery.isLoading) {
+    return <Text>Loading...</Text>;
+  }
+  if (templatesQuery.isError || !templatesQuery.data) {
+    console.error(templatesQuery.error);
+    return <Text>Error loading templates</Text>;
+  }
+  const templates = templatesQuery.data as TemplateStuff[];
 
   const small = true;
   return (
@@ -53,10 +83,10 @@ export default function Page() {
             if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
               const newTemplates = [...templates];
               newTemplates[editTemplateIdx] = t;
-              setTemplates(newTemplates);
+              mutateTemplates(newTemplates);
               return;
             }
-            setTemplates([...templates, t]);
+            mutateTemplates([...templates, t]);
           }}
           onDelete={() => {
             setEditTemplateIdx(-1);
@@ -64,7 +94,7 @@ export default function Page() {
             if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
               const newTemplates = [...templates];
               newTemplates.splice(editTemplateIdx, 1);
-              setTemplates(newTemplates);
+              mutateTemplates(newTemplates);
             }
           }}
           defaultTemplate={
@@ -294,10 +324,19 @@ function TemplateEditModal(props: {
   );
   const [iconName, setIconName] = useState(props.defaultTemplate?.icon || "");
   const [project, setProject] = useState(props.defaultTemplate?.project || "");
+  const [projectID, setProjectID] = useState(0);
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
   );
   const [tags, setTags] = useState<string[]>(props.defaultTemplate?.tags || []);
+
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Toggl.getProjects,
+  });
+  if (projectsQuery.isError) {
+    console.error(projectsQuery.error);
+  }
 
   const iconOptions = [
     "music-note",
@@ -308,8 +347,6 @@ function TemplateEditModal(props: {
     "shopping",
     "wizard-hat",
   ];
-
-  const projectOptions = ["Project 1", "Project 2", "Project 3"];
 
   const onCancel = () => {
     setName("");
@@ -337,6 +374,7 @@ function TemplateEditModal(props: {
       color,
       icon: iconName,
       project,
+      projectID,
       description,
       tags,
     });
@@ -404,12 +442,23 @@ function TemplateEditModal(props: {
             className="pb-2"
           />
           <MyDropDown
-            placeholder="Project"
-            options={projectOptions}
+            placeholder={
+              projectsQuery.isSuccess
+                ? "Select Project"
+                : projectsQuery.isError
+                  ? "Error loading projects"
+                  : "Loading Projects..."
+            }
+            options={
+              projectsQuery.isSuccess
+                ? projectsQuery.data.map((item) => item.name)
+                : []
+            }
             value={project}
             onChange={(t) => {
               setProject(t);
             }}
+            placeholderColor={projectsQuery.isError ? "#994444" : undefined}
             className="z-40 pb-2"
           />
           <MyTagInput

@@ -10,6 +10,9 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+
+const qc = new QueryClient();
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -33,14 +36,16 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider
-      value={DefaultTheme}
-      // value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-    >
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-    </ThemeProvider>
+    <QueryClientProvider client={qc}>
+      <ThemeProvider
+        value={DefaultTheme}
+        // value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+      >
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
