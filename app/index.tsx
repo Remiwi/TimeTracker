@@ -21,9 +21,21 @@ type TemplateStuff = {
   icon: string;
 };
 
+const exampleTemplate = {
+  name: "Example",
+  project: "Project 1",
+  description: "This is an example template",
+  tags: ["tag1", "tag2"],
+  color: "bg-indigo-600",
+  icon: "music-note",
+} as TemplateStuff;
+
 export default function Page() {
   const [templateModalShown, setTemplateModalShown] = useState(false);
-  const [templates, setTemplates] = useState<TemplateStuff[]>([]);
+  const [templates, setTemplates] = useState<TemplateStuff[]>([
+    exampleTemplate,
+    exampleTemplate,
+  ]);
   const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
 
   const small = true;
@@ -62,6 +74,7 @@ export default function Page() {
           }
         />
       )}
+      {!templateModalShown && <TimerControls />}
       <View className="flex h-full pt-20">
         <View className="pb-6">
           <View className="flex flex-row items-end justify-between px-4 pb-1">
@@ -90,9 +103,15 @@ export default function Page() {
             <FlatList
               numColumns={3}
               key={3}
-              data={[...templates, 0] as (TemplateStuff | 0)[]}
+              data={
+                [...templates, "add", "empty", "empty", "empty"] as (
+                  | TemplateStuff
+                  | "add"
+                  | "empty"
+                )[]
+              }
               renderItem={(data) => {
-                if (data.item === 0) {
+                if (data.item === "add") {
                   return (
                     <View className="h-22 w-1/3 overflow-hidden rounded-lg bg-gray-50">
                       <TouchableNativeFeedback
@@ -107,11 +126,14 @@ export default function Page() {
                     </View>
                   );
                 }
+                if (data.item === "empty") {
+                  return <View className="h-14 w-1/3" />;
+                }
 
                 return (
                   <View className="w-1/3">
                     <ItemSmall
-                      templateStuff={data.item}
+                      templateStuff={data.item as TemplateStuff}
                       onLongPress={() => {
                         setEditTemplateIdx(data.index);
                         setTemplateModalShown(true);
@@ -127,9 +149,15 @@ export default function Page() {
             <FlatList
               numColumns={2}
               key={2}
-              data={[...templates, 0] as (TemplateStuff | 0)[]}
+              data={
+                [...templates, "add", "empty", "empty"] as (
+                  | TemplateStuff
+                  | "add"
+                  | "empty"
+                )[]
+              }
               renderItem={(data) => {
-                if (data.item === 0) {
+                if (data.item === "add") {
                   return (
                     <View className="h-29 w-1/2 overflow-hidden rounded-lg bg-gray-50">
                       <TouchableNativeFeedback
@@ -144,10 +172,19 @@ export default function Page() {
                     </View>
                   );
                 }
+                if (data.item === "empty") {
+                  return <View className="h-18 w-1/3" />;
+                }
 
                 return (
                   <View className="w-1/2">
-                    <ItemMedium templateStuff={data.item} />
+                    <ItemMedium
+                      templateStuff={data.item as TemplateStuff}
+                      onLongPress={() => {
+                        setEditTemplateIdx(data.index);
+                        setTemplateModalShown(true);
+                      }}
+                    />
                   </View>
                 );
               }}
@@ -400,5 +437,96 @@ function TemplateEditModal(props: {
         </View>
       </View>
     </Modal>
+  );
+}
+
+function TimerControls() {
+  const [showExtra, setShowExtra] = useState(false);
+
+  return (
+    <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
+      {showExtra && (
+        <View className="relative left-4 flex flex-row gap-4">
+          <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+            <TouchableNativeFeedback>
+              <View className="h-full w-full items-center justify-center bg-gray-600">
+                <MaterialCommunityIcons
+                  name="clock-start"
+                  color="white"
+                  size={24}
+                />
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+          <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+            <TouchableNativeFeedback>
+              <View className="h-full w-full items-center justify-center bg-gray-600">
+                <MaterialCommunityIcons
+                  name="clock-end"
+                  color="white"
+                  size={24}
+                />
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+          <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+            <TouchableNativeFeedback>
+              <View className="h-full w-full items-center justify-center bg-gray-600">
+                <MaterialCommunityIcons
+                  name="trash-can"
+                  color="white"
+                  size={24}
+                />
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+          <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+            <TouchableNativeFeedback>
+              <View className="h-full w-full items-center justify-center bg-gray-600">
+                <MaterialIcons
+                  name="restore-from-trash"
+                  color="white"
+                  size={24}
+                />
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+        </View>
+      )}
+      <View className="flex flex-row-reverse items-end justify-center gap-4">
+        <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback>
+            <View className="h-full w-full items-center justify-center bg-red-500">
+              <MaterialIcons name="stop-circle" color="white" size={52} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+        <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback onPress={() => setShowExtra(!showExtra)}>
+            <View className="h-full w-full items-center justify-center bg-gray-600">
+              <MaterialCommunityIcons
+                name="clock-edit-outline"
+                color="white"
+                size={48}
+              />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+        <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback>
+            <View className="h-full w-full items-center justify-center bg-gray-600">
+              <MaterialCommunityIcons name="redo" color="white" size={24} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+        <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback>
+            <View className="h-full w-full items-center justify-center bg-gray-600">
+              <MaterialCommunityIcons name="undo" color="white" size={24} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+      </View>
+    </View>
   );
 }
