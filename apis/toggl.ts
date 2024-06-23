@@ -130,6 +130,36 @@ const Toggl = {
 
     return res.json();
   },
+
+  deleteCurrentTimeEntry: async () => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const id = await Toggl.getCurrentTimeEntry().then((entry) => entry?.id);
+    if (!id) {
+      throw new Error("No time entry found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json();
+  },
 };
 
 export default Toggl;

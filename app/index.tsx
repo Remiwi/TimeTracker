@@ -525,6 +525,12 @@ function TimerControls() {
       console.error(error);
     },
   });
+  const deleteEntryMutation = useMutation({
+    mutationFn: Toggl.deleteCurrentTimeEntry,
+    onError: (error) => {
+      console.error(error);
+    },
+  });
 
   return (
     <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
@@ -553,7 +559,9 @@ function TimerControls() {
             </TouchableNativeFeedback>
           </View>
           <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-            <TouchableNativeFeedback>
+            <TouchableNativeFeedback
+              onPress={() => deleteEntryMutation.mutate()}
+            >
               <View className="h-full w-full items-center justify-center bg-gray-600">
                 <MaterialCommunityIcons
                   name="trash-can"
