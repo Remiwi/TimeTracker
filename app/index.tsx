@@ -369,6 +369,9 @@ function TemplateEditModal(props: {
     if (iconName === "") return;
     if (project === "") return;
 
+    const projectID =
+      projectsQuery.data?.find((item) => item.name === project)?.id || -1;
+
     props.onDone({
       name,
       color,
