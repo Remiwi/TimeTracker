@@ -5,6 +5,7 @@ import {
   Text,
   TouchableNativeFeedback,
   View,
+  Vibration,
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
@@ -14,6 +15,8 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Toggl from "@/apis/toggl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
+
+const VIBRATION_DURATION = 80;
 
 type TemplateStuff = {
   name: string;
@@ -239,6 +242,9 @@ function Item(props: {
     mutationFn: Toggl.startTimeEntry,
     onError: (error) => {
       console.error(error);
+    },
+    onMutate: () => {
+      Vibration.vibrate(VIBRATION_DURATION);
     },
   });
 
@@ -524,11 +530,17 @@ function TimerControls() {
     onError: (error) => {
       console.error(error);
     },
+    onMutate: () => {
+      Vibration.vibrate(VIBRATION_DURATION);
+    },
   });
   const deleteEntryMutation = useMutation({
     mutationFn: Toggl.deleteCurrentTimeEntry,
     onError: (error) => {
       console.error(error);
+    },
+    onMutate: () => {
+      Vibration.vibrate(VIBRATION_DURATION);
     },
   });
 
@@ -593,7 +605,11 @@ function TimerControls() {
           </TouchableNativeFeedback>
         </View>
         <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-          <TouchableNativeFeedback onPress={() => setShowExtra(!showExtra)}>
+          <TouchableNativeFeedback
+            onPress={() => {
+              setShowExtra(!showExtra);
+            }}
+          >
             <View className="h-full w-full items-center justify-center bg-gray-600">
               <MaterialCommunityIcons
                 name="clock-edit-outline"
