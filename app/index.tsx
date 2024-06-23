@@ -10,6 +10,7 @@ import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
 import ColorSelector from "@/components/ColorSelector";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 
 type TemplateStuff = {
   name: string;
@@ -135,8 +136,17 @@ function ItemSmall(props: { templateStuff: TemplateStuff }) {
       <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
       <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
         <View
-          className={"h-full w-full rounded-full " + props.templateStuff.color}
-        />
+          className={
+            "flex h-full w-full items-center justify-center rounded-full " +
+            props.templateStuff.color
+          }
+        >
+          <MaterialCommunityIcons
+            name={props.templateStuff.icon as any}
+            size={24}
+            color="white"
+          />
+        </View>
       </View>
       <View className="-top-21 flex h-14 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
         <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
@@ -152,8 +162,17 @@ function ItemMedium(props: { templateStuff: TemplateStuff }) {
       <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
       <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
         <View
-          className={"h-full w-full rounded-full " + props.templateStuff.color}
-        />
+          className={
+            "flex h-full w-full items-center justify-center rounded-full " +
+            props.templateStuff.color
+          }
+        >
+          <MaterialCommunityIcons
+            name={props.templateStuff.icon as any}
+            size={32}
+            color="white"
+          />
+        </View>
       </View>
       <View className="-top-29 flex h-20 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
         <Text className="text-md self-end pb-6">XX:XX:XX</Text>
@@ -192,13 +211,13 @@ function NewTemplateModal(props: {
   const [tags, setTags] = useState<string[]>([]);
 
   const iconOptions = [
-    "AcademicCap",
-    "Computer",
-    "Dumbbell",
-    "Film",
-    "MusicNote",
-    "Book",
-    "ShoppingCart",
+    "music-note",
+    "laptop",
+    "dumbbell",
+    "filmstrip",
+    "book",
+    "shopping",
+    "wizard-hat",
   ];
 
   const projectOptions = ["Project 1", "Project 2", "Project 3"];
@@ -250,7 +269,13 @@ function NewTemplateModal(props: {
             className="pb-2"
           />
           <View className="z-50 flex flex-row gap-4">
-            <ColorSelector value={color} onChange={(c) => setColor(c)} />
+            <ColorSelector value={color} onChange={(c) => setColor(c)}>
+              <MaterialCommunityIcons
+                name={iconName as any}
+                size={20}
+                color="white"
+              />
+            </ColorSelector>
             <MyDropDown
               className="flex-grow"
               options={iconOptions}

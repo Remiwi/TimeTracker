@@ -12,6 +12,7 @@ export default function ColorSelector(props: {
   value: string;
   onChange: (color: string) => void;
   colors?: string[];
+  children?: React.ReactNode;
 }) {
   const [colorsShow, setColorsShown] = useState(false);
   const colors = props.colors || [
@@ -81,7 +82,14 @@ export default function ColorSelector(props: {
       <View className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border-2 border-gray-500">
         <TouchableNativeFeedback onPress={() => setColorsShown(!colorsShow)}>
           <View className="flex h-full w-full items-center justify-center p-1">
-            <View className={"h-10 w-10 rounded-full " + props.value} />
+            <View
+              className={
+                "flex h-10 w-10 items-center justify-center rounded-full " +
+                props.value
+              }
+            >
+              {props.children}
+            </View>
           </View>
         </TouchableNativeFeedback>
       </View>
