@@ -46,8 +46,6 @@ const Toggl = {
       throw new Error("No token found");
     }
 
-    console.log(data.projectID);
-
     const res = await fetch(
       `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries`,
       {

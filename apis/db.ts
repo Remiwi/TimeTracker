@@ -7,7 +7,7 @@ const dbPromise = (async () => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     project TEXT,
-    project_id INTEGER,
+    projectID INTEGER,
     description TEXT,
     tags TEXT,
     color TEXT,
@@ -49,7 +49,7 @@ const Database = {
     for (const template of templates) {
       const tags = template.tags.join(",");
       await db.runAsync(
-        `INSERT INTO templates (name, project, project_id, description, tags, color, icon) VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO templates (name, project, projectID, description, tags, color, icon) VALUES (?, ?, ?, ?, ?, ?, ?);`,
         [
           template.name,
           template.project,
