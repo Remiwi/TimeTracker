@@ -162,7 +162,8 @@ export default function Page() {
 
                 return (
                   <View className="w-1/3">
-                    <ItemSmall
+                    <Item
+                      isSmall={true}
                       templateStuff={data.item as TemplateStuff}
                       onLongPress={() => {
                         setEditTemplateIdx(data.index);
@@ -208,7 +209,8 @@ export default function Page() {
 
                 return (
                   <View className="w-1/2">
-                    <ItemMedium
+                    <Item
+                      isSmall={false}
                       templateStuff={data.item as TemplateStuff}
                       onLongPress={() => {
                         setEditTemplateIdx(data.index);
@@ -228,71 +230,94 @@ export default function Page() {
   );
 }
 
-function ItemSmall(props: {
+function Item(props: {
   templateStuff: TemplateStuff;
   onLongPress?: () => void;
+  isSmall: boolean;
 }) {
-  return (
-    <View className="flex h-22 px-1">
-      <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
-      <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
-        <View
-          className={
-            "flex h-full w-full items-center justify-center rounded-full " +
-            props.templateStuff.color
-          }
-        >
-          <MaterialCommunityIcons
-            name={props.templateStuff.icon as any}
-            size={24}
-            color="white"
-          />
+  const startEntryMutation = useMutation({
+    mutationFn: Toggl.startTimeEntry,
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
+  if (props.isSmall) {
+    return (
+      <View className="flex h-22 px-1">
+        <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
+        <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
+          <View
+            className={
+              "flex h-full w-full items-center justify-center rounded-full " +
+              props.templateStuff.color
+            }
+          >
+            <MaterialCommunityIcons
+              name={props.templateStuff.icon as any}
+              size={24}
+              color="white"
+            />
+          </View>
+        </View>
+        <View className="-top-21 h-14 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
+          <TouchableNativeFeedback
+            onLongPress={props.onLongPress}
+            onPress={() => {
+              startEntryMutation.mutate({
+                description: props.templateStuff.description,
+                projectID: props.templateStuff.projectID,
+                tags: props.templateStuff.tags,
+              });
+            }}
+          >
+            <View className="flex p-2 pt-1">
+              <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
+              <Text className="text-sm">{props.templateStuff.name}</Text>
+            </View>
+          </TouchableNativeFeedback>
         </View>
       </View>
-      <View className="-top-21 h-14 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
-        <TouchableNativeFeedback onLongPress={props.onLongPress}>
-          <View className="flex p-2 pt-1">
-            <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
-            <Text className="text-sm">{props.templateStuff.name}</Text>
+    );
+  } else {
+    return (
+      <View className="flex h-29 px-1">
+        <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
+
+        <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
+          <View
+            className={
+              "flex h-full w-full items-center justify-center rounded-full " +
+              props.templateStuff.color
+            }
+          >
+            <MaterialCommunityIcons
+              name={props.templateStuff.icon as any}
+              size={32}
+              color="white"
+            />
           </View>
-        </TouchableNativeFeedback>
-      </View>
-    </View>
-  );
-}
-
-function ItemMedium(props: {
-  templateStuff: TemplateStuff;
-  onLongPress?: () => void;
-}) {
-  return (
-    <View className="flex h-29 px-1">
-      <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
-
-      <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
-        <View
-          className={
-            "flex h-full w-full items-center justify-center rounded-full " +
-            props.templateStuff.color
-          }
-        >
-          <MaterialCommunityIcons
-            name={props.templateStuff.icon as any}
-            size={32}
-            color="white"
-          />
+        </View>
+        <View className="-top-29 h-20 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
+          <TouchableNativeFeedback
+            onLongPress={props.onLongPress}
+            onPress={() => {
+              startEntryMutation.mutate({
+                description: props.templateStuff.description,
+                projectID: props.templateStuff.projectID,
+                tags: props.templateStuff.tags,
+              });
+            }}
+          >
+            <View className="flex p-2 pt-1">
+              <Text className="text-md self-end pb-6">XX:XX:XX</Text>
+              <Text>{props.templateStuff.name}</Text>
+            </View>
+          </TouchableNativeFeedback>
         </View>
       </View>
-      <View className="-top-29 h-20 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
-        <TouchableNativeFeedback onLongPress={props.onLongPress}>
-          <View className="flex p-2 pt-1">
-            <Text className="text-md self-end pb-6">XX:XX:XX</Text>
-            <Text>{props.templateStuff.name}</Text>
-          </View>
-        </TouchableNativeFeedback>
-      </View>
-    </View>
-  );
+    );
+  }
 }
 
 function Folder(props: { active?: boolean }) {
@@ -324,7 +349,6 @@ function TemplateEditModal(props: {
   );
   const [iconName, setIconName] = useState(props.defaultTemplate?.icon || "");
   const [project, setProject] = useState(props.defaultTemplate?.project || "");
-  const [projectID, setProjectID] = useState(0);
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
   );
