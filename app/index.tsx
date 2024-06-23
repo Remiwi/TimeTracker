@@ -24,17 +24,42 @@ type TemplateStuff = {
 export default function Page() {
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [templates, setTemplates] = useState<TemplateStuff[]>([]);
+  const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
 
-  const small = false;
+  const small = true;
   return (
     <>
       {templateModalShown && (
-        <NewTemplateModal
-          onCancel={() => setTemplateModalShown(false)}
-          onDone={(t) => {
-            setTemplates([...templates, t]);
+        <TemplateEditModal
+          onCancel={() => {
+            setEditTemplateIdx(-1);
             setTemplateModalShown(false);
           }}
+          onDone={(t) => {
+            setEditTemplateIdx(-1);
+            setTemplateModalShown(false);
+            if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
+              const newTemplates = [...templates];
+              newTemplates[editTemplateIdx] = t;
+              setTemplates(newTemplates);
+              return;
+            }
+            setTemplates([...templates, t]);
+          }}
+          onDelete={() => {
+            setEditTemplateIdx(-1);
+            setTemplateModalShown(false);
+            if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
+              const newTemplates = [...templates];
+              newTemplates.splice(editTemplateIdx, 1);
+              setTemplates(newTemplates);
+            }
+          }}
+          defaultTemplate={
+            0 <= editTemplateIdx && editTemplateIdx < templates.length
+              ? templates[editTemplateIdx]
+              : undefined
+          }
         />
       )}
       <View className="flex h-full pt-20">
@@ -85,7 +110,13 @@ export default function Page() {
 
                 return (
                   <View className="w-1/3">
-                    <ItemSmall templateStuff={data.item} />
+                    <ItemSmall
+                      templateStuff={data.item}
+                      onLongPress={() => {
+                        setEditTemplateIdx(data.index);
+                        setTemplateModalShown(true);
+                      }}
+                    />
                   </View>
                 );
               }}
@@ -130,7 +161,10 @@ export default function Page() {
   );
 }
 
-function ItemSmall(props: { templateStuff: TemplateStuff }) {
+function ItemSmall(props: {
+  templateStuff: TemplateStuff;
+  onLongPress?: () => void;
+}) {
   return (
     <View className="flex h-22 px-1">
       <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
@@ -148,18 +182,26 @@ function ItemSmall(props: { templateStuff: TemplateStuff }) {
           />
         </View>
       </View>
-      <View className="-top-21 flex h-14 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
-        <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
-        <Text className="text-sm">{props.templateStuff.name}</Text>
+      <View className="-top-21 h-14 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
+        <TouchableNativeFeedback onLongPress={props.onLongPress}>
+          <View className="flex p-2 pt-1">
+            <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
+            <Text className="text-sm">{props.templateStuff.name}</Text>
+          </View>
+        </TouchableNativeFeedback>
       </View>
     </View>
   );
 }
 
-function ItemMedium(props: { templateStuff: TemplateStuff }) {
+function ItemMedium(props: {
+  templateStuff: TemplateStuff;
+  onLongPress?: () => void;
+}) {
   return (
     <View className="flex h-29 px-1">
       <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
+
       <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
         <View
           className={
@@ -174,9 +216,13 @@ function ItemMedium(props: { templateStuff: TemplateStuff }) {
           />
         </View>
       </View>
-      <View className="-top-29 flex h-20 w-full rounded-lg bg-white p-2 pt-1 shadow-sm shadow-slate-950">
-        <Text className="text-md self-end pb-6">XX:XX:XX</Text>
-        <Text>{props.templateStuff.name}</Text>
+      <View className="-top-29 h-20 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
+        <TouchableNativeFeedback onLongPress={props.onLongPress}>
+          <View className="flex p-2 pt-1">
+            <Text className="text-md self-end pb-6">XX:XX:XX</Text>
+            <Text>{props.templateStuff.name}</Text>
+          </View>
+        </TouchableNativeFeedback>
       </View>
     </View>
   );
@@ -199,16 +245,22 @@ function Folder(props: { active?: boolean }) {
   );
 }
 
-function NewTemplateModal(props: {
+function TemplateEditModal(props: {
   onCancel: () => void;
   onDone: (t: TemplateStuff) => void;
+  onDelete: () => void;
+  defaultTemplate?: TemplateStuff;
 }) {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("bg-indigo-600");
-  const [iconName, setIconName] = useState("");
-  const [project, setProject] = useState("");
-  const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>([]);
+  const [name, setName] = useState(props.defaultTemplate?.name || "");
+  const [color, setColor] = useState(
+    props.defaultTemplate?.color || "bg-indigo-600",
+  );
+  const [iconName, setIconName] = useState(props.defaultTemplate?.icon || "");
+  const [project, setProject] = useState(props.defaultTemplate?.project || "");
+  const [description, setDescription] = useState(
+    props.defaultTemplate?.description || "",
+  );
+  const [tags, setTags] = useState<string[]>(props.defaultTemplate?.tags || []);
 
   const iconOptions = [
     "music-note",
@@ -252,6 +304,15 @@ function NewTemplateModal(props: {
       tags,
     });
   };
+  const onDelete = () => {
+    setName("");
+    setColor("bg-indigo-600");
+    setIconName("");
+    setProject("");
+    setDescription("");
+    setTags([]);
+    props.onDelete();
+  };
 
   return (
     <Modal animationType="slide" transparent>
@@ -260,6 +321,17 @@ function NewTemplateModal(props: {
         style={{ backgroundColor: "#00000088" }}
       >
         <View className="w-full rounded-2xl bg-gray-50 p-4">
+          {props.defaultTemplate !== undefined && (
+            <View className="flex items-center pb-2">
+              <View className="w-44 overflow-hidden rounded-full shadow-sm shadow-slate-800">
+                <TouchableNativeFeedback onPress={onDelete}>
+                  <View className="flex w-full items-center rounded-full bg-slate-100 p-2">
+                    <Text className="font-bold">Delete Template</Text>
+                  </View>
+                </TouchableNativeFeedback>
+              </View>
+            </View>
+          )}
           <Text className="pb-4 text-xl">Template Properties</Text>
           <MyTextInput
             label="Name"
