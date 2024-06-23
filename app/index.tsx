@@ -15,6 +15,8 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Toggl from "@/apis/toggl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
+import TimerText from "@/components/TimerText";
+import { Temporal } from "@js-temporal/polyfill";
 
 const VIBRATION_DURATION = 80;
 
@@ -109,19 +111,7 @@ export default function Page() {
       )}
       {!templateModalShown && <TimerControls />}
       <View className="flex h-full pt-20">
-        <View className="pb-6">
-          <View className="flex flex-row items-end justify-between px-4 pb-1">
-            <View>
-              <Text className="pb-2 text-xl font-bold">Project name</Text>
-              <Text className="text-6xl">XX:XX:XX</Text>
-            </View>
-            <View className="aspect-square w-24 rounded-full bg-orange-500 shadow-md shadow-black" />
-          </View>
-          <View className="px-4">
-            <Text className="font-light">Description</Text>
-            <Text className="font-light italic text-gray-400">Tags</Text>
-          </View>
-        </View>
+        <Timer />
         <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
           <View className="flex w-full flex-row gap-2 p-2 pb-8">
             <Folder active={true} />
@@ -644,6 +634,39 @@ function TimerControls() {
             </View>
           </TouchableNativeFeedback>
         </View>
+      </View>
+    </View>
+  );
+}
+
+function Timer() {
+  const timeEntryQuery = useQuery({
+    queryKey: ["currentEntry"],
+    queryFn: Toggl.getCurrentTimeEntry,
+  });
+
+  const start = timeEntryQuery.data
+    ? Temporal.Instant.from(timeEntryQuery.data.start)
+    : undefined;
+
+  return (
+    <View className="pb-6">
+      <View className="flex flex-row items-end justify-between px-4 pb-1">
+        <View>
+          <Text className="pb-2 text-xl font-bold">
+            {timeEntryQuery.data?.project_id || "..."}
+          </Text>
+          <TimerText className="text-6xl" startTime={start} />
+        </View>
+        <View className="aspect-square w-24 rounded-full shadow-md shadow-black" />
+      </View>
+      <View className="px-4">
+        <Text className="font-light">
+          {timeEntryQuery.data?.description || "..."}
+        </Text>
+        <Text className="font-light italic text-gray-400">
+          {timeEntryQuery.data?.tags || "..."}
+        </Text>
       </View>
     </View>
   );
