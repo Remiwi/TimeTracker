@@ -543,13 +543,24 @@ function TimerControls() {
       Vibration.vibrate(VIBRATION_DURATION);
     },
   });
+  const startToLastStopMutation = useMutation({
+    mutationFn: Toggl.setCurrentStartToPrevStop,
+    onError: (error) => {
+      console.error(error);
+    },
+    onMutate: () => {
+      Vibration.vibrate(VIBRATION_DURATION);
+    },
+  });
 
   return (
     <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
       {showExtra && (
         <View className="relative left-4 flex flex-row gap-4">
           <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-            <TouchableNativeFeedback>
+            <TouchableNativeFeedback
+              onPress={() => startToLastStopMutation.mutate()}
+            >
               <View className="h-full w-full items-center justify-center bg-gray-600">
                 <MaterialCommunityIcons
                   name="clock-start"
