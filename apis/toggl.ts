@@ -158,7 +158,7 @@ const Toggl = {
       throw new Error(text);
     }
 
-    return res.json();
+    return res.status;
   },
 };
 
