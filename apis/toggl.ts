@@ -36,6 +36,33 @@ const Toggl = {
     >;
   },
 
+  getCurrentTimeEntry: async () => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const res = await fetch(
+      "https://api.track.toggl.com/api/v9/me/time_entries/current",
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json() as Promise<{
+      id: number;
+    } | null>;
+  },
+
   startTimeEntry: async (data: {
     description: string;
     projectID: number;
@@ -63,6 +90,36 @@ const Toggl = {
           duration: -1,
           start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
         }),
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json();
+  },
+
+  stopTimeEntry: async () => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const id = await Toggl.getCurrentTimeEntry().then((entry) => entry?.id);
+    if (!id) {
+      throw new Error("No time entry found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries/${id}/stop`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
       },
     );
 

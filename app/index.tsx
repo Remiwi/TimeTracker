@@ -519,6 +519,13 @@ function TemplateEditModal(props: {
 function TimerControls() {
   const [showExtra, setShowExtra] = useState(false);
 
+  const stopEntryMutation = useMutation({
+    mutationFn: Toggl.stopTimeEntry,
+    onError: (error) => {
+      console.error(error);
+    },
+  });
+
   return (
     <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
       {showExtra && (
@@ -571,7 +578,7 @@ function TimerControls() {
       )}
       <View className="flex flex-row-reverse items-end justify-center gap-4">
         <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-          <TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={() => stopEntryMutation.mutate()}>
             <View className="h-full w-full items-center justify-center bg-red-500">
               <MaterialIcons name="stop-circle" color="white" size={52} />
             </View>
