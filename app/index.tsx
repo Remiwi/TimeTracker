@@ -520,7 +520,7 @@ function TimerControls() {
   const [showExtra, setShowExtra] = useState(false);
 
   const stopEntryMutation = useMutation({
-    mutationFn: Toggl.stopTimeEntry,
+    mutationFn: Toggl.stopCurrentTimeEntry,
     onError: (error) => {
       console.error(error);
     },

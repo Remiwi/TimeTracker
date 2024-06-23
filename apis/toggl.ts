@@ -101,7 +101,7 @@ const Toggl = {
     return res.json();
   },
 
-  stopTimeEntry: async () => {
+  stopCurrentTimeEntry: async () => {
     const token = await SecureStore.getItemAsync("togglToken");
     if (!token) {
       throw new Error("No token found");
