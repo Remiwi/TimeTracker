@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
+import ColorMaps from "@/utils/colorMaps";
 
 const VIBRATION_DURATION = 80;
 
@@ -691,6 +692,11 @@ function TimerControls() {
 }
 
 function Timer() {
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Toggl.getProjects,
+  });
+
   const timeEntryQuery = useQuery({
     queryKey: ["currentEntry"],
     queryFn: Toggl.getCurrentTimeEntry,
@@ -700,16 +706,30 @@ function Timer() {
     ? Temporal.Instant.from(timeEntryQuery.data.start)
     : undefined;
 
+  const projectID = timeEntryQuery.data?.project_id || -1;
+  const project = projectsQuery.data?.find((v) => {
+    return v.id === projectID;
+  });
+  const projectName = project ? project.name : "Unknown";
+  const projectColor = ColorMaps.TogglToInternalTailwind.get(
+    project?.color.toUpperCase() || "#525266",
+  );
+
   return (
     <View className="pb-6">
       <View className="flex flex-row items-end justify-between px-4 pb-1">
         <View>
           <Text className="pb-2 text-xl font-bold">
-            {timeEntryQuery.data?.project_id || "..."}
+            {timeEntryQuery.data ? projectName : "..."}
           </Text>
           <TimerText className="text-6xl" startTime={start} />
         </View>
-        <View className="aspect-square w-24 rounded-full shadow-md shadow-black" />
+        <View
+          className={
+            "aspect-square w-24 rounded-full shadow-md shadow-black " +
+            projectColor
+          }
+        />
       </View>
       <View className="px-4">
         <Text className="font-light">
