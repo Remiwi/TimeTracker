@@ -25,7 +25,12 @@ export default function TimerText(props: {
   const minutes = Math.floor(duration.total({ unit: "minute" }) % 60)
     .toFixed(0)
     .padStart(2, "0");
-  const hours = Math.floor(duration.total({ unit: "hour" })).toFixed(0);
+  const hours = Math.floor(duration.total({ unit: "hour" }));
+
+  if (hours < 0) {
+    return <Text className={props.className}>0:00:00</Text>;
+  }
+
   return (
     <Text className={props.className}>
       {hours}:{minutes}:{seconds}
