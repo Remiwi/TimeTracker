@@ -576,11 +576,21 @@ function TimerControls() {
   });
   const startToLastStopMutation = useMutation({
     mutationFn: Toggl.setCurrentStartToPrevStop,
+    onMutate: () => {
+      const oldEntry = qc.getQueryData(["currentEntry"]);
+      Vibration.vibrate(VIBRATION_DURATION);
+      qc.setQueryData(["currentEntry"], {
+        ...(oldEntry as any),
+      });
+      return oldEntry;
+    },
     onError: (error) => {
       console.error(error);
     },
-    onMutate: () => {
-      Vibration.vibrate(VIBRATION_DURATION);
+    onSettled: () => {
+      qc.invalidateQueries({
+        queryKey: ["currentEntry"],
+      });
     },
   });
 
