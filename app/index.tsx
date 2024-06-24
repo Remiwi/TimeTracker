@@ -228,13 +228,34 @@ function Item(props: {
   onLongPress?: () => void;
   isSmall: boolean;
 }) {
+  const qc = useQueryClient();
+
   const startEntryMutation = useMutation({
     mutationFn: Toggl.startTimeEntry,
+    onMutate: () => {
+      const oldEntry = qc.getQueryData(["currentEntry"]);
+      qc.setQueryData(["currentEntry"], {
+        id: 0,
+        description: props.templateStuff.description,
+        project_id: props.templateStuff.projectID,
+        project_name: props.templateStuff.project,
+        project_color: props.templateStuff.color,
+        start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
+        stop: null,
+        duration: -1,
+        tags: props.templateStuff.tags,
+      });
+      Vibration.vibrate(VIBRATION_DURATION);
+      return oldEntry;
+    },
     onError: (error) => {
       console.error(error);
+      qc.setQueryData(["currentEntry"], null);
     },
-    onMutate: () => {
-      Vibration.vibrate(VIBRATION_DURATION);
+    onSettled: () => {
+      // qc.invalidateQueries({
+      //   queryKey: ["currentEntry"],
+      // });
     },
   });
 
@@ -513,24 +534,44 @@ function TemplateEditModal(props: {
 }
 
 function TimerControls() {
+  const qc = useQueryClient();
+
   const [showExtra, setShowExtra] = useState(false);
 
   const stopEntryMutation = useMutation({
     mutationFn: Toggl.stopCurrentTimeEntry,
-    onError: (error) => {
-      console.error(error);
-    },
     onMutate: () => {
+      const oldEntry = qc.getQueryData(["currentEntry"]);
+      qc.setQueryData(["currentEntry"], null);
       Vibration.vibrate(VIBRATION_DURATION);
+      return oldEntry;
+    },
+    onError: (error, _, oldEntry) => {
+      console.error(error);
+      qc.setQueryData(["currentEntry"], oldEntry);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({
+        queryKey: ["currentEntry"],
+      });
     },
   });
   const deleteEntryMutation = useMutation({
     mutationFn: Toggl.deleteCurrentTimeEntry,
-    onError: (error) => {
-      console.error(error);
-    },
     onMutate: () => {
+      const oldEntry = qc.getQueryData(["currentEntry"]);
+      qc.setQueryData(["currentEntry"], null);
       Vibration.vibrate(VIBRATION_DURATION);
+      return oldEntry;
+    },
+    onError: (error, _, oldEntry) => {
+      console.error(error);
+      qc.setQueryData(["currentEntry"], oldEntry);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({
+        queryKey: ["currentEntry"],
+      });
     },
   });
   const startToLastStopMutation = useMutation({
