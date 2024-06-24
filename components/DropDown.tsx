@@ -1,7 +1,13 @@
 import { MaterialIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Text, TouchableNativeFeedback, View, FlatList } from "react-native";
-import { Menu, MenuItem } from "react-native-material-menu";
+import { useRef, useState } from "react";
+import {
+  Text,
+  TouchableNativeFeedback,
+  View,
+  FlatList,
+  Modal,
+  TouchableWithoutFeedback,
+} from "react-native";
 
 export default function MyDropDown(props: {
   label?: string;
@@ -17,6 +23,8 @@ export default function MyDropDown(props: {
   className?: string;
 }) {
   const [optionsShown, setOptionsShown] = useState(false);
+  const containerRef = useRef<View>(null);
+  const [layout, setLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   return (
     <View className={props.className}>
@@ -30,6 +38,14 @@ export default function MyDropDown(props: {
                 }
               : {},
           ]}
+          ref={containerRef}
+          onLayout={(event) => {
+            // var { width, height } = event.nativeEvent.layout;
+            if (containerRef.current === null) return;
+            containerRef.current.measure((rx, ry, width, height, x, y) => {
+              setLayout({ x, y, width, height });
+            });
+          }}
         >
           {props.label && (
             <Text
@@ -75,24 +91,37 @@ export default function MyDropDown(props: {
           </View>
         </View>
         {optionsShown && (
-          <View className="absolute top-14 h-60 w-full rounded-b-md bg-gray-50">
-            <FlatList
-              data={props.options}
-              renderItem={({ item: option }) => (
-                <TouchableNativeFeedback
-                  onPress={() => {
-                    setOptionsShown(false);
-                    if (props.onChange) props.onChange(option);
+          <Modal transparent={true}>
+            <TouchableWithoutFeedback onPress={() => setOptionsShown(false)}>
+              <View className="relative h-full w-full">
+                <View
+                  className="asbolute h-60 w-full rounded-md bg-white"
+                  style={{
+                    width: layout.width,
+                    top: layout.y + layout.height,
+                    left: layout.x,
                   }}
-                  key={option}
                 >
-                  <View className="p-4" key={option}>
-                    <Text>{option}</Text>
-                  </View>
-                </TouchableNativeFeedback>
-              )}
-            />
-          </View>
+                  <FlatList
+                    data={props.options}
+                    renderItem={({ item: option }) => (
+                      <TouchableNativeFeedback
+                        onPress={() => {
+                          setOptionsShown(false);
+                          if (props.onChange) props.onChange(option);
+                        }}
+                        key={option}
+                      >
+                        <View className="p-4 px-3" key={option}>
+                          <Text>{option}</Text>
+                        </View>
+                      </TouchableNativeFeedback>
+                    )}
+                  />
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
         )}
       </View>
     </View>
