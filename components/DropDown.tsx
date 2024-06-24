@@ -1,6 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Text, TouchableNativeFeedback, View } from "react-native";
+import { Text, TouchableNativeFeedback, View, FlatList } from "react-native";
+import { Menu, MenuItem } from "react-native-material-menu";
 
 export default function MyDropDown(props: {
   label?: string;
@@ -74,20 +75,23 @@ export default function MyDropDown(props: {
           </View>
         </View>
         {optionsShown && (
-          <View className="absolute top-14 w-full rounded-b-md bg-gray-50">
-            {props.options.map((option) => (
-              <TouchableNativeFeedback
-                onPress={() => {
-                  setOptionsShown(false);
-                  if (props.onChange) props.onChange(option);
-                }}
-                key={option}
-              >
-                <View className="p-4">
-                  <Text>{option}</Text>
-                </View>
-              </TouchableNativeFeedback>
-            ))}
+          <View className="absolute top-14 h-60 w-full rounded-b-md bg-gray-50">
+            <FlatList
+              data={props.options}
+              renderItem={({ item: option }) => (
+                <TouchableNativeFeedback
+                  onPress={() => {
+                    setOptionsShown(false);
+                    if (props.onChange) props.onChange(option);
+                  }}
+                  key={option}
+                >
+                  <View className="p-4" key={option}>
+                    <Text>{option}</Text>
+                  </View>
+                </TouchableNativeFeedback>
+              )}
+            />
           </View>
         )}
       </View>
