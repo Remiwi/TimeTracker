@@ -111,7 +111,7 @@ export default function Page() {
         />
       )}
       {!templateModalShown && <TimerControls />}
-      <View className="flex h-full pt-20">
+      <View className="flex h-full bg-gray-50 pt-4">
         <Timer />
         <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
           <View className="flex w-full flex-row gap-2 p-2 pb-8">
