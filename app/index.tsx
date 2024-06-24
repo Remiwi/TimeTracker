@@ -246,7 +246,6 @@ function Item(props: {
         duration: -1,
         tags: props.templateStuff.tags,
       });
-      Vibration.vibrate(VIBRATION_DURATION);
       return oldEntry;
     },
     onError: (error) => {
@@ -287,6 +286,7 @@ function Item(props: {
                 projectID: props.templateStuff.projectID,
                 tags: props.templateStuff.tags,
               });
+              Vibration.vibrate(VIBRATION_DURATION);
             }}
           >
             <View className="flex p-2 pt-1">
@@ -544,7 +544,6 @@ function TimerControls() {
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
-      Vibration.vibrate(VIBRATION_DURATION);
       return oldEntry;
     },
     onError: (error, _, oldEntry) => {
@@ -562,7 +561,6 @@ function TimerControls() {
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
-      Vibration.vibrate(VIBRATION_DURATION);
       return oldEntry;
     },
     onError: (error, _, oldEntry) => {
@@ -579,7 +577,6 @@ function TimerControls() {
     mutationFn: Toggl.setCurrentStartToPrevStop,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
-      Vibration.vibrate(VIBRATION_DURATION);
       qc.setQueryData(["currentEntry"], {
         ...(oldEntry as any),
       });
@@ -601,7 +598,10 @@ function TimerControls() {
         <View className="relative left-4 flex flex-row gap-4">
           <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
             <TouchableNativeFeedback
-              onPress={() => startToLastStopMutation.mutate()}
+              onPress={() => {
+                Vibration.vibrate(VIBRATION_DURATION);
+                startToLastStopMutation.mutate();
+              }}
             >
               <View className="h-full w-full items-center justify-center bg-gray-600">
                 <MaterialCommunityIcons
@@ -625,7 +625,10 @@ function TimerControls() {
           </View>
           <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
             <TouchableNativeFeedback
-              onPress={() => deleteEntryMutation.mutate()}
+              onPress={() => {
+                Vibration.vibrate(VIBRATION_DURATION);
+                deleteEntryMutation.mutate();
+              }}
             >
               <View className="h-full w-full items-center justify-center bg-gray-600">
                 <MaterialCommunityIcons
@@ -651,7 +654,12 @@ function TimerControls() {
       )}
       <View className="flex flex-row-reverse items-end justify-center gap-4">
         <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-          <TouchableNativeFeedback onPress={() => stopEntryMutation.mutate()}>
+          <TouchableNativeFeedback
+            onPress={() => {
+              Vibration.vibrate(VIBRATION_DURATION);
+              stopEntryMutation.mutate();
+            }}
+          >
             <View className="h-full w-full items-center justify-center bg-red-500">
               <MaterialIcons name="stop-circle" color="white" size={52} />
             </View>
