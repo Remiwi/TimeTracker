@@ -7,6 +7,7 @@ import {
   FlatList,
   Modal,
   TouchableWithoutFeedback,
+  useWindowDimensions,
 } from "react-native";
 
 export default function MyDropDown(props: {
@@ -22,9 +23,12 @@ export default function MyDropDown(props: {
   placeholderColor?: string;
   className?: string;
 }) {
+  const { height, width } = useWindowDimensions();
   const [optionsShown, setOptionsShown] = useState(false);
   const containerRef = useRef<View>(null);
   const [layout, setLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+
+  const above = layout.y + layout.height + 240 > height;
 
   return (
     <View className={props.className}>
@@ -98,7 +102,7 @@ export default function MyDropDown(props: {
                   className="asbolute h-60 w-full rounded-md bg-white"
                   style={{
                     width: layout.width,
-                    top: layout.y + layout.height,
+                    top: above ? layout.y - 210 : layout.y + layout.height,
                     left: layout.x,
                   }}
                 >
