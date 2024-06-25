@@ -11,28 +11,11 @@ export default function ColorSelector(props: {
   className?: string;
   value: string;
   onChange: (color: string) => void;
-  colors?: string[];
+  colors: string[];
   children?: React.ReactNode;
 }) {
   const [colorsShow, setColorsShown] = useState(false);
-  const colors = props.colors || [
-    "bg-indigo-600",
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-fuchsia-700",
-    "bg-orange-500",
-    "bg-pink-500",
-    "bg-red-500",
-    "bg-orange-800",
-    "bg-slate-600",
-    "bg-lime-800",
-    "bg-lime-500",
-    "bg-teal-500",
-    "bg-yellow-400",
-    "bg-orange-300",
-  ];
-
-  <View className="bg-fuchsia-700"></View>;
+  const color = props.value.toLowerCase();
 
   return (
     <View className={props.className}>
@@ -45,12 +28,11 @@ export default function ColorSelector(props: {
                   <View className="h-1 w-1/3 rounded-full bg-gray-300" />
                 </View>
                 <View className="flex w-full flex-row flex-wrap items-center justify-center gap-3 p-4">
-                  {colors.map((color) => (
+                  {props.colors.map((color) => (
                     <View
                       key={color}
-                      className={
-                        "h-10 w-10 overflow-hidden rounded-full " + color
-                      }
+                      className={"h-10 w-10 overflow-hidden rounded-full"}
+                      style={{ backgroundColor: color }}
                     >
                       <TouchableNativeFeedback
                         onPress={() => {
@@ -84,9 +66,9 @@ export default function ColorSelector(props: {
           <View className="flex h-full w-full items-center justify-center p-1">
             <View
               className={
-                "flex h-10 w-10 items-center justify-center rounded-full " +
-                props.value
+                "flex h-10 w-10 items-center justify-center rounded-full"
               }
+              style={{ backgroundColor: color }}
             >
               {props.children}
             </View>

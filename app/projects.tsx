@@ -3,9 +3,9 @@ import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
-import ColorMaps from "@/utils/colorMaps";
+import useProjects from "@/hooks/useProjects";
+import { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   FlatList,
@@ -28,10 +28,7 @@ export default function Page() {
     ProjectStuff | undefined
   >();
 
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Toggl.getProjects,
-  });
+  const projects = useProjects();
 
   return (
     <>
@@ -42,7 +39,7 @@ export default function Page() {
         />
       )}
       <FlatList
-        data={projectsQuery.data}
+        data={projects}
         renderItem={({ item }) => (
           <Project
             project={{ ...item, icon: "" }}
@@ -77,11 +74,7 @@ function ProjectModal(props: {
   defaultProject?: ProjectStuff;
 }) {
   const [name, setName] = useState(props.defaultProject?.name || "");
-  const [color, setColor] = useState(
-    ColorMaps.TogglToInternalTailwind.get(
-      props.defaultProject?.color.toUpperCase() || "#0B83D9",
-    ) || "bg-blue-500",
-  );
+  const [color, setColor] = useState(props.defaultProject?.color || "");
   const [icon, setIcon] = useState(props.defaultProject?.icon || "");
 
   const iconOptions = [
@@ -130,7 +123,11 @@ function ProjectModal(props: {
           onChange={setName}
         />
         <View className="flex flex-row items-center gap-4 pb-2">
-          <ColorSelector value={color} onChange={setColor}>
+          <ColorSelector
+            value={color}
+            onChange={setColor}
+            colors={colors.map((c) => c.hex)}
+          >
             <MaterialCommunityIcons
               name={icon as any}
               size={20}

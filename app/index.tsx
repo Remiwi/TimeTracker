@@ -17,7 +17,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
-import ColorMaps from "@/utils/colorMaps";
+import useProjects from "@/hooks/useProjects";
+import { colors } from "@/utils/colors";
 
 const VIBRATION_DURATION = 80;
 
@@ -461,7 +462,11 @@ function TemplateEditModal(props: {
             className="pb-2"
           />
           <View className="z-50 flex flex-row gap-4">
-            <ColorSelector value={color} onChange={(c) => setColor(c)}>
+            <ColorSelector
+              value={color}
+              onChange={(c) => setColor(c)}
+              colors={colors.map((c) => c.name)}
+            >
               <MaterialCommunityIcons
                 name={iconName as any}
                 size={20}
@@ -700,10 +705,7 @@ function TimerControls() {
 }
 
 function Timer() {
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Toggl.getProjects,
-  });
+  const projects = useProjects();
 
   const timeEntryQuery = useQuery({
     queryKey: ["currentEntry"],
@@ -715,13 +717,11 @@ function Timer() {
     : undefined;
 
   const projectID = timeEntryQuery.data?.project_id || -1;
-  const project = projectsQuery.data?.find((v) => {
+  const project = projects.find((v) => {
     return v.id === projectID;
   });
   const projectName = project ? project.name : "Unknown";
-  const projectColor = ColorMaps.TogglToInternalTailwind.get(
-    project?.color.toUpperCase() || "#525266",
-  );
+  const projectHex = project ? project.color : "#ffffff";
 
   return (
     <View className="pb-6">
@@ -733,10 +733,8 @@ function Timer() {
           <TimerText className="text-6xl" startTime={start} />
         </View>
         <View
-          className={
-            "aspect-square w-24 rounded-full shadow-md shadow-black " +
-            projectColor
-          }
+          className={"aspect-square w-24 rounded-full shadow-md shadow-black"}
+          style={{ backgroundColor: projectHex }}
         />
       </View>
       <View className="px-4">

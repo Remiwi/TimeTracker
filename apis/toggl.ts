@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
 import { Temporal } from "@js-temporal/polyfill";
+import Colors from "@/utils/colors";
 
 const MY_WORKSPACE = 5930509;
 
@@ -29,8 +30,8 @@ const Toggl = {
 
     return res.json() as Promise<
       {
-        name: string;
         id: number;
+        name: string;
         color: string;
       }[]
     >;

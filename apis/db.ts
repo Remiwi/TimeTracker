@@ -14,6 +14,15 @@ const dbPromise = (async () => {
     icon TEXT
   );`);
 
+  await db.runAsync(`DROP TABLE IF EXISTS projects;`);
+
+  await db.runAsync(`CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY,
+    name TEXT,
+    color TEXT,
+    icon TEXT
+  );`);
+
   return db;
 })();
 
@@ -59,6 +68,34 @@ const Database = {
           template.color,
           template.icon,
         ],
+      );
+    }
+  },
+
+  getProjects: async () => {
+    const db = await dbPromise;
+    return await db.getAllAsync<{
+      id: number;
+      name: string;
+      color: string;
+      icon: string;
+    }>(`SELECT * FROM projects;`, []);
+  },
+
+  setProjects: async (
+    projects: {
+      id: number;
+      name: string;
+      color: string;
+      icon: string;
+    }[],
+  ) => {
+    const db = await dbPromise;
+    await db.runAsync(`DELETE FROM projects;`, []);
+    for (const project of projects) {
+      await db.runAsync(
+        `INSERT INTO projects (id, name, color, icon) VALUES (?, ?, ?, ?);`,
+        [project.id, project.name, project.color, project.icon],
       );
     }
   },

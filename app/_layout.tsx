@@ -16,9 +16,6 @@ const qc = new QueryClient();
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { TouchableNativeFeedback, View } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { DrawerHeaderProps } from "@react-navigation/drawer";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
