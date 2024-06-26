@@ -29,7 +29,12 @@ export default function Page() {
   const { deleteProjectDBMutation, deleteProjectTogglMutation } =
     useDeleteProject();
 
-  const onEditDone = (project: ProjectStuff) => {
+  const onAdd = () => {
+    setProjectModalOpen(true);
+    setSelectedProject(undefined);
+  };
+
+  const onModalDone = (project: ProjectStuff) => {
     editProjectDBMutation.mutate(project);
     editProjectTogglMutation.mutate({
       pid: project.id,
@@ -39,7 +44,7 @@ export default function Page() {
     setProjectModalOpen(false);
   };
 
-  const onEditDelete = (id: number) => {
+  const onModalDelete = (id: number) => {
     deleteProjectDBMutation.mutate(id);
     deleteProjectTogglMutation.mutate(id);
     setProjectModalOpen(false);
@@ -50,11 +55,12 @@ export default function Page() {
       {projectModalOpen && (
         <ProjectModal
           onCancel={() => setProjectModalOpen(false)}
-          onDone={onEditDone}
-          onDelete={onEditDelete}
+          onDone={onModalDone}
+          onDelete={onModalDelete}
           defaultProject={selectedProject}
         />
       )}
+      {!projectModalOpen && <FABs onAdd={onAdd} />}
       <FlatList
         data={projects}
         renderItem={({ item }) => (
@@ -183,5 +189,21 @@ function ProjectModal(props: {
         </View>
       </View>
     </BottomSheet>
+  );
+}
+
+function FABs(props: { onAdd?: () => void }) {
+  return (
+    <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
+      <View className="flex flex-row-reverse items-end justify-center gap-4">
+        <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback onPress={props.onAdd}>
+            <View className="h-full w-full items-center justify-center bg-red-500">
+              <MaterialCommunityIcons name="plus" color="white" size={52} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+      </View>
+    </View>
   );
 }

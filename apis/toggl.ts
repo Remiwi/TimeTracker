@@ -1,7 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
 import { Temporal } from "@js-temporal/polyfill";
-import Colors from "@/utils/colors";
 
 const MY_WORKSPACE = 5930509;
 
@@ -250,6 +249,32 @@ const Toggl = {
           "Content-Type": "application/json",
           Authorization: `Basic ${encode(token + ":api_token")}`,
         },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json();
+  },
+
+  createProject: async (data: { name: string; color: string }) => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+        body: JSON.stringify({ name: data.name, color: data.color }),
       },
     );
 
