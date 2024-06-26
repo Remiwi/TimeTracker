@@ -3,7 +3,7 @@ import * as SQLite from "expo-sqlite";
 const dbPromise = (async () => {
   const db = await SQLite.openDatabaseAsync("db.db");
 
-  await db.runAsync(`DROP TABLE IF EXISTS templates;`);
+  // await db.runAsync(`DROP TABLE IF EXISTS templates;`);
 
   await db.runAsync(`CREATE TABLE IF NOT EXISTS templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
