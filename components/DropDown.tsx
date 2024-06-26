@@ -10,12 +10,13 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-export default function MyDropDown(props: {
+export default function MyDropDown<T>(props: {
   label?: string;
   placeholder?: string;
-  options: string[];
-  value?: string;
-  onChange?: (text: string) => void;
+  options: T[];
+  itemToString: (item: T) => string;
+  value?: T;
+  onChange?: (item: T) => void;
   bgColor?: string;
   labelColor?: string;
   borderColor?: string;
@@ -89,7 +90,11 @@ export default function MyDropDown(props: {
                     {props.placeholder}
                   </Text>
                 )}
-                {props.value && <Text className="py-1">{props.value}</Text>}
+                {props.value && (
+                  <Text className="py-1">
+                    {props.itemToString(props.value)}
+                  </Text>
+                )}
               </View>
             </TouchableNativeFeedback>
           </View>
@@ -112,12 +117,12 @@ export default function MyDropDown(props: {
                       <TouchableNativeFeedback
                         onPress={() => {
                           setOptionsShown(false);
-                          if (props.onChange) props.onChange(option);
+                          props.onChange?.(option);
                         }}
-                        key={option}
+                        key={props.itemToString(option)}
                       >
-                        <View className="p-4 px-3" key={option}>
-                          <Text>{option}</Text>
+                        <View className="p-4 px-3">
+                          <Text>{props.itemToString(option)}</Text>
                         </View>
                       </TouchableNativeFeedback>
                     )}
