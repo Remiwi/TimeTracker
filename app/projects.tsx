@@ -52,7 +52,7 @@ export default function Page() {
             key={item.id}
             project={{ ...item }}
             onPress={() => {
-              setSelectedProject({ ...item, icon: "" });
+              setSelectedProject({ ...item });
               setProjectModalOpen(true);
             }}
           />
