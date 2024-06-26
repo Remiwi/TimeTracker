@@ -100,6 +100,11 @@ const Database = {
       [name, color, icon, id],
     );
   },
+
+  deleteProject: async (id: number) => {
+    const db = await dbPromise;
+    return db.runAsync(`DELETE FROM projects WHERE id = ?;`, [id]);
+  },
 };
 
 export default Database;

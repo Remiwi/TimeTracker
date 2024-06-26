@@ -260,6 +260,31 @@ const Toggl = {
 
     return res.json();
   },
+
+  deleteProject: async (id: number) => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json();
+  },
 };
 
 export default Toggl;

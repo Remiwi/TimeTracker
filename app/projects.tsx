@@ -2,6 +2,7 @@ import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
+import useDeleteProject from "@/hooks/useDeleteProject";
 import useEditProjects from "@/hooks/useEditProjects";
 import useProjects from "@/hooks/useProjects";
 import { colors } from "@/utils/colors";
@@ -25,6 +26,8 @@ export default function Page() {
   const projects = useProjects();
 
   const { editProjectDBMutation, editProjectTogglMutation } = useEditProjects();
+  const { deleteProjectDBMutation, deleteProjectTogglMutation } =
+    useDeleteProject();
 
   const onEditDone = (project: ProjectStuff) => {
     editProjectDBMutation.mutate(project);
@@ -36,12 +39,19 @@ export default function Page() {
     setProjectModalOpen(false);
   };
 
+  const onEditDelete = (id: number) => {
+    deleteProjectDBMutation.mutate(id);
+    deleteProjectTogglMutation.mutate(id);
+    setProjectModalOpen(false);
+  };
+
   return (
     <>
       {projectModalOpen && (
         <ProjectModal
           onCancel={() => setProjectModalOpen(false)}
           onDone={onEditDone}
+          onDelete={onEditDelete}
           defaultProject={selectedProject}
         />
       )}
@@ -85,6 +95,7 @@ function Project(props: { project: ProjectStuff; onPress?: () => void }) {
 function ProjectModal(props: {
   onCancel?: () => void;
   onDone?: (p: ProjectStuff) => void;
+  onDelete?: (id: number) => void;
   defaultProject?: ProjectStuff;
 }) {
   const [name, setName] = useState(props.defaultProject?.name || "");
@@ -149,7 +160,7 @@ function ProjectModal(props: {
             />
           </ColorSelector>
           <MyDropDown
-            className="pb flex-grow"
+            className="flex-grow"
             options={iconOptions}
             value={icon}
             onChange={setIcon}
@@ -157,10 +168,18 @@ function ProjectModal(props: {
             placeholder="Icon"
           />
         </View>
-        <View className="w-full items-center justify-center">
-          <Text className="p-4 text-lg font-bold color-red-600">
-            Delete Project
-          </Text>
+        <View className="w-full items-center justify-center pb-2">
+          <View className="overflow-hidden rounded-full">
+            <TouchableNativeFeedback
+              onPress={() => props.onDelete?.(props.defaultProject?.id || -1)}
+            >
+              <View className="p-4 px-6">
+                <Text className="text-lg font-bold color-red-600">
+                  Delete Project
+                </Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
         </View>
       </View>
     </BottomSheet>
