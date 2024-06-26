@@ -153,6 +153,7 @@ function ProjectModal(props: {
             options={iconOptions}
             value={icon}
             onChange={setIcon}
+            itemToString={(i) => i}
             placeholder="Icon"
           />
         </View>

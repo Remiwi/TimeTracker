@@ -24,23 +24,10 @@ const VIBRATION_DURATION = 80;
 
 type TemplateStuff = {
   name: string;
-  project: string;
   projectID: number;
   description: string;
   tags: string[];
-  color: string;
-  icon: string;
 };
-
-const exampleTemplate = {
-  name: "Example",
-  project: "Project 1",
-  projectID: 123456,
-  description: "This is an example template",
-  tags: ["tag1", "tag2"],
-  color: "bg-indigo-600",
-  icon: "music-note",
-} as TemplateStuff;
 
 export default function Page() {
   const qc = useQueryClient();
@@ -231,6 +218,8 @@ function Item(props: {
   isSmall: boolean;
 }) {
   const qc = useQueryClient();
+  const projects = useProjects();
+  const thisProj = projects.find((p) => p.id === props.templateStuff.projectID);
 
   const startEntryMutation = useMutation({
     mutationFn: Toggl.startTimeEntry,
@@ -240,8 +229,8 @@ function Item(props: {
         id: 0,
         description: props.templateStuff.description,
         project_id: props.templateStuff.projectID,
-        project_name: props.templateStuff.project,
-        project_color: props.templateStuff.color,
+        project_name: "props.templateStuff.project",
+        project_color: "props.templateStuff.color",
         start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
         stop: null,
         duration: -1,
@@ -254,9 +243,9 @@ function Item(props: {
       qc.setQueryData(["currentEntry"], null);
     },
     onSettled: () => {
-      // qc.invalidateQueries({
-      //   queryKey: ["currentEntry"],
-      // });
+      qc.invalidateQueries({
+        queryKey: ["currentEntry"],
+      });
     },
   });
 
@@ -267,12 +256,12 @@ function Item(props: {
         <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
           <View
             className={
-              "flex h-full w-full items-center justify-center rounded-full " +
-              props.templateStuff.color
+              "flex h-full w-full items-center justify-center rounded-full"
             }
+            style={{ backgroundColor: thisProj?.color || "#000000" }}
           >
             <MaterialCommunityIcons
-              name={props.templateStuff.icon as any}
+              name={thisProj?.icon as any}
               size={24}
               color="white"
             />
@@ -306,12 +295,12 @@ function Item(props: {
         <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
           <View
             className={
-              "flex h-full w-full items-center justify-center rounded-full " +
-              props.templateStuff.color
+              "flex h-full w-full items-center justify-center rounded-full"
             }
+            style={{ backgroundColor: thisProj?.color || "#000000" }}
           >
             <MaterialCommunityIcons
-              name={props.templateStuff.icon as any}
+              name={thisProj?.icon as any}
               size={32}
               color="white"
             />
@@ -362,24 +351,16 @@ function TemplateEditModal(props: {
   onDelete: () => void;
   defaultTemplate?: TemplateStuff;
 }) {
+  const projects = useProjects();
+
   const [name, setName] = useState(props.defaultTemplate?.name || "");
-  const [color, setColor] = useState(
-    props.defaultTemplate?.color || "bg-indigo-600",
+  const [projectID, setProjectID] = useState(
+    props.defaultTemplate?.projectID || -1,
   );
-  const [iconName, setIconName] = useState(props.defaultTemplate?.icon || "");
-  const [project, setProject] = useState(props.defaultTemplate?.project || "");
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
   );
   const [tags, setTags] = useState<string[]>(props.defaultTemplate?.tags || []);
-
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Toggl.getProjects,
-  });
-  if (projectsQuery.isError) {
-    console.error(projectsQuery.error);
-  }
 
   const iconOptions = [
     "music-note",
@@ -393,33 +374,21 @@ function TemplateEditModal(props: {
 
   const onCancel = () => {
     setName("");
-    setColor("bg-indigo-600");
-    setIconName("");
-    setProject("");
+    setProjectID(-1);
     setDescription("");
     setTags([]);
     props.onCancel();
   };
   const onDone = () => {
     setName("");
-    setColor("bg-indigo-600");
-    setIconName("");
-    setProject("");
+    setProjectID(-1);
     setDescription("");
     setTags([]);
 
     if (name === "") return;
-    if (iconName === "") return;
-    if (project === "") return;
-
-    const projectID =
-      projectsQuery.data?.find((item) => item.name === project)?.id || -1;
 
     props.onDone({
       name,
-      color,
-      icon: iconName,
-      project,
       projectID,
       description,
       tags,
@@ -427,9 +396,7 @@ function TemplateEditModal(props: {
   };
   const onDelete = () => {
     setName("");
-    setColor("bg-indigo-600");
-    setIconName("");
-    setProject("");
+    setProjectID(-1);
     setDescription("");
     setTags([]);
     props.onDelete();
@@ -461,26 +428,6 @@ function TemplateEditModal(props: {
             onChange={(t) => setName(t)}
             className="pb-2"
           />
-          <View className="z-50 flex flex-row gap-4">
-            <ColorSelector
-              value={color}
-              onChange={(c) => setColor(c)}
-              colors={colors.map((c) => c.name)}
-            >
-              <MaterialCommunityIcons
-                name={iconName as any}
-                size={20}
-                color="white"
-              />
-            </ColorSelector>
-            <MyDropDown
-              className="flex-grow"
-              options={iconOptions}
-              value={iconName}
-              onChange={(name) => setIconName(name)}
-              placeholder="Icon"
-            />
-          </View>
           <View className="flex flex-grow items-center justify-center pb-4 pt-8">
             <View className="h-0.5 w-full rounded-full bg-gray-300" />
           </View>
@@ -492,23 +439,13 @@ function TemplateEditModal(props: {
             className="pb-2"
           />
           <MyDropDown
-            placeholder={
-              projectsQuery.isSuccess
-                ? "Select Project"
-                : projectsQuery.isError
-                  ? "Error loading projects"
-                  : "Loading Projects..."
-            }
-            options={
-              projectsQuery.isSuccess
-                ? projectsQuery.data.map((item) => item.name)
-                : []
-            }
-            value={project}
-            onChange={(t) => {
-              setProject(t);
+            placeholder="Select Project"
+            options={projects}
+            value={projects.find((p) => p.id === projectID)}
+            onChange={(item) => {
+              setProjectID(item.id);
             }}
-            placeholderColor={projectsQuery.isError ? "#994444" : undefined}
+            itemToString={(item) => item.name}
             className="z-40 pb-2"
           />
           <MyTagInput
@@ -722,6 +659,7 @@ function Timer() {
   });
   const projectName = project ? project.name : "Unknown";
   const projectHex = project ? project.color : "#ffffff";
+  const projectIcon = project ? project.icon : "";
 
   return (
     <View className="pb-6">
@@ -733,9 +671,17 @@ function Timer() {
           <TimerText className="text-6xl" startTime={start} />
         </View>
         <View
-          className={"aspect-square w-24 rounded-full shadow-md shadow-black"}
+          className={
+            "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
+          }
           style={{ backgroundColor: projectHex }}
-        />
+        >
+          <MaterialCommunityIcons
+            name={projectIcon as any}
+            color="white"
+            size={44}
+          />
+        </View>
       </View>
       <View className="px-4">
         <Text className="font-light">
