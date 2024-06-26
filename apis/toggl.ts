@@ -6,37 +6,6 @@ import Colors from "@/utils/colors";
 const MY_WORKSPACE = 5930509;
 
 const Toggl = {
-  getProjects: async () => {
-    const token = await SecureStore.getItemAsync("togglToken");
-    if (!token) {
-      throw new Error("No token found");
-    }
-
-    const res = await fetch(
-      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${encode(token + ":api_token")}`,
-        },
-      },
-    );
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(text);
-    }
-
-    return res.json() as Promise<
-      {
-        id: number;
-        name: string;
-        color: string;
-      }[]
-    >;
-  },
-
   getCurrentTimeEntry: async () => {
     const token = await SecureStore.getItemAsync("togglToken");
     if (!token) {
@@ -217,6 +186,66 @@ const Toggl = {
       {
         method: "PUT",
         body: JSON.stringify({ start: lastFinished.stop }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json();
+  },
+
+  getProjects: async () => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encode(token + ":api_token")}`,
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+
+    return res.json() as Promise<
+      {
+        id: number;
+        name: string;
+        color: string;
+      }[]
+    >;
+  },
+
+  editProjects: async (data: {
+    pids: number[];
+    edits: { op: "add" | "remove" | "replace"; path: string; value: any }[];
+  }) => {
+    const token = await SecureStore.getItemAsync("togglToken");
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const res = await fetch(
+      `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects/${data.pids.join(",")}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(data.edits),
         headers: {
           "Content-Type": "application/json",
           Authorization: `Basic ${encode(token + ":api_token")}`,

@@ -4,8 +4,9 @@ import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
 import useProjects from "@/hooks/useProjects";
-import { colors } from "@/utils/colors";
+import Colors, { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   FlatList,
@@ -23,6 +24,8 @@ type ProjectStuff = {
 };
 
 export default function Page() {
+  const qc = useQueryClient();
+
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
     ProjectStuff | undefined
@@ -30,11 +33,59 @@ export default function Page() {
 
   const projects = useProjects();
 
+  const editProjectMutation = useMutation({
+    mutationFn: (data: { pid: number; newName: string; newColor: string }) =>
+      Toggl.editProjects({
+        pids: [data.pid],
+        edits: [
+          {
+            op: "replace",
+            path: "/name",
+            value: data.newName,
+          },
+          {
+            op: "replace",
+            path: "/color",
+            value: Colors.fromHex(data.newColor)?.toggl_hex,
+          },
+        ],
+      }),
+    onMutate: (data) => {
+      const projectsDB = qc.getQueryData<
+        { id: number; name: string; color: string; icon: string }[]
+      >(["projectsDB"]);
+      if (!projectsDB) return;
+      const newProjects = projectsDB.map((p) => {
+        if (p.id === data.pid) {
+          return { ...p, name: data.newName, color: data.newColor };
+        }
+        return p;
+      });
+      qc.setQueryData(["projectsDB"], newProjects);
+    },
+    onError: (error) => console.error(error),
+    onSettled: () => {
+      qc.invalidateQueries({
+        queryKey: ["projectsToggl"],
+      });
+    },
+  });
+
+  const onEditDone = (project: ProjectStuff) => {
+    editProjectMutation.mutate({
+      pid: project.id,
+      newName: project.name,
+      newColor: project.color,
+    });
+    setProjectModalOpen(false);
+  };
+
   return (
     <>
       {projectModalOpen && (
         <ProjectModal
           onCancel={() => setProjectModalOpen(false)}
+          onDone={onEditDone}
           defaultProject={selectedProject}
         />
       )}
