@@ -66,7 +66,11 @@ export default function useEditProjects() {
       if (!projectsToggl) return;
       const newProjects = projectsToggl.map((p) => {
         if (p.id === data.pid) {
-          return { ...p, name: data.name, color: data.color };
+          return {
+            ...p,
+            name: data.name,
+            color: Colors.fromHex(data.color)?.toggl_hex,
+          };
         }
         return p;
       });

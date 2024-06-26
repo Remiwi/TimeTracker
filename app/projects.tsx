@@ -8,7 +8,7 @@ import useProjects from "@/hooks/useProjects";
 import Colors, { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -59,6 +59,7 @@ export default function Page() {
         data={projects}
         renderItem={({ item }) => (
           <Project
+            key={item.id}
             project={{ ...item, icon: "" }}
             onPress={() => {
               setSelectedProject({ ...item, icon: "" });
