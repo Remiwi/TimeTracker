@@ -1,21 +1,13 @@
-import Toggl from "@/apis/toggl";
 import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
 import useEditProjects from "@/hooks/useEditProjects";
 import useProjects from "@/hooks/useProjects";
-import Colors, { colors } from "@/utils/colors";
+import { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Text,
-  TouchableNativeFeedback,
-  View,
-} from "react-native";
+import { useState } from "react";
+import { FlatList, Text, TouchableNativeFeedback, View } from "react-native";
 
 type ProjectStuff = {
   id: number;
@@ -25,8 +17,6 @@ type ProjectStuff = {
 };
 
 export default function Page() {
-  const qc = useQueryClient();
-
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<
     ProjectStuff | undefined
