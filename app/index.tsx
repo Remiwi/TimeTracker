@@ -648,8 +648,8 @@ function Timer() {
   const project = projects.find((v) => {
     return v.id === projectID;
   });
-  const projectName = project ? project.name : "Unknown";
-  const projectHex = project ? project.color : "#ffffff";
+  const projectName = project ? project.name : "No Project";
+  const projectHex = project ? project.color : "#cccccc";
   const projectIcon = project ? project.icon : "";
 
   return (

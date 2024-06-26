@@ -61,7 +61,7 @@ const Toggl = {
         },
         body: JSON.stringify({
           description: data.description,
-          project_id: data.projectID,
+          project_id: data.projectID !== -1 ? data.projectID : null,
           tags: data.tags,
           created_with: "Indev interface app",
           workspace_id: MY_WORKSPACE,
