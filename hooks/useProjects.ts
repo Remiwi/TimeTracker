@@ -67,6 +67,7 @@ export default function useProjects() {
       // console.log("changed color", dbProjCopy.name, color);
       dbProjCopy.color = color;
     }
+    dbProjCopy.icon = dbProj.icon;
     projects.push(dbProjCopy);
   }
   // add new projects

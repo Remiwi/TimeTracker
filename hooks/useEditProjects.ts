@@ -20,7 +20,7 @@ export default function useEditProjects() {
       if (!projectsDB) return;
       const newProjects = projectsDB.map((p) => {
         if (p.id === data.id) {
-          return { ...p, name: data.name, color: data.color };
+          return { ...p, name: data.name, color: data.color, icon: data.icon };
         }
         return p;
       });

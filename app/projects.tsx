@@ -50,7 +50,7 @@ export default function Page() {
         renderItem={({ item }) => (
           <Project
             key={item.id}
-            project={{ ...item, icon: "" }}
+            project={{ ...item }}
             onPress={() => {
               setSelectedProject({ ...item, icon: "" });
               setProjectModalOpen(true);
@@ -67,7 +67,7 @@ function Project(props: { project: ProjectStuff; onPress?: () => void }) {
     <TouchableNativeFeedback onPress={props.onPress}>
       <View className="flex flex-row items-center gap-6 border-b border-gray-100 p-4">
         <View
-          className="h-12 w-12 rounded-full"
+          className="flex h-12 w-12 items-center justify-center rounded-full"
           style={{ backgroundColor: props.project.color }}
         >
           <MaterialCommunityIcons
