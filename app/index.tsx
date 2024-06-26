@@ -19,6 +19,7 @@ import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
 import useProjects from "@/hooks/useProjects";
 import { colors } from "@/utils/colors";
+import { template } from "@babel/core";
 
 const VIBRATION_DURATION = 80;
 
@@ -281,7 +282,9 @@ function Item(props: {
           >
             <View className="flex p-2 pt-1">
               <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
-              <Text className="text-sm">{props.templateStuff.name}</Text>
+              <Text className="text-sm">
+                {props.templateStuff.name || props.templateStuff.description}
+              </Text>
             </View>
           </TouchableNativeFeedback>
         </View>
@@ -362,16 +365,6 @@ function TemplateEditModal(props: {
   );
   const [tags, setTags] = useState<string[]>(props.defaultTemplate?.tags || []);
 
-  const iconOptions = [
-    "music-note",
-    "laptop",
-    "dumbbell",
-    "filmstrip",
-    "book",
-    "shopping",
-    "wizard-hat",
-  ];
-
   const onCancel = () => {
     setName("");
     setProjectID(-1);
@@ -384,8 +377,6 @@ function TemplateEditModal(props: {
     setProjectID(-1);
     setDescription("");
     setTags([]);
-
-    if (name === "") return;
 
     props.onDone({
       name,
