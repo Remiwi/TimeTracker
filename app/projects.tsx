@@ -3,6 +3,7 @@ import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
+import useEditProjects from "@/hooks/useEditProjects";
 import useProjects from "@/hooks/useProjects";
 import Colors, { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -33,49 +34,14 @@ export default function Page() {
 
   const projects = useProjects();
 
-  const editProjectMutation = useMutation({
-    mutationFn: (data: { pid: number; newName: string; newColor: string }) =>
-      Toggl.editProjects({
-        pids: [data.pid],
-        edits: [
-          {
-            op: "replace",
-            path: "/name",
-            value: data.newName,
-          },
-          {
-            op: "replace",
-            path: "/color",
-            value: Colors.fromHex(data.newColor)?.toggl_hex,
-          },
-        ],
-      }),
-    onMutate: (data) => {
-      const projectsDB = qc.getQueryData<
-        { id: number; name: string; color: string; icon: string }[]
-      >(["projectsDB"]);
-      if (!projectsDB) return;
-      const newProjects = projectsDB.map((p) => {
-        if (p.id === data.pid) {
-          return { ...p, name: data.newName, color: data.newColor };
-        }
-        return p;
-      });
-      qc.setQueryData(["projectsDB"], newProjects);
-    },
-    onError: (error) => console.error(error),
-    onSettled: () => {
-      qc.invalidateQueries({
-        queryKey: ["projectsToggl"],
-      });
-    },
-  });
+  const { editProjectDBMutation, editProjectTogglMutation } = useEditProjects();
 
   const onEditDone = (project: ProjectStuff) => {
-    editProjectMutation.mutate({
+    editProjectDBMutation.mutate(project);
+    editProjectTogglMutation.mutate({
       pid: project.id,
-      newName: project.name,
-      newColor: project.color,
+      name: project.name,
+      color: project.color,
     });
     setProjectModalOpen(false);
   };
@@ -112,7 +78,13 @@ function Project(props: { project: ProjectStuff; onPress?: () => void }) {
         <View
           className="h-12 w-12 rounded-full"
           style={{ backgroundColor: props.project.color }}
-        />
+        >
+          <MaterialCommunityIcons
+            name={props.project.icon as any}
+            size={20}
+            color="white"
+          />
+        </View>
         <Text className="text-lg">{props.project.name}</Text>
       </View>
     </TouchableNativeFeedback>

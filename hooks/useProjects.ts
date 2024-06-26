@@ -52,16 +52,19 @@ export default function useProjects() {
     // check if it was deleted in toggl
     if (!togglProj) {
       difference = true;
+      // console.log("deleted project", dbProjCopy.name);
       continue;
     }
     // check if name or color has changed
     if (dbProjCopy.name !== togglProj.name) {
       difference = true;
+      // console.log("changed project", dbProjCopy.name, togglProj.name);
       dbProjCopy.name = togglProj.name;
     }
     const color = Colors.fromTogglHex(togglProj.color)?.hex || "#ffffff";
     if (dbProjCopy.color !== color) {
       difference = true;
+      // console.log("changed color", dbProjCopy.name, color);
       dbProjCopy.color = color;
     }
     projects.push(dbProjCopy);
@@ -70,6 +73,11 @@ export default function useProjects() {
   for (const togglProj of projectsTogglQuery.data) {
     if (!projects.find((p) => p.id === togglProj.id)) {
       difference = true;
+      // console.log(
+      //   "new project",
+      //   togglProj.id,
+      //   projects.map((p) => p.id),
+      // );
       projects.push({
         id: togglProj.id,
         name: togglProj.name,
