@@ -10,16 +10,13 @@ import {
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
-import ColorSelector from "@/components/ColorSelector";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import Toggl from "@/apis/toggl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
-import useProjects from "@/hooks/useProjects";
-import { colors } from "@/utils/colors";
-import { template } from "@babel/core";
+import { Data } from "@/apis/data";
 
 const VIBRATION_DURATION = 80;
 
@@ -36,14 +33,19 @@ export default function Page() {
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
 
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
+  });
+
   const templatesQuery = useQuery({
     queryKey: ["templates"],
-    queryFn: DB.getTemplates,
+    queryFn: DB.Templates.getAll,
   });
   const { mutate: mutateTemplates } = useMutation({
-    mutationFn: DB.setTemplates,
-    onError: (error, _, context) => {
-      console.error(error);
+    mutationFn: DB.Templates.set,
+    onError: (err, _, context) => {
+      console.error(err);
       if (context) {
         qc.setQueryData(["templates"], context);
       }
@@ -219,11 +221,16 @@ function Item(props: {
   isSmall: boolean;
 }) {
   const qc = useQueryClient();
-  const projects = useProjects();
-  const thisProj = projects.find((p) => p.id === props.templateStuff.projectID);
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
+  });
+  const thisProj = projectsQuery.data?.find(
+    (p) => p.id === props.templateStuff.projectID,
+  );
 
   const startEntryMutation = useMutation({
-    mutationFn: Toggl.startTimeEntry,
+    mutationFn: Toggl.Entries.start,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
@@ -239,8 +246,8 @@ function Item(props: {
       });
       return oldEntry;
     },
-    onError: (error) => {
-      console.error(error);
+    onError: (err) => {
+      console.error(err);
       qc.setQueryData(["currentEntry"], null);
     },
     onSettled: () => {
@@ -354,7 +361,10 @@ function TemplateEditModal(props: {
   onDelete: () => void;
   defaultTemplate?: TemplateStuff;
 }) {
-  const projects = useProjects();
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
+  });
 
   const [name, setName] = useState(props.defaultTemplate?.name || "");
   const [projectID, setProjectID] = useState(
@@ -431,13 +441,14 @@ function TemplateEditModal(props: {
           />
           <MyDropDown
             placeholder="Select Project"
-            options={projects}
-            value={projects.find((p) => p.id === projectID)}
+            options={projectsQuery.data || []}
+            value={projectsQuery.data?.find((p) => p.id === projectID)}
             onChange={(item) => {
               setProjectID(item.id);
             }}
             itemToString={(item) => item.name}
             className="z-40 pb-2"
+            placeholderColor={projectsQuery.isError ? "#884444" : undefined}
           />
           <MyTagInput
             placeholder="Tags"
@@ -473,14 +484,14 @@ function TimerControls() {
   const [showExtra, setShowExtra] = useState(false);
 
   const stopEntryMutation = useMutation({
-    mutationFn: Toggl.stopCurrentTimeEntry,
+    mutationFn: Toggl.Entries.stopCurrent,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
       return oldEntry;
     },
-    onError: (error, _, oldEntry) => {
-      console.error(error);
+    onError: (err, _, oldEntry) => {
+      console.error(err);
       qc.setQueryData(["currentEntry"], oldEntry);
     },
     onSettled: () => {
@@ -490,14 +501,14 @@ function TimerControls() {
     },
   });
   const deleteEntryMutation = useMutation({
-    mutationFn: Toggl.deleteCurrentTimeEntry,
+    mutationFn: Toggl.Entries.deleteCurrent,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
       return oldEntry;
     },
-    onError: (error, _, oldEntry) => {
-      console.error(error);
+    onError: (err, _, oldEntry) => {
+      console.error(err);
       qc.setQueryData(["currentEntry"], oldEntry);
     },
     onSettled: () => {
@@ -507,7 +518,7 @@ function TimerControls() {
     },
   });
   const startToLastStopMutation = useMutation({
-    mutationFn: Toggl.setCurrentStartToPrevStop,
+    mutationFn: Toggl.Entries.setCurrentStartToPrevStop,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
@@ -515,8 +526,8 @@ function TimerControls() {
       });
       return oldEntry;
     },
-    onError: (error) => {
-      console.error(error);
+    onError: (err) => {
+      console.error(err);
     },
     onSettled: () => {
       qc.invalidateQueries({
@@ -633,11 +644,14 @@ function TimerControls() {
 }
 
 function Timer() {
-  const projects = useProjects();
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
+  });
 
   const timeEntryQuery = useQuery({
     queryKey: ["currentEntry"],
-    queryFn: Toggl.getCurrentTimeEntry,
+    queryFn: Toggl.Entries.getCurrent,
   });
 
   const start = timeEntryQuery.data
@@ -645,7 +659,7 @@ function Timer() {
     : undefined;
 
   const projectID = timeEntryQuery.data?.project_id || -1;
-  const project = projects.find((v) => {
+  const project = projectsQuery.data?.find((v) => {
     return v.id === projectID;
   });
   const projectName = project ? project.name : "No Project";

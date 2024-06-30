@@ -1,52 +1,41 @@
+import { Data } from "@/apis/data";
+import { Project } from "@/apis/types";
 import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
 import StyledTextInput from "@/components/TextInput";
-import useDeleteProject from "@/hooks/useDeleteProject";
-import useEditProjects from "@/hooks/useEditProjects";
-import useProjects from "@/hooks/useProjects";
-import { colors } from "@/utils/colors";
+import Colors, { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { FlatList, Text, TouchableNativeFeedback, View } from "react-native";
 
-type ProjectStuff = {
-  id: number;
-  name: string;
-  color: string;
-  icon: string;
-};
-
 export default function Page() {
+  const qc = useQueryClient();
+
   const [projectModalOpen, setProjectModalOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<
-    ProjectStuff | undefined
-  >();
-
-  const projects = useProjects();
-
-  const { editProjectDBMutation, editProjectTogglMutation } = useEditProjects();
-  const { deleteProjectDBMutation, deleteProjectTogglMutation } =
-    useDeleteProject();
+  const [selectedProject, setSelectedProject] = useState<Project | undefined>();
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
+  });
+  const createProjectMutation = useMutation({
+    mutationFn: Data.Projects.create,
+  });
 
   const onAdd = () => {
     setProjectModalOpen(true);
     setSelectedProject(undefined);
   };
 
-  const onModalDone = (project: ProjectStuff) => {
-    editProjectDBMutation.mutate(project);
-    editProjectTogglMutation.mutate({
-      pid: project.id,
-      name: project.name,
-      color: project.color,
-    });
+  const onModalDone = (project: Project) => {
+    createProjectMutation.mutate(project);
     setProjectModalOpen(false);
   };
 
   const onModalDelete = (id: number) => {
-    deleteProjectDBMutation.mutate(id);
-    deleteProjectTogglMutation.mutate(id);
+    // deleteProjectDBMutation.mutate(id);
+    // deleteProjectTogglMutation.mutate(id);
     setProjectModalOpen(false);
   };
 
@@ -60,11 +49,18 @@ export default function Page() {
           defaultProject={selectedProject}
         />
       )}
-      {!projectModalOpen && <FABs onAdd={onAdd} />}
+      {!projectModalOpen && (
+        <FABs
+          onAdd={onAdd}
+          onSync={() => {
+            console.log("Sync");
+          }}
+        />
+      )}
       <FlatList
-        data={projects}
+        data={projectsQuery.data}
         renderItem={({ item }) => (
-          <Project
+          <ProjectRow
             key={item.id}
             project={{ ...item }}
             onPress={() => {
@@ -78,7 +74,7 @@ export default function Page() {
   );
 }
 
-function Project(props: { project: ProjectStuff; onPress?: () => void }) {
+function ProjectRow(props: { project: Project; onPress?: () => void }) {
   return (
     <TouchableNativeFeedback onPress={props.onPress}>
       <View className="flex flex-row items-center gap-6 border-b border-gray-100 p-4">
@@ -100,9 +96,9 @@ function Project(props: { project: ProjectStuff; onPress?: () => void }) {
 
 function ProjectModal(props: {
   onCancel?: () => void;
-  onDone?: (p: ProjectStuff) => void;
+  onDone?: (p: Project) => void;
   onDelete?: (id: number) => void;
-  defaultProject?: ProjectStuff;
+  defaultProject?: Project;
 }) {
   const [name, setName] = useState(props.defaultProject?.name || "");
   const [color, setColor] = useState(props.defaultProject?.color || "");
@@ -134,9 +130,11 @@ function ProjectModal(props: {
               onPress={() => {
                 props.onDone?.({
                   id: props.defaultProject?.id || -1,
-                  color,
+                  color: Colors.fromHex(color)?.toggl_hex!,
                   icon,
                   name,
+                  at: props.defaultProject?.at || "never",
+                  created_at: props.defaultProject?.created_at || "never",
                 });
               }}
             >
@@ -192,7 +190,7 @@ function ProjectModal(props: {
   );
 }
 
-function FABs(props: { onAdd?: () => void }) {
+function FABs(props: { onAdd?: () => void; onSync?: () => void }) {
   return (
     <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
       <View className="flex flex-row-reverse items-end justify-center gap-4">
@@ -200,6 +198,13 @@ function FABs(props: { onAdd?: () => void }) {
           <TouchableNativeFeedback onPress={props.onAdd}>
             <View className="h-full w-full items-center justify-center bg-red-500">
               <MaterialCommunityIcons name="plus" color="white" size={52} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+        <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback onPress={props.onSync}>
+            <View className="h-full w-full items-center justify-center bg-gray-600">
+              <MaterialCommunityIcons name="sync" color="white" size={24} />
             </View>
           </TouchableNativeFeedback>
         </View>
