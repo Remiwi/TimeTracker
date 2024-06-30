@@ -57,10 +57,10 @@ export const Data = {
     },
 
     create: async (project: Project) => {
-      await Database.Projects.createLocal(project);
+      const local = await Database.Projects.createLocal(project);
       const togglProj = await Toggl.Projects.create(project);
       return await Database.Projects.syncLocalWithRemote(
-        togglProj.id,
+        local.id,
         togglProj,
       ).catch((e) => console.log(e));
     },

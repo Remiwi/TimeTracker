@@ -72,6 +72,7 @@ const Database = {
 
     createLocal: async (project: Project) => {
       const db = await dbPromise;
+      let res_id: any = undefined;
       await db.withExclusiveTransactionAsync(async (tx) => {
         const id = (
           (await tx.getFirstAsync(
@@ -79,6 +80,8 @@ const Database = {
             [],
           )) as any
         ).id as number;
+
+        res_id = id;
 
         await tx.runAsync(
           `INSERT INTO projects (id, name, color, created_at, at, icon, to_delete)
@@ -99,6 +102,14 @@ const Database = {
           [],
         );
       });
+      const proj = await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [res_id as number],
+      );
+      if (proj === null) {
+        throw Error("Project not found after creation");
+      }
+      return proj;
     },
 
     syncLocalWithRemote: async (local_id: number, remote: TogglProject) => {
