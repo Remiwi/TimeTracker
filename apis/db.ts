@@ -1,53 +1,54 @@
 import * as SQLite from "expo-sqlite";
 import { DBProject, Project, TogglProject } from "./types";
 
-const dbPromise = (async () => {
-  const db = await SQLite.openDatabaseAsync("db.db");
-
-  // await db.runAsync(`DROP TABLE IF EXISTS templates;`);
-
-  await db.runAsync(`CREATE TABLE IF NOT EXISTS templates (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    project_id INTEGER,
-    description TEXT,
-    tags TEXT
-  );`);
-
-  // await db.runAsync(`DROP TABLE IF EXISTS projects;`);
-
-  await db.runAsync(`CREATE TABLE IF NOT EXISTS projects (
-    id INTEGER PRIMARY KEY,
-    name TEXT,
-    color TEXT,
-    created_at TEXT,
-    at TEXT,
-    active INTEGER,
-    icon TEXT,
-    to_delete INTEGER
-  );`);
-
-  await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
-    type TEXT PRIMARY KEY,
-    id INTEGER
-  );`);
-
-  await db.runAsync(
-    `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
-  );
-
-  return db;
-})();
+const db = SQLite.openDatabaseSync("db.db");
 
 const Database = {
+  Manage: {
+    intializeDBSync: () =>
+      db.withTransactionSync(() => {
+        db.runSync(`CREATE TABLE IF NOT EXISTS templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        project_id INTEGER,
+        description TEXT,
+        tags TEXT
+      );`);
+
+        db.runSync(`CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY,
+        name TEXT,
+        color TEXT,
+        created_at TEXT,
+        at TEXT,
+        active INTEGER,
+        icon TEXT,
+        to_delete INTEGER
+      );`);
+
+        db.runSync(`CREATE TABLE IF NOT EXISTS local_ids (
+        type TEXT PRIMARY KEY,
+        id INTEGER
+      );`);
+        db.runSync(
+          `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
+        );
+      }),
+
+    dropAllTablesSync: () =>
+      db.withTransactionSync(() => {
+        db.runSync(`DROP TABLE IF EXISTS templates;`);
+        db.runSync(`DROP TABLE IF EXISTS projects;`);
+        db.runSync(`DROP TABLE IF EXISTS local_ids;`);
+      }),
+  },
+
   Projects: {
     getAll: async () => {
-      const db = await dbPromise;
       return await db.getAllAsync<DBProject>(`SELECT * FROM projects;`, []);
     },
 
     getAllVisible: async () => {
-      const db = await dbPromise;
       return await db.getAllAsync<DBProject>(
         `SELECT * FROM projects WHERE to_delete = 0;`,
         [],
@@ -55,7 +56,6 @@ const Database = {
     },
 
     createFromToggl: async (project: TogglProject) => {
-      const db = await dbPromise;
       await db.runAsync(
         `INSERT INTO projects (id, name, color, created_at, at, active, icon, to_delete)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
@@ -73,7 +73,6 @@ const Database = {
     },
 
     createLocal: async (project: Project) => {
-      const db = await dbPromise;
       let res_id: any = undefined;
       await db.withExclusiveTransactionAsync(async (tx) => {
         const id = (
@@ -116,7 +115,6 @@ const Database = {
     },
 
     syncLocalWithRemote: async (local_id: number, remote: TogglProject) => {
-      const db = await dbPromise;
       await db.withExclusiveTransactionAsync(async (tx) => {
         await tx.runAsync(
           `UPDATE projects SET
@@ -144,19 +142,16 @@ const Database = {
     },
 
     delete: async (id: number) => {
-      const db = await dbPromise;
       await db.runAsync(`DELETE FROM projects WHERE id = ?;`, [id]);
     },
 
     markDeleted: async (id: number) => {
-      const db = await dbPromise;
       await db.runAsync(`UPDATE projects SET to_delete = 1 WHERE id = ?;`, [
         id,
       ]);
     },
 
     editWithLocalData: async (project: Project) => {
-      const db = await dbPromise;
       await db.runAsync(
         `UPDATE projects SET
           name = ?,
@@ -177,7 +172,6 @@ const Database = {
     },
 
     editWithRemoteData: async (project: TogglProject) => {
-      const db = await dbPromise;
       await db.runAsync(
         `UPDATE projects SET
           name = ?,
@@ -192,7 +186,6 @@ const Database = {
 
   Templates: {
     getAll: async () => {
-      const db = await dbPromise;
       const data = await db.getAllAsync<{
         id: number;
         name: string;
@@ -211,7 +204,6 @@ const Database = {
         tags: string[];
       }[],
     ) => {
-      const db = await dbPromise;
       await db.runAsync(`DELETE FROM templates;`, []);
       for (const template of templates) {
         const tags = template.tags.join(",");
@@ -223,5 +215,8 @@ const Database = {
     },
   },
 };
+
+// Database.Manage.dropAllTablesSync();
+Database.Manage.intializeDBSync();
 
 export default Database;
