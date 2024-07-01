@@ -33,11 +33,6 @@ export default function Page() {
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
 
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
-
   const templatesQuery = useQuery({
     queryKey: ["templates"],
     queryFn: DB.Templates.getAll,

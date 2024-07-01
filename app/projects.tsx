@@ -15,12 +15,48 @@ export default function Page() {
 
   const [projectModalOpen, setProjectModalOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | undefined>();
+
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
+    refetchInterval: 10_000,
   });
   const createProjectMutation = useMutation({
     mutationFn: Data.Projects.create,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+  const editProjectMutation = useMutation({
+    mutationFn: Data.Projects.edit,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+  const deleteProjectMutation = useMutation({
+    mutationFn: Data.Projects.delete,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const tempSyncMutation = useMutation({
+    mutationFn: Data.Projects.sync,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
   });
 
   const onAdd = () => {
@@ -29,13 +65,16 @@ export default function Page() {
   };
 
   const onModalDone = (project: Project) => {
-    createProjectMutation.mutate(project);
+    if (selectedProject === undefined) {
+      createProjectMutation.mutate(project);
+    } else {
+      editProjectMutation.mutate(project);
+    }
     setProjectModalOpen(false);
   };
 
   const onModalDelete = (id: number) => {
-    // deleteProjectDBMutation.mutate(id);
-    // deleteProjectTogglMutation.mutate(id);
+    deleteProjectMutation.mutate(id);
     setProjectModalOpen(false);
   };
 
@@ -53,7 +92,8 @@ export default function Page() {
         <FABs
           onAdd={onAdd}
           onSync={() => {
-            console.log("Sync");
+            projectsQuery.refetch();
+            tempSyncMutation.mutate();
           }}
         />
       )}
@@ -130,10 +170,11 @@ function ProjectModal(props: {
               onPress={() => {
                 props.onDone?.({
                   id: props.defaultProject?.id || -1,
-                  color: Colors.fromHex(color)?.toggl_hex!,
+                  color,
                   icon,
                   name,
                   at: props.defaultProject?.at || "never",
+                  active: props.defaultProject?.active || true,
                   created_at: props.defaultProject?.created_at || "never",
                 });
               }}
@@ -155,7 +196,7 @@ function ProjectModal(props: {
           <ColorSelector
             value={color}
             onChange={setColor}
-            colors={colors.map((c) => c.hex)}
+            colors={colors.map((c) => c.toggl_hex)}
           >
             <MaterialCommunityIcons
               name={icon as any}

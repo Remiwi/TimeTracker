@@ -46,7 +46,10 @@ const Toggl = {
             "Content-Type": "application/json",
             Authorization: `Basic ${encode(token + ":api_token")}`,
           },
-          body: JSON.stringify(project),
+          body: JSON.stringify({
+            ...project,
+            active: project.active ? true : false,
+          }),
         },
       );
 
@@ -59,6 +62,10 @@ const Toggl = {
     },
 
     delete: async (id: number) => {
+      if (id < 0) {
+        throw Error("This project only exists on local!");
+      }
+
       const token = await SecureStore.getItemAsync("togglToken");
       if (!token) {
         throw new Error("No token found");
@@ -84,21 +91,23 @@ const Toggl = {
     },
 
     edit: async (project: Project) => {
+      if (project.id < 0) {
+        throw Error("This project only exists on local!");
+      }
+
       const token = await SecureStore.getItemAsync("togglToken");
       if (!token) {
         throw new Error("No token found");
       }
 
-      const edits = [
-        { op: "replace", path: "/name", value: project.name },
-        { op: "replace", path: "/color", value: project.color },
-      ] as { op: "replace"; path: string; value: any }[];
-
       const res = await fetch(
         `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects/${project.id}`,
         {
-          method: "PATCH",
-          body: JSON.stringify(edits),
+          method: "PUT",
+          body: JSON.stringify({
+            ...project,
+            active: project.active ? true : false,
+          }),
           headers: {
             "Content-Type": "application/json",
             Authorization: `Basic ${encode(token + ":api_token")}`,

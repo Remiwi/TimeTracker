@@ -59,10 +59,7 @@ export const Data = {
     create: async (project: Project) => {
       const local = await Database.Projects.createLocal(project);
       const togglProj = await Toggl.Projects.create(project);
-      return await Database.Projects.syncLocalWithRemote(
-        local.id,
-        togglProj,
-      ).catch((e) => console.log(e));
+      return await Database.Projects.syncLocalWithRemote(local.id, togglProj);
     },
 
     edit: async (project: Project) => {
@@ -71,10 +68,10 @@ export const Data = {
       return await Database.Projects.editWithRemoteData(newRemoteData);
     },
 
-    delete: async (project: Project) => {
-      await Database.Projects.markDeleted(project.id);
-      await Toggl.Projects.delete(project.id);
-      return await Database.Projects.delete(project.id);
+    delete: async (id: number) => {
+      await Database.Projects.markDeleted(id);
+      await Toggl.Projects.delete(id);
+      return await Database.Projects.delete(id);
     },
   },
 };

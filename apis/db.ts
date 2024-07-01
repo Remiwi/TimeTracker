@@ -22,6 +22,7 @@ const dbPromise = (async () => {
     color TEXT,
     created_at TEXT,
     at TEXT,
+    active INTEGER,
     icon TEXT,
     to_delete INTEGER
   );`);
@@ -56,14 +57,15 @@ const Database = {
     createFromToggl: async (project: TogglProject) => {
       const db = await dbPromise;
       await db.runAsync(
-        `INSERT INTO projects (id, name, color, created_at, at, icon, to_delete)
-        VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO projects (id, name, color, created_at, at, active, icon, to_delete)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           project.id,
           project.name,
           project.color,
           project.created_at,
           project.at,
+          project.active ? 1 : 0,
           "",
           0,
         ],
@@ -84,14 +86,15 @@ const Database = {
         res_id = id;
 
         await tx.runAsync(
-          `INSERT INTO projects (id, name, color, created_at, at, icon, to_delete)
-          VALUES (?, ?, ?, ?, ?, ?, ?);`,
+          `INSERT INTO projects (id, name, color, created_at, at, active, icon, to_delete)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             id,
             project.name,
             project.color,
             project.created_at,
             project.at,
+            1,
             "",
             0,
           ],
@@ -121,7 +124,8 @@ const Database = {
             name = ?,
             color = ?,
             created_at = ?,
-            at = ?
+            at = ?,
+            active = ?
           WHERE id = ?;`,
           [
             remote.id,
@@ -129,6 +133,7 @@ const Database = {
             remote.color,
             remote.created_at,
             remote.at,
+            remote.active ? 1 : 0,
             local_id,
           ],
         );
@@ -157,13 +162,15 @@ const Database = {
           name = ?,
           color = ?,
           icon = ?,
-          at = ?
+          at = ?,
+          active = ?
         WHERE id = ?;`,
         [
           project.name,
           project.color,
           project.icon,
-          Date.now().toString(),
+          new Date().toISOString(),
+          project.active ? 1 : 0,
           project.id,
         ],
       );
@@ -175,9 +182,10 @@ const Database = {
         `UPDATE projects SET
           name = ?,
           color = ?,
-          at = ?
+          at = ?,
+          active = ?
         WHERE id = ?;`,
-        [project.name, project.color, project.at, project.id],
+        [project.name, project.color, project.at, project.active, project.id],
       );
     },
   },

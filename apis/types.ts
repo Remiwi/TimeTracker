@@ -4,6 +4,7 @@ export type TogglProject = {
   color: string;
   created_at: string;
   at: string;
+  active: boolean;
 };
 
 export type Project = TogglProject & {
