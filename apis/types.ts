@@ -2,7 +2,6 @@ export type TogglProject = {
   id: number;
   name: string;
   color: string;
-  created_at: string;
   at: string;
   active: boolean;
 };
@@ -12,5 +11,6 @@ export type Project = TogglProject & {
 };
 
 export type DBProject = Project & {
+  linked: boolean;
   to_delete: boolean;
 };

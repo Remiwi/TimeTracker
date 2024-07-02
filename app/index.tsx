@@ -11,7 +11,7 @@ import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import Toggl from "@/apis/toggl";
+import { Toggl } from "@/apis/toggl";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";

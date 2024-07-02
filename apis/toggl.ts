@@ -1,20 +1,32 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
 import { Temporal } from "@js-temporal/polyfill";
-import { Project, TogglProject } from "./types";
+import { TogglProject } from "./types";
+import Colors from "@/utils/colors";
 
-const MY_WORKSPACE = 5930509;
+export const TogglConfig = {
+  token: null as string | null,
+  workspace: 5930509,
+  disabled: false,
+};
 
-const Toggl = {
+(async () => {
+  TogglConfig.token = await SecureStore.getItemAsync("togglToken");
+})();
+
+export const Toggl = {
   Projects: {
     getAll: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/projects`,
         {
           method: "GET",
           headers: {
@@ -32,14 +44,17 @@ const Toggl = {
       return res.json() as Promise<TogglProject[]>;
     },
 
-    create: async (project: Project) => {
-      const token = await SecureStore.getItemAsync("togglToken");
+    create: async (project: Partial<TogglProject> & { name: string }) => {
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/projects`,
         {
           method: "POST",
           headers: {
@@ -48,7 +63,12 @@ const Toggl = {
           },
           body: JSON.stringify({
             ...project,
-            active: project.active ? true : false,
+            active:
+              project.active || project.active === undefined ? true : false,
+            color:
+              project.color !== "" && project.color ? project.color : undefined,
+            created_at: undefined,
+            at: undefined,
           }),
         },
       );
@@ -62,17 +82,20 @@ const Toggl = {
     },
 
     delete: async (id: number) => {
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
       if (id < 0) {
         throw Error("This project only exists on local!");
       }
 
-      const token = await SecureStore.getItemAsync("togglToken");
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects/${id}`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/projects/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -90,18 +113,21 @@ const Toggl = {
       return res.json();
     },
 
-    edit: async (project: Project) => {
+    edit: async (project: Partial<TogglProject> & { id: number }) => {
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
       if (project.id < 0) {
         throw Error("This project only exists on local!");
       }
 
-      const token = await SecureStore.getItemAsync("togglToken");
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/projects/${project.id}`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/projects/${project.id}`,
         {
           method: "PUT",
           body: JSON.stringify({
@@ -126,7 +152,10 @@ const Toggl = {
 
   Entries: {
     getCurrent: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
@@ -165,13 +194,16 @@ const Toggl = {
       projectID: number;
       tags: string[];
     }) => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries`,
         {
           method: "POST",
           headers: {
@@ -183,7 +215,7 @@ const Toggl = {
             project_id: data.projectID !== -1 ? data.projectID : null,
             tags: data.tags,
             created_with: "Indev interface app",
-            workspace_id: MY_WORKSPACE,
+            workspace_id: TogglConfig.workspace,
             duration: -1,
             start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
           }),
@@ -199,7 +231,10 @@ const Toggl = {
     },
 
     stopCurrent: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
@@ -210,7 +245,7 @@ const Toggl = {
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries/${id}/stop`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${id}/stop`,
         {
           method: "PATCH",
           headers: {
@@ -229,7 +264,10 @@ const Toggl = {
     },
 
     deleteCurrent: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
@@ -240,7 +278,7 @@ const Toggl = {
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries/${id}`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -259,7 +297,10 @@ const Toggl = {
     },
 
     getLastFinished: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
@@ -289,7 +330,10 @@ const Toggl = {
     },
 
     setCurrentStartToPrevStop: async () => {
-      const token = await SecureStore.getItemAsync("togglToken");
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      const token = TogglConfig.token;
       if (!token) {
         throw new Error("No token found");
       }
@@ -301,7 +345,7 @@ const Toggl = {
       }
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${MY_WORKSPACE}/time_entries/${id}`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${id}`,
         {
           method: "PUT",
           body: JSON.stringify({ start: lastFinished.stop }),
@@ -321,5 +365,3 @@ const Toggl = {
     },
   },
 };
-
-export default Toggl;

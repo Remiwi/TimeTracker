@@ -175,7 +175,6 @@ function ProjectModal(props: {
                   name,
                   at: props.defaultProject?.at || "never",
                   active: props.defaultProject?.active || true,
-                  created_at: props.defaultProject?.created_at || "never",
                 });
               }}
             >

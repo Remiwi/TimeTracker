@@ -5,9 +5,42 @@ const db = SQLite.openDatabaseSync("db.db");
 
 const Database = {
   Manage: {
-    intializeDBSync: () =>
-      db.withTransactionSync(() => {
-        db.runSync(`CREATE TABLE IF NOT EXISTS templates (
+    intializeDBSync: () => {
+      db.runSync(`CREATE TABLE IF NOT EXISTS templates (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          project_id INTEGER,
+          description TEXT,
+          tags TEXT
+        );`);
+
+      db.runSync(`CREATE TABLE IF NOT EXISTS projects (
+          id INTEGER PRIMARY KEY,
+          name TEXT,
+          color TEXT,
+          at TEXT,
+          active INTEGER,
+          icon TEXT,
+          to_delete INTEGER
+        );`);
+
+      db.runSync(`CREATE TABLE IF NOT EXISTS local_ids (
+          type TEXT PRIMARY KEY,
+          id INTEGER
+        );`);
+      db.runSync(
+        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
+      );
+    },
+
+    dropAllTablesSync: () => {
+      db.runSync(`DROP TABLE IF EXISTS templates;`);
+      db.runSync(`DROP TABLE IF EXISTS projects;`);
+      db.runSync(`DROP TABLE IF EXISTS local_ids;`);
+    },
+
+    initializeDBAsync: async () => {
+      await db.runAsync(`CREATE TABLE IF NOT EXISTS templates (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
         project_id INTEGER,
@@ -15,32 +48,30 @@ const Database = {
         tags TEXT
       );`);
 
-        db.runSync(`CREATE TABLE IF NOT EXISTS projects (
+      await db.runAsync(`CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY,
         name TEXT,
         color TEXT,
-        created_at TEXT,
         at TEXT,
         active INTEGER,
         icon TEXT,
         to_delete INTEGER
       );`);
 
-        db.runSync(`CREATE TABLE IF NOT EXISTS local_ids (
+      await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
         type TEXT PRIMARY KEY,
         id INTEGER
       );`);
-        db.runSync(
-          `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
-        );
-      }),
+      await db.runAsync(
+        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
+      );
+    },
 
-    dropAllTablesSync: () =>
-      db.withTransactionSync(() => {
-        db.runSync(`DROP TABLE IF EXISTS templates;`);
-        db.runSync(`DROP TABLE IF EXISTS projects;`);
-        db.runSync(`DROP TABLE IF EXISTS local_ids;`);
-      }),
+    dropAllTablesAsync: async () => {
+      await db.runAsync(`DROP TABLE IF EXISTS templates;`);
+      await db.runAsync(`DROP TABLE IF EXISTS projects;`);
+      await db.runAsync(`DROP TABLE IF EXISTS local_ids;`);
+    },
   },
 
   Projects: {
@@ -57,13 +88,12 @@ const Database = {
 
     createFromToggl: async (project: TogglProject) => {
       await db.runAsync(
-        `INSERT INTO projects (id, name, color, created_at, at, active, icon, to_delete)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO projects (id, name, color, at, active, icon, to_delete)
+        VALUES (?, ?, ?, ?, ?, ?, ?);`,
         [
           project.id,
           project.name,
           project.color,
-          project.created_at,
           project.at,
           project.active ? 1 : 0,
           "",
@@ -72,7 +102,7 @@ const Database = {
       );
     },
 
-    createLocal: async (project: Project) => {
+    createLocal: async (project: Partial<Project> & { name: string }) => {
       let res_id: any = undefined;
       await db.withExclusiveTransactionAsync(async (tx) => {
         const id = (
@@ -85,16 +115,15 @@ const Database = {
         res_id = id;
 
         await tx.runAsync(
-          `INSERT INTO projects (id, name, color, created_at, at, active, icon, to_delete)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
+          `INSERT INTO projects (id, name, color, at, active, icon, to_delete)
+          VALUES (?, ?, ?, ?, ?, ?, ?);`,
           [
             id,
             project.name,
-            project.color,
-            project.created_at,
-            project.at,
-            1,
-            "",
+            project.color || "",
+            project.at || "",
+            project.active === undefined || project.active ? 1 : 0,
+            project.icon || "",
             0,
           ],
         );
@@ -114,14 +143,13 @@ const Database = {
       return proj;
     },
 
-    syncLocalWithRemote: async (local_id: number, remote: TogglProject) => {
+    linkLocalWithRemote: async (local_id: number, remote: TogglProject) => {
       await db.withExclusiveTransactionAsync(async (tx) => {
         await tx.runAsync(
           `UPDATE projects SET
             id = ?,
             name = ?,
             color = ?,
-            created_at = ?,
             at = ?,
             active = ?
           WHERE id = ?;`,
@@ -129,7 +157,6 @@ const Database = {
             remote.id,
             remote.name,
             remote.color,
-            remote.created_at,
             remote.at,
             remote.active ? 1 : 0,
             local_id,
@@ -139,6 +166,11 @@ const Database = {
         // update it's usage as foreign key in templates
         // update it's usage as foreign key in entries
       });
+
+      return await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [remote.id],
+      );
     },
 
     delete: async (id: number) => {
@@ -151,7 +183,15 @@ const Database = {
       ]);
     },
 
-    editWithLocalData: async (project: Project) => {
+    editWithLocalData: async (project: Partial<Project> & { id: number }) => {
+      const oldProject = await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [project.id],
+      );
+      if (oldProject === null) {
+        throw Error("Project not found");
+      }
+
       await db.runAsync(
         `UPDATE projects SET
           name = ?,
@@ -161,17 +201,30 @@ const Database = {
           active = ?
         WHERE id = ?;`,
         [
-          project.name,
-          project.color,
-          project.icon,
+          project.name || oldProject.name,
+          project.color || oldProject.color,
+          project.icon || oldProject.icon,
           new Date().toISOString(),
-          project.active ? 1 : 0,
+          project.active === undefined || project.active ? 1 : 0,
           project.id,
         ],
+      );
+
+      return await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [project.id],
       );
     },
 
     editWithRemoteData: async (project: TogglProject) => {
+      const oldProject = await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [project.id],
+      );
+      if (oldProject === null) {
+        throw Error("Project not found");
+      }
+
       await db.runAsync(
         `UPDATE projects SET
           name = ?,
@@ -180,6 +233,11 @@ const Database = {
           active = ?
         WHERE id = ?;`,
         [project.name, project.color, project.at, project.active, project.id],
+      );
+
+      return await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [project.id],
       );
     },
   },
