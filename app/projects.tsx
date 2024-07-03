@@ -49,7 +49,7 @@ export default function Page() {
     },
   });
 
-  const tempSyncMutation = useMutation({
+  const syncMutation = useMutation({
     mutationFn: Data.Projects.sync,
     onError: (err) => {
       console.error(err);
@@ -93,7 +93,7 @@ export default function Page() {
           onAdd={onAdd}
           onSync={() => {
             projectsQuery.refetch();
-            tempSyncMutation.mutate();
+            syncMutation.mutate();
           }}
         />
       )}
