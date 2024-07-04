@@ -18,8 +18,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -29,7 +29,7 @@ export const Toggl = {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -46,8 +46,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -57,7 +57,7 @@ export const Toggl = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
           body: JSON.stringify({
             ...project,
@@ -87,8 +87,7 @@ export const Toggl = {
         throw Error("This project only exists on local!");
       }
 
-      const token = TogglConfig.token;
-      if (!token) {
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -98,7 +97,7 @@ export const Toggl = {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -119,8 +118,7 @@ export const Toggl = {
         throw Error("This project only exists on local!");
       }
 
-      const token = TogglConfig.token;
-      if (!token) {
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -134,7 +132,7 @@ export const Toggl = {
           }),
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -153,8 +151,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -164,7 +162,7 @@ export const Toggl = {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -195,8 +193,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -206,7 +204,7 @@ export const Toggl = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
           body: JSON.stringify({
             description: data.description,
@@ -232,8 +230,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -248,7 +246,7 @@ export const Toggl = {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -265,8 +263,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -281,7 +279,7 @@ export const Toggl = {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -298,8 +296,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -309,7 +307,7 @@ export const Toggl = {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
@@ -331,8 +329,8 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-      const token = TogglConfig.token;
-      if (!token) {
+
+      if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
@@ -349,7 +347,7 @@ export const Toggl = {
           body: JSON.stringify({ start: lastFinished.stop }),
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Basic ${encode(token + ":api_token")}`,
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
         },
       );
