@@ -7,11 +7,6 @@ beforeAll(async () => {
   TogglConfig.disabled = false;
   TogglConfig.workspace = Number(process.env.TOGGL_TEST_WORKSPACE);
   TogglConfig.token = process.env.TOGGL_TEST_API_KEY || null;
-
-  const projs = await Toggl.Projects.getAll();
-  for (const proj of projs) {
-    await Toggl.Projects.delete(proj.id);
-  }
 });
 
 // describe("Toggl", () => {
