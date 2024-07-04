@@ -17,83 +17,74 @@ import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
 import { Data } from "@/apis/data";
+import { Template } from "@/apis/types";
 
 const VIBRATION_DURATION = 80;
-
-type TemplateStuff = {
-  name: string;
-  projectID: number;
-  description: string;
-  tags: string[];
-};
 
 export default function Page() {
   const qc = useQueryClient();
 
   const [templateModalShown, setTemplateModalShown] = useState(false);
-  const [editTemplateIdx, setEditTemplateIdx] = useState<number>(-1);
+  const [selectedTemplate, setSelectedTemplate] = useState<
+    Template | undefined
+  >();
 
   const templatesQuery = useQuery({
     queryKey: ["templates"],
     queryFn: DB.Templates.getAll,
   });
-  const { mutate: mutateTemplates } = useMutation({
-    mutationFn: DB.Templates.set,
-    onError: (err, _, context) => {
+
+  const createTemplateMutation = useMutation({
+    mutationFn: DB.Templates.create,
+    onError: (err) => {
       console.error(err);
-      if (context) {
-        qc.setQueryData(["templates"], context);
-      }
     },
-    onMutate: (newTemplates: TemplateStuff[]) => {
-      const oldTemplates = templatesQuery.data as TemplateStuff[];
-      qc.setQueryData(["templates"], newTemplates);
-      return oldTemplates;
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["templates"] });
     },
   });
-  if (templatesQuery.isLoading) {
-    return <Text>Loading...</Text>;
-  }
-  if (templatesQuery.isError || !templatesQuery.data) {
-    console.error(templatesQuery.error);
-    return <Text>Error loading templates</Text>;
-  }
-  const templates = templatesQuery.data as TemplateStuff[];
+  const editTemplateMutation = useMutation({
+    mutationFn: DB.Templates.edit,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+  const deleteTemplateMutation = useMutation({
+    mutationFn: DB.Templates.delete,
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["templates"] });
+    },
+  });
+
+  const templates = templatesQuery.data || [];
 
   const small = true;
   return (
     <>
       {templateModalShown && (
         <TemplateEditModal
+          defaultTemplate={selectedTemplate}
           onCancel={() => {
-            setEditTemplateIdx(-1);
             setTemplateModalShown(false);
           }}
-          onDone={(t) => {
-            setEditTemplateIdx(-1);
+          onCreate={(template) => {
+            createTemplateMutation.mutate(template);
             setTemplateModalShown(false);
-            if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
-              const newTemplates = [...templates];
-              newTemplates[editTemplateIdx] = t;
-              mutateTemplates(newTemplates);
-              return;
-            }
-            mutateTemplates([...templates, t]);
           }}
-          onDelete={() => {
-            setEditTemplateIdx(-1);
+          onEdit={(template) => {
+            editTemplateMutation.mutate(template);
             setTemplateModalShown(false);
-            if (0 <= editTemplateIdx && editTemplateIdx < templates.length) {
-              const newTemplates = [...templates];
-              newTemplates.splice(editTemplateIdx, 1);
-              mutateTemplates(newTemplates);
-            }
           }}
-          defaultTemplate={
-            0 <= editTemplateIdx && editTemplateIdx < templates.length
-              ? templates[editTemplateIdx]
-              : undefined
-          }
+          onDelete={(id) => {
+            deleteTemplateMutation.mutate(id);
+            setTemplateModalShown(false);
+          }}
         />
       )}
       {!templateModalShown && <TimerControls />}
@@ -109,21 +100,31 @@ export default function Page() {
           <View className="flex items-center justify-center pb-6">
             <View className="h-0.5 w-2/3 rounded-full bg-gray-300" />
           </View>
-          {small ? (
+          {templatesQuery.isSuccess && (
             <FlatList
-              numColumns={3}
-              key={3}
+              numColumns={small ? 3 : 2}
+              key={small ? 3 : 2}
               data={
-                [...templates, "add", "empty", "empty", "empty"] as (
-                  | TemplateStuff
-                  | "add"
-                  | "empty"
-                )[]
+                [
+                  ...templates,
+                  "add",
+                  "empty",
+                  "empty",
+                  small ? "empty" : undefined,
+                ] as (Template | "add" | "empty" | undefined)[]
               }
               renderItem={(data) => {
+                if (data.item === undefined) {
+                  return <View></View>;
+                }
                 if (data.item === "add") {
                   return (
-                    <View className="h-22 w-1/3 overflow-hidden rounded-lg bg-gray-50">
+                    <View
+                      className={
+                        "overflow-hidden rounded-lg bg-gray-50 " +
+                        (small ? "h-22 w-1/3" : "h-29 w-1/2")
+                      }
+                    >
                       <TouchableNativeFeedback
                         onPress={() => setTemplateModalShown(true)}
                       >
@@ -137,70 +138,24 @@ export default function Page() {
                   );
                 }
                 if (data.item === "empty") {
-                  return <View className="h-14 w-1/3" />;
+                  return (
+                    <View className={small ? "h-14 w-1/3" : "h-18 w-1/2"} />
+                  );
                 }
-
                 return (
-                  <View className="w-1/3">
+                  <View className={small ? "w-1/3" : "w-1/2"}>
                     <Item
                       isSmall={true}
-                      templateStuff={data.item as TemplateStuff}
+                      template={data.item as Template}
                       onLongPress={() => {
-                        setEditTemplateIdx(data.index);
+                        // setEditTemplateIdx(data.index);
                         setTemplateModalShown(true);
                       }}
                     />
                   </View>
                 );
               }}
-              contentContainerClassName="gap-16"
-              className="px-4"
-            />
-          ) : (
-            <FlatList
-              numColumns={2}
-              key={2}
-              data={
-                [...templates, "add", "empty", "empty"] as (
-                  | TemplateStuff
-                  | "add"
-                  | "empty"
-                )[]
-              }
-              renderItem={(data) => {
-                if (data.item === "add") {
-                  return (
-                    <View className="h-29 w-1/2 overflow-hidden rounded-lg bg-gray-50">
-                      <TouchableNativeFeedback
-                        onPress={() => setTemplateModalShown(true)}
-                      >
-                        <View className="flex h-full w-full justify-center rounded-lg border-2 border-dashed border-gray-200">
-                          <Text className="text-center text-sm text-gray-400">
-                            New Template
-                          </Text>
-                        </View>
-                      </TouchableNativeFeedback>
-                    </View>
-                  );
-                }
-                if (data.item === "empty") {
-                  return <View className="h-18 w-1/3" />;
-                }
-
-                return (
-                  <View className="w-1/2">
-                    <Item
-                      isSmall={false}
-                      templateStuff={data.item as TemplateStuff}
-                      onLongPress={() => {
-                        setEditTemplateIdx(data.index);
-                        setTemplateModalShown(true);
-                      }}
-                    />
-                  </View>
-                );
-              }}
-              contentContainerClassName="gap-12"
+              contentContainerClassName={small ? "gap-16" : "gap-12"}
               className="px-4"
             />
           )}
@@ -211,7 +166,7 @@ export default function Page() {
 }
 
 function Item(props: {
-  templateStuff: TemplateStuff;
+  template: Template;
   onLongPress?: () => void;
   isSmall: boolean;
 }) {
@@ -221,7 +176,7 @@ function Item(props: {
     queryFn: Data.Projects.getAll,
   });
   const thisProj = projectsQuery.data?.find(
-    (p) => p.id === props.templateStuff.projectID,
+    (p) => p.id === props.template.project_id,
   );
 
   const startEntryMutation = useMutation({
@@ -230,14 +185,12 @@ function Item(props: {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
         id: 0,
-        description: props.templateStuff.description,
-        project_id: props.templateStuff.projectID,
-        project_name: "props.templateStuff.project",
-        project_color: "props.templateStuff.color",
+        description: props.template.description,
+        project_id: props.template.project_id,
         start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
         stop: null,
         duration: -1,
-        tags: props.templateStuff.tags,
+        tags: props.template.tags,
       });
       return oldEntry;
     },
@@ -252,85 +205,66 @@ function Item(props: {
     },
   });
 
-  if (props.isSmall) {
-    return (
-      <View className="flex h-22 px-1">
-        <View className="h-14 w-14 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
-        <View className="-top-14 z-50 h-14 w-14 rounded-full bg-white p-1">
-          <View
-            className={
-              "flex h-full w-full items-center justify-center rounded-full"
-            }
-            style={{ backgroundColor: thisProj?.color || "#000000" }}
-          >
-            <MaterialCommunityIcons
-              name={thisProj?.icon as any}
-              size={24}
-              color="white"
-            />
-          </View>
-        </View>
-        <View className="-top-21 h-14 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
-          <TouchableNativeFeedback
-            onLongPress={props.onLongPress}
-            onPress={() => {
-              startEntryMutation.mutate({
-                description: props.templateStuff.description,
-                projectID: props.templateStuff.projectID,
-                tags: props.templateStuff.tags,
-              });
-              Vibration.vibrate(VIBRATION_DURATION);
-            }}
-          >
-            <View className="flex p-2 pt-1">
-              <Text className="self-end pb-1 text-sm">XX:XX:XX</Text>
-              <Text className="text-sm">
-                {props.templateStuff.name || props.templateStuff.description}
-              </Text>
-            </View>
-          </TouchableNativeFeedback>
+  return (
+    <View className={"flex px-1 " + (props.isSmall ? "h-22" : "h:29")}>
+      <View
+        className={
+          "rounded-full bg-white p-1 shadow-sm shadow-slate-900 " +
+          (props.isSmall ? "h-14 w-14" : "h-18 w-18")
+        }
+      />
+      <View
+        className={
+          "z-50 rounded-full bg-white p-1 " +
+          (props.isSmall ? "-top-14 h-14 w-14" : "-top-18 h-18 w-18")
+        }
+      >
+        <View
+          className={
+            "flex h-full w-full items-center justify-center rounded-full"
+          }
+          style={{ backgroundColor: thisProj?.color || "#000000" }}
+        >
+          <MaterialCommunityIcons
+            name={thisProj?.icon as any}
+            size={props.isSmall ? 24 : 32}
+            color="white"
+          />
         </View>
       </View>
-    );
-  } else {
-    return (
-      <View className="flex h-29 px-1">
-        <View className="h-18 w-18 rounded-full bg-white p-1 shadow-sm shadow-slate-900" />
-
-        <View className="-top-18 z-50 h-18 w-18 rounded-full bg-white p-1">
-          <View
-            className={
-              "flex h-full w-full items-center justify-center rounded-full"
-            }
-            style={{ backgroundColor: thisProj?.color || "#000000" }}
-          >
-            <MaterialCommunityIcons
-              name={thisProj?.icon as any}
-              size={32}
-              color="white"
-            />
+      <View
+        className={
+          "w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950" +
+          (props.isSmall ? "-top-21 h-14" : "-top-29 h-20")
+        }
+      >
+        <TouchableNativeFeedback
+          onLongPress={props.onLongPress}
+          onPress={() => {
+            startEntryMutation.mutate({
+              description: props.template.description,
+              projectID: props.template.project_id,
+              tags: props.template.tags,
+            });
+            Vibration.vibrate(VIBRATION_DURATION);
+          }}
+        >
+          <View className="flex p-2 pt-1">
+            <Text
+              className={
+                "self-end" + (props.isSmall ? "pb-1 text-sm" : "text-md pb-6")
+              }
+            >
+              XX:XX:XX
+            </Text>
+            <Text className={props.isSmall ? "text-sm" : ""}>
+              {props.template.name || props.template.description}
+            </Text>
           </View>
-        </View>
-        <View className="-top-29 h-20 w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950">
-          <TouchableNativeFeedback
-            onLongPress={props.onLongPress}
-            onPress={() => {
-              startEntryMutation.mutate({
-                description: props.templateStuff.description,
-                projectID: props.templateStuff.projectID,
-                tags: props.templateStuff.tags,
-              });
-            }}
-          >
-            <View className="flex p-2 pt-1">
-              <Text className="text-md self-end pb-6">XX:XX:XX</Text>
-              <Text>{props.templateStuff.name}</Text>
-            </View>
-          </TouchableNativeFeedback>
-        </View>
+        </TouchableNativeFeedback>
       </View>
-    );
-  }
+    </View>
+  );
 }
 
 function Folder(props: { active?: boolean }) {
@@ -352,9 +286,10 @@ function Folder(props: { active?: boolean }) {
 
 function TemplateEditModal(props: {
   onCancel: () => void;
-  onDone: (t: TemplateStuff) => void;
-  onDelete: () => void;
-  defaultTemplate?: TemplateStuff;
+  onCreate: (t: Template) => void;
+  onEdit: (t: Template) => void;
+  onDelete: (id: number) => void;
+  defaultTemplate?: Template;
 }) {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -362,40 +297,38 @@ function TemplateEditModal(props: {
   });
 
   const [name, setName] = useState(props.defaultTemplate?.name || "");
-  const [projectID, setProjectID] = useState(
-    props.defaultTemplate?.projectID || -1,
+  const [project_id, setProjectID] = useState(
+    props.defaultTemplate?.project_id || -1,
   );
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
   );
   const [tags, setTags] = useState<string[]>(props.defaultTemplate?.tags || []);
 
-  const onCancel = () => {
-    setName("");
-    setProjectID(-1);
-    setDescription("");
-    setTags([]);
-    props.onCancel();
-  };
   const onDone = () => {
-    setName("");
-    setProjectID(-1);
-    setDescription("");
-    setTags([]);
-
-    props.onDone({
-      name,
-      projectID,
-      description,
-      tags,
-    });
+    if (props.defaultTemplate === undefined) {
+      props.onCreate({
+        id: 0, // Id should be ignored for creation anyways
+        name,
+        project_id,
+        description,
+        tags,
+      });
+    } else {
+      props.onEdit({
+        ...props.defaultTemplate,
+        name,
+        project_id,
+        description,
+        tags,
+      });
+    }
   };
+
   const onDelete = () => {
-    setName("");
-    setProjectID(-1);
-    setDescription("");
-    setTags([]);
-    props.onDelete();
+    if (props.defaultTemplate !== undefined) {
+      props.onDelete(props.defaultTemplate.id);
+    }
   };
 
   return (
@@ -421,7 +354,7 @@ function TemplateEditModal(props: {
             label="Name"
             placeholder=""
             value={name}
-            onChange={(t) => setName(t)}
+            onChange={setName}
             className="pb-2"
           />
           <View className="flex flex-grow items-center justify-center pb-4 pt-8">
@@ -431,13 +364,13 @@ function TemplateEditModal(props: {
           <MyTextInput
             label="Description"
             value={description}
-            onChange={(t) => setDescription(t)}
+            onChange={setDescription}
             className="pb-2"
           />
           <MyDropDown
             placeholder="Select Project"
             options={projectsQuery.data || []}
-            value={projectsQuery.data?.find((p) => p.id === projectID)}
+            value={projectsQuery.data?.find((p) => p.id === project_id)}
             onChange={(item) => {
               setProjectID(item.id);
             }}
@@ -448,12 +381,12 @@ function TemplateEditModal(props: {
           <MyTagInput
             placeholder="Tags"
             value={tags}
-            onChange={(t) => setTags(t)}
+            onChange={setTags}
             className="pb-4"
           />
           <View className="flex flex-grow flex-row justify-between">
             <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
-              <TouchableNativeFeedback onPress={onCancel}>
+              <TouchableNativeFeedback onPress={props.onCancel}>
                 <View className="flex w-28 items-center rounded-full bg-gray-100 p-2">
                   <Text className="font-bold">Cancel</Text>
                 </View>
