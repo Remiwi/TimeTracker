@@ -234,7 +234,7 @@ function Item(props: {
       </View>
       <View
         className={
-          "w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950" +
+          "w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950 " +
           (props.isSmall ? "-top-21 h-14" : "-top-29 h-20")
         }
       >
@@ -252,7 +252,7 @@ function Item(props: {
           <View className="flex p-2 pt-1">
             <Text
               className={
-                "self-end" + (props.isSmall ? "pb-1 text-sm" : "text-md pb-6")
+                "self-end " + (props.isSmall ? "pb-1 text-sm" : "text-md pb-6")
               }
             >
               XX:XX:XX
