@@ -1,16 +1,15 @@
 import { Text } from "react-native";
-import { Temporal } from "@js-temporal/polyfill";
 import { useEffect, useState } from "react";
 
 export default function TimerText(props: {
-  startTime: Temporal.Instant | undefined;
+  startTime: Date | undefined;
   className?: string;
 }) {
-  const [now, setNow] = useState(Temporal.Now.instant());
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
     if (props.startTime === undefined) return;
     const interval = setInterval(() => {
-      setNow(Temporal.Now.instant());
+      setNow(new Date());
     }, 1000);
     return () => clearInterval(interval);
   }, [props.startTime]);
@@ -18,14 +17,14 @@ export default function TimerText(props: {
   if (props.startTime === undefined)
     return <Text className={props.className}>X:XX:XX</Text>;
 
-  const duration = Temporal.Duration.from(now.since(props.startTime));
-  const seconds = Math.floor(duration.total({ unit: "second" }) % 60)
+  const differenceInMilliseconds = now.getTime() - props.startTime.getTime();
+  const seconds = (Math.floor(differenceInMilliseconds / 1000) % 60)
     .toFixed(0)
     .padStart(2, "0");
-  const minutes = Math.floor(duration.total({ unit: "minute" }) % 60)
+  const minutes = (Math.floor(differenceInMilliseconds / 60_000) % 60)
     .toFixed(0)
     .padStart(2, "0");
-  const hours = Math.floor(duration.total({ unit: "hour" }));
+  const hours = Math.floor(differenceInMilliseconds / 3_600_000);
 
   if (hours < 0) {
     return <Text className={props.className}>0:00:00</Text>;

@@ -1,8 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
-import { Temporal } from "@js-temporal/polyfill";
 import { TogglProject } from "./types";
-import Colors from "@/utils/colors";
 
 export const TogglConfig = {
   token: null as string | null,
@@ -217,7 +215,7 @@ export const Toggl = {
             created_with: "Indev interface app",
             workspace_id: TogglConfig.workspace,
             duration: -1,
-            start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
+            start: new Date().toISOString(),
           }),
         },
       );

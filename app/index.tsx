@@ -13,7 +13,6 @@ import MyTagInput from "@/components/TagInput";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Temporal } from "@js-temporal/polyfill";
 import { Toggl } from "@/apis/toggl";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
@@ -189,7 +188,7 @@ function Item(props: {
         id: 0,
         description: props.template.description,
         project_id: props.template.project_id,
-        start: Temporal.Now.plainDateTimeISO("UTC").toString() + "Z",
+        start: new Date().toISOString(),
         stop: null,
         duration: -1,
         tags: props.template.tags,
@@ -587,7 +586,7 @@ function Timer() {
   });
 
   const start = timeEntryQuery.data
-    ? Temporal.Instant.from(timeEntryQuery.data.start)
+    ? new Date(timeEntryQuery.data.start)
     : undefined;
 
   const projectID = timeEntryQuery.data?.project_id || -1;
