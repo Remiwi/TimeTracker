@@ -262,7 +262,9 @@ function Item(props: {
               XX:XX:XX
             </Text>
             <Text className={props.isSmall ? "text-sm" : ""}>
-              {props.template.name || props.template.description}
+              {props.template.name ||
+                props.template.description ||
+                thisProj?.name}
             </Text>
           </View>
         </TouchableNativeFeedback>
