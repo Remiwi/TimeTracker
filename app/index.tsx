@@ -18,6 +18,7 @@ import TimerText from "@/components/TimerText";
 import { Temporal } from "@js-temporal/polyfill";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
+import { set } from "@dotenvx/dotenvx";
 
 const VIBRATION_DURATION = 80;
 
@@ -126,7 +127,10 @@ export default function Page() {
                       }
                     >
                       <TouchableNativeFeedback
-                        onPress={() => setTemplateModalShown(true)}
+                        onPress={() => {
+                          setSelectedTemplate(undefined);
+                          setTemplateModalShown(true);
+                        }}
                       >
                         <View className="flex h-full w-full justify-center rounded-lg border-2 border-dashed border-gray-200">
                           <Text className="text-center text-sm text-gray-400">
@@ -148,7 +152,7 @@ export default function Page() {
                       isSmall={true}
                       template={data.item as Template}
                       onLongPress={() => {
-                        // setEditTemplateIdx(data.index);
+                        setSelectedTemplate(data.item as Template);
                         setTemplateModalShown(true);
                       }}
                     />
