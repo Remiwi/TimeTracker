@@ -1,6 +1,6 @@
 import Database from "./db";
 import { Toggl } from "./toggl";
-import { Project } from "./types";
+import { Project, Template } from "./types";
 import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 
@@ -91,6 +91,23 @@ export const Data = {
       await Database.Projects.markDeleted(id);
       await Toggl.Projects.delete(id);
       return await Database.Projects.delete(id);
+    },
+  },
+  Templates: {
+    getAll: async () => {
+      return await Database.Templates.getAll();
+    },
+
+    create: async (template: Omit<Template, "id">) => {
+      return await Database.Templates.create(template);
+    },
+
+    edit: async (template: Partial<Template> & { id: number }) => {
+      return await Database.Templates.edit(template);
+    },
+
+    delete: async (id: number) => {
+      return await Database.Templates.delete(id);
     },
   },
 };

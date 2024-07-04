@@ -10,15 +10,13 @@ import {
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
-import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { Toggl } from "@/apis/toggl";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { default as DB } from "@/apis/db";
 import TimerText from "@/components/TimerText";
+import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Temporal } from "@js-temporal/polyfill";
+import { Toggl } from "@/apis/toggl";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
-import { set } from "@dotenvx/dotenvx";
 
 const VIBRATION_DURATION = 80;
 
@@ -32,11 +30,11 @@ export default function Page() {
 
   const templatesQuery = useQuery({
     queryKey: ["templates"],
-    queryFn: DB.Templates.getAll,
+    queryFn: Data.Templates.getAll,
   });
 
   const createTemplateMutation = useMutation({
-    mutationFn: DB.Templates.create,
+    mutationFn: Data.Templates.create,
     onError: (err) => {
       console.error(err);
     },
@@ -45,7 +43,7 @@ export default function Page() {
     },
   });
   const editTemplateMutation = useMutation({
-    mutationFn: DB.Templates.edit,
+    mutationFn: Data.Templates.edit,
     onError: (err) => {
       console.error(err);
     },
@@ -54,7 +52,7 @@ export default function Page() {
     },
   });
   const deleteTemplateMutation = useMutation({
-    mutationFn: DB.Templates.delete,
+    mutationFn: Data.Templates.delete,
     onError: (err) => {
       console.error(err);
     },
