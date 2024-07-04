@@ -59,38 +59,32 @@ export default function Page() {
     },
   });
 
-  const onAdd = () => {
-    setProjectModalOpen(true);
-    setSelectedProject(undefined);
-  };
-
-  const onModalDone = (project: Project) => {
-    if (selectedProject === undefined) {
-      createProjectMutation.mutate(project);
-    } else {
-      editProjectMutation.mutate(project);
-    }
-    setProjectModalOpen(false);
-  };
-
-  const onModalDelete = (id: number) => {
-    deleteProjectMutation.mutate(id);
-    setProjectModalOpen(false);
-  };
-
   return (
     <>
       {projectModalOpen && (
         <ProjectModal
           onCancel={() => setProjectModalOpen(false)}
-          onDone={onModalDone}
-          onDelete={onModalDelete}
+          onCreate={(project) => {
+            createProjectMutation.mutate(project);
+            setProjectModalOpen(false);
+          }}
+          onEdit={(project) => {
+            editProjectMutation.mutate(project);
+            setProjectModalOpen(false);
+          }}
+          onDelete={(id: number) => {
+            deleteProjectMutation.mutate(id);
+            setProjectModalOpen(false);
+          }}
           defaultProject={selectedProject}
         />
       )}
       {!projectModalOpen && (
         <FABs
-          onAdd={onAdd}
+          onAdd={() => {
+            setSelectedProject(undefined);
+            setProjectModalOpen(true);
+          }}
           onSync={() => {
             projectsQuery.refetch();
             syncMutation.mutate();
@@ -136,7 +130,8 @@ function ProjectRow(props: { project: Project; onPress?: () => void }) {
 
 function ProjectModal(props: {
   onCancel?: () => void;
-  onDone?: (p: Project) => void;
+  onCreate?: (p: Project) => void;
+  onEdit?: (p: Project) => void;
   onDelete?: (id: number) => void;
   defaultProject?: Project;
 }) {
@@ -154,6 +149,32 @@ function ProjectModal(props: {
     "wizard-hat",
   ];
 
+  const onDone = () => {
+    if (props.defaultProject === undefined) {
+      props.onCreate?.({
+        id: 0, // Id should be ignored for creation anyways
+        name,
+        color,
+        icon,
+        at: "never",
+        active: true,
+      });
+    } else {
+      props.onEdit?.({
+        ...props.defaultProject,
+        name,
+        color,
+        icon,
+      });
+    }
+  };
+
+  const onDelete = () => {
+    if (props.defaultProject !== undefined) {
+      props.onDelete?.(props.defaultProject.id);
+    }
+  };
+
   return (
     <BottomSheet onClose={props.onCancel}>
       <View className="px-4">
@@ -166,18 +187,7 @@ function ProjectModal(props: {
             </TouchableNativeFeedback>
           </View>
           <View className="overflow-hidden rounded-full shadow-sm shadow-slate-900">
-            <TouchableNativeFeedback
-              onPress={() => {
-                props.onDone?.({
-                  id: props.defaultProject?.id || -1,
-                  color,
-                  icon,
-                  name,
-                  at: props.defaultProject?.at || "never",
-                  active: props.defaultProject?.active || true,
-                });
-              }}
-            >
+            <TouchableNativeFeedback onPress={onDone}>
               <View className="flex w-32 items-center rounded-full bg-slate-200 p-3">
                 <Text>Done</Text>
               </View>
@@ -214,9 +224,7 @@ function ProjectModal(props: {
         </View>
         <View className="w-full items-center justify-center pb-2">
           <View className="overflow-hidden rounded-full">
-            <TouchableNativeFeedback
-              onPress={() => props.onDelete?.(props.defaultProject?.id || -1)}
-            >
+            <TouchableNativeFeedback onPress={onDelete}>
               <View className="p-4 px-6">
                 <Text className="text-lg font-bold color-red-600">
                   Delete Project
