@@ -1,5 +1,11 @@
 import * as SQLite from "expo-sqlite";
-import { DBProject, Project, TogglProject } from "./types";
+import {
+  DBProject,
+  DBTemplate,
+  Project,
+  Template,
+  TogglProject,
+} from "./types";
 
 const db = SQLite.openDatabaseSync("db.db");
 
@@ -244,32 +250,73 @@ const Database = {
 
   Templates: {
     getAll: async () => {
-      const data = await db.getAllAsync<{
-        id: number;
-        name: string;
-        projectID: number;
-        description: string;
-        tags: string;
-      }>(`SELECT * FROM templates;`, []);
-      return data.map((row) => ({ ...row, tags: row.tags.split(",") }));
+      const data = await db.getAllAsync<DBTemplate>(
+        `SELECT * FROM templates;`,
+        [],
+      );
+      return data.map(
+        (row) => ({ ...row, tags: row.tags.split(",") }) as Template,
+      );
     },
 
-    set: async (
-      templates: {
-        name: string;
-        projectID: number;
-        description: string;
-        tags: string[];
-      }[],
-    ) => {
-      await db.runAsync(`DELETE FROM templates;`, []);
-      for (const template of templates) {
-        const tags = template.tags.join(",");
-        await db.runAsync(
-          `INSERT INTO templates (name, projectID, description, tags) VALUES (?, ?, ?, ?);`,
-          [template.name, template.projectID, template.description, tags],
-        );
+    create: async (template: Omit<Template, "id">) => {
+      const tags = template.tags.join(",");
+      const res = await db.runAsync(
+        `INSERT INTO templates (name, project_id, description, tags)
+        VALUES (?, ?, ?, ?);`,
+        [template.name, template.project_id, template.description, tags],
+      );
+      return { ...template, id: res.lastInsertRowId } as Template;
+    },
+
+    delete: async (id: number) => {
+      await db.runAsync(`DELETE FROM templates WHERE id = ?;`, [id]);
+    },
+
+    edit: async (template: Partial<Template> & { id: number }) => {
+      const oldTemplate = await db.getFirstAsync<DBTemplate>(
+        `SELECT * FROM templates WHERE id = ?;`,
+        [template.id],
+      );
+      if (oldTemplate === null) {
+        throw Error("Template not found");
       }
+
+      await db.runAsync(
+        `UPDATE templates SET
+          name = ?,
+          project_id = ?,
+          description = ?,
+          tags = ?
+        WHERE id = ?;`,
+        [
+          template.name || oldTemplate.name,
+          template.project_id !== undefined
+            ? template.project_id
+            : oldTemplate.project_id,
+          template.description || oldTemplate.description,
+          template.tags?.join(",") || oldTemplate.tags,
+          template.id,
+        ],
+      );
+
+      const edited = await db.getFirstAsync<DBTemplate>(
+        `SELECT * FROM templates WHERE id = ?;`,
+        [template.id],
+      );
+      if (edited === null) {
+        throw Error("Template not found after edit");
+      }
+
+      const tags = edited.tags.split(",");
+      return { ...edited, tags } as Template;
+    },
+
+    insertOrUpdate: async (template: Partial<Template>) => {
+      if (template.id !== undefined) {
+        return await Database.Templates.edit(template as Template);
+      }
+      return await Database.Templates.create(template as Omit<Template, "id">);
     },
   },
 };
