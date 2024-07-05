@@ -400,12 +400,15 @@ const Database = {
 
   Entries: {
     getAll: async () => {
-      return await db.getAllAsync<DBEntry>(`SELECT * FROM entries;`, []);
+      return await db.getAllAsync<DBEntry>(
+        `SELECT * FROM entries ORDER BY start DESC;`,
+        [],
+      );
     },
 
     getSince: async (startingAtOrAfter: string) => {
       return await db.getAllAsync<DBEntry>(
-        `SELECT * FROM entries WHERE start >= ?;`,
+        `SELECT * FROM entries WHERE start >= ? ORDER BY start DESC;`,
         [startingAtOrAfter],
       );
     },
