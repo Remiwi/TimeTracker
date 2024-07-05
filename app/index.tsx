@@ -181,7 +181,7 @@ function Item(props: {
   );
 
   const startEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.start,
+    mutationFn: Toggl.Entries.create,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
@@ -244,7 +244,7 @@ function Item(props: {
           onPress={() => {
             startEntryMutation.mutate({
               description: props.template.description,
-              projectID: props.template.project_id,
+              project_id: props.template.project_id,
               tags: props.template.tags,
             });
             Vibration.vibrate(VIBRATION_DURATION);
@@ -589,9 +589,9 @@ function Timer() {
     ? new Date(timeEntryQuery.data.start)
     : undefined;
 
-  const projectID = timeEntryQuery.data?.project_id || -1;
+  const project_id = timeEntryQuery.data?.project_id || -1;
   const project = projectsQuery.data?.find((v) => {
-    return v.id === projectID;
+    return v.id === project_id;
   });
   const projectName = project ? project.name : "No Project";
   const projectHex = project ? project.color : "#cccccc";

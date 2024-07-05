@@ -1,7 +1,9 @@
 import * as SQLite from "expo-sqlite";
 import {
+  DBEntry,
   DBProject,
   DBTemplate,
+  Entry,
   Project,
   Template,
   TogglProject,
@@ -30,6 +32,20 @@ const Database = {
           to_delete INTEGER
         );`);
 
+      db.runSync(`CREATE TABLE IF NOT EXISTS entries (
+          id INTEGER PRIMARY KEY,
+          description TEXT,
+          project_id INTEGER,
+          start TEXT,
+          stop TEXT,
+          duration INTEGER,
+          at TEXT,
+          tags TEXT,
+          linked INTEGER,
+          to_delete INTEGER,
+          need_push INTEGER
+      );`);
+
       db.runSync(`CREATE TABLE IF NOT EXISTS local_ids (
           type TEXT PRIMARY KEY,
           id INTEGER
@@ -37,11 +53,15 @@ const Database = {
       db.runSync(
         `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
       );
+      db.runSync(
+        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('entries', -1);`,
+      );
     },
 
     dropAllTablesSync: () => {
       db.runSync(`DROP TABLE IF EXISTS templates;`);
       db.runSync(`DROP TABLE IF EXISTS projects;`);
+      db.runSync(`DROP TABLE IF EXISTS entries;`);
       db.runSync(`DROP TABLE IF EXISTS local_ids;`);
     },
 
@@ -64,6 +84,20 @@ const Database = {
         to_delete INTEGER
       );`);
 
+      await db.runAsync(`CREATE TABLE IF NOT EXISTS entries (
+        id INTEGER PRIMARY KEY,
+        description TEXT,
+        project_id INTEGER,
+        start TEXT,
+        stop TEXT,
+        duration INTEGER,
+        at TEXT,
+        tags TEXT,
+        linked INTEGER,
+        to_delete INTEGER,
+        need_push INTEGER
+    );`);
+
       await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
         type TEXT PRIMARY KEY,
         id INTEGER
@@ -71,15 +105,20 @@ const Database = {
       await db.runAsync(
         `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
       );
+      await db.runAsync(
+        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('entries', -1);`,
+      );
     },
 
     dropAllTablesAsync: async () => {
       await db.runAsync(`DROP TABLE IF EXISTS templates;`);
       await db.runAsync(`DROP TABLE IF EXISTS projects;`);
+      await db.runAsync(`DROP TABLE IF EXISTS entries;`);
       await db.runAsync(`DROP TABLE IF EXISTS local_ids;`);
     },
   },
 
+  // TODO: project here don't seem to include `linked`...
   Projects: {
     getAll: async () => {
       return await db.getAllAsync<DBProject>(`SELECT * FROM projects;`, []);
@@ -181,6 +220,7 @@ const Database = {
 
     delete: async (id: number) => {
       await db.runAsync(`DELETE FROM projects WHERE id = ?;`, [id]);
+      // Use transaction, also delete from usage as foreign key
     },
 
     markDeleted: async (id: number) => {
@@ -317,6 +357,103 @@ const Database = {
         return await Database.Templates.edit(template as Template);
       }
       return await Database.Templates.create(template as Omit<Template, "id">);
+    },
+  },
+
+  Entries: {
+    getAll: async () => {
+      return await db.getAllAsync<DBEntry>(`SELECT * FROM entries;`, []);
+    },
+
+    getSince: async (startingAtOrAfter: string) => {
+      return await db.getAllAsync<DBEntry>(
+        `SELECT * FROM entries WHERE start >= ?;`,
+        [startingAtOrAfter],
+      );
+    },
+
+    createFromToggl: async (entry: Entry) => {
+      await db.runAsync(
+        `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        [
+          entry.id,
+          entry.description,
+          entry.project_id,
+          entry.start,
+          entry.stop,
+          entry.duration,
+          entry.at,
+          entry.tags.join(","),
+          1,
+          0,
+          0,
+        ],
+      );
+    },
+
+    linkLocalWithRemote: async (local_id: number, remote: Entry) => {
+      await db.runAsync(
+        `UPDATE entries SET
+          id = ?,
+          description = ?,
+          project_id = ?,
+          start = ?,
+          stop = ?,
+          duration = ?,
+          at = ?,
+          tags = ?,
+          linked = 1
+          WHERE id = ?;`,
+        [
+          remote.id,
+          remote.description,
+          remote.project_id,
+          remote.start,
+          remote.stop,
+          remote.duration,
+          remote.at,
+          remote.tags.join(","),
+          local_id,
+        ],
+      );
+    },
+
+    delete: async (id: number) => {
+      await db.runAsync(`DELETE FROM entries WHERE id = ?;`, [id]);
+    },
+
+    editWithRemoteData: async (entry: Entry) => {
+      const oldEntry = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [entry.id],
+      );
+      if (oldEntry === null) {
+        throw Error("Entry not found");
+      }
+
+      await db.runAsync(
+        `UPDATE entries SET
+          description = ?,
+          project_id = ?,
+          start = ?,
+          stop = ?,
+          duration = ?,
+          at = ?,
+          tags = ?,
+          needs_push = 0
+        WHERE id = ?;`,
+        [
+          entry.description,
+          entry.project_id,
+          entry.start,
+          entry.stop,
+          entry.duration,
+          entry.at,
+          entry.tags.join(","),
+          entry.id,
+        ],
+      );
     },
   },
 };

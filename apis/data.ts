@@ -5,6 +5,7 @@ import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 
 const projectSyncLock = tryAcquire(new Mutex());
+const entrySyncLock = tryAcquire(new Mutex());
 
 export const Data = {
   Projects: {
@@ -109,5 +110,90 @@ export const Data = {
     delete: async (id: number) => {
       return await Database.Templates.delete(id);
     },
+  },
+  Entries: {
+    sync: async () =>
+      entrySyncLock.runExclusive(async () => {
+        const twelveWeeksAgo = new Date(
+          new Date().getTime() - 12 * 7 * 24 * 60 * 60 * 1000,
+        ).toISOString();
+        const recentLocalEntries =
+          await Database.Entries.getSince(twelveWeeksAgo);
+        const recentRemoteEntries =
+          await Toggl.Entries.getSince(twelveWeeksAgo);
+
+        // Create entries on local of remote entries with no linked entry
+        for (const remote of recentRemoteEntries) {
+          if (
+            recentLocalEntries.find((p) => p.id === remote.id) === undefined
+          ) {
+            await Database.Entries.createFromToggl(remote);
+          }
+        }
+
+        for (const local of recentLocalEntries) {
+          // Create and link entries on toggl to unlinked local entries
+          if (!local.linked) {
+            const newRemote = await Toggl.Entries.create(local);
+            await Database.Entries.linkLocalWithRemote(local.id, newRemote);
+            continue;
+          }
+
+          const remote = recentRemoteEntries.find((p) => p.id === local.id);
+          // Delete linked entries that were deleted on remote
+          if (remote === undefined) {
+            await Database.Entries.delete(local.id);
+            continue;
+          }
+
+          // Delete linked entries that were marked during offline mode
+          if (local.to_delete) {
+            await Toggl.Entries.delete(local.id);
+            await Database.Entries.delete(local.id);
+            continue;
+          }
+
+          // Update sides of link of last edit time differs
+          const localLastUpdate = new Date(local.at);
+          const remoteLastUpdate = new Date(remote.at);
+          if (localLastUpdate > remoteLastUpdate) {
+            const newRemoteData = await Toggl.Entries.edit(local);
+            await Database.Entries.editWithRemoteData(newRemoteData);
+          } else if (remoteLastUpdate > localLastUpdate) {
+            await Database.Entries.editWithRemoteData(remote);
+          }
+        }
+
+        qc.invalidateQueries({
+          queryKey: ["entries"],
+        });
+      }),
+
+    getAll: async () => {},
+
+    create: async () => {},
+
+    edit: async () => {},
+
+    delete: async () => {},
+
+    restore: async () => {},
+
+    undo: async () => {},
+
+    redo: async () => {},
+
+    // Convenience
+    getCurrent: async () => {},
+
+    getLastStopped: async () => {},
+
+    start: async () => {},
+
+    stop: async () => {},
+
+    editStart: async () => {},
+
+    editStop: async () => {},
   },
 };
