@@ -211,7 +211,16 @@ const Database = {
         );
 
         // update it's usage as foreign key in templates
+        await tx.runAsync(
+          `UPDATE templates SET project_id = ? WHERE project_id = ?;`,
+          [remote.id, local_id],
+        );
+
         // update it's usage as foreign key in entries
+        await tx.runAsync(
+          `UPDATE entries SET project_id = ? WHERE project_id = ?;`,
+          [remote.id, local_id],
+        );
       });
 
       return await db.getFirstAsync<DBProject>(
@@ -221,8 +230,21 @@ const Database = {
     },
 
     delete: async (id: number) => {
-      await db.runAsync(`DELETE FROM projects WHERE id = ?;`, [id]);
-      // Use transaction, also delete from usage as foreign key
+      await db.withExclusiveTransactionAsync(async (tx) => {
+        await tx.runAsync(`DELETE FROM projects WHERE id = ?;`, [id]);
+
+        // update it's usage as foreign key in templates
+        await tx.runAsync(
+          `UPDATE templates SET project_id = NULL WHERE project_id = ?;`,
+          [id],
+        );
+
+        // update it's usage as foreign key in entries
+        await tx.runAsync(
+          `UPDATE entries SET project_id = NULL WHERE project_id = ?;`,
+          [id],
+        );
+      });
     },
 
     markDeleted: async (id: number) => {
