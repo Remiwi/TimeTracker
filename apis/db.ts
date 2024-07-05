@@ -118,7 +118,6 @@ const Database = {
     },
   },
 
-  // TODO: project here don't seem to include `linked`...
   Projects: {
     getAll: async () => {
       return await db.getAllAsync<DBProject>(`SELECT * FROM projects;`, []);
@@ -133,8 +132,8 @@ const Database = {
 
     createFromToggl: async (project: TogglProject) => {
       await db.runAsync(
-        `INSERT INTO projects (id, name, color, at, active, icon, to_delete)
-        VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO projects (id, name, color, at, active, icon, linked, to_delete)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           project.id,
           project.name,
@@ -142,6 +141,7 @@ const Database = {
           project.at,
           project.active ? 1 : 0,
           "",
+          1,
           0,
         ],
       );
@@ -160,8 +160,8 @@ const Database = {
         res_id = id;
 
         await tx.runAsync(
-          `INSERT INTO projects (id, name, color, at, active, icon, to_delete)
-          VALUES (?, ?, ?, ?, ?, ?, ?);`,
+          `INSERT INTO projects (id, name, color, at, active, icon, linked, to_delete)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             id,
             project.name,
@@ -169,6 +169,7 @@ const Database = {
             project.at || "",
             project.active === undefined || project.active ? 1 : 0,
             project.icon || "",
+            0,
             0,
           ],
         );
@@ -196,7 +197,8 @@ const Database = {
             name = ?,
             color = ?,
             at = ?,
-            active = ?
+            active = ?,
+            linked = 1
           WHERE id = ?;`,
           [
             remote.id,
