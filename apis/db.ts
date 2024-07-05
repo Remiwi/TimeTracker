@@ -413,7 +413,28 @@ const Database = {
       );
     },
 
+    getLastStopped: async () => {
+      return await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE duration != -1 ORDER BY start DESC LIMIT 1;`,
+        [],
+      );
+    },
+
+    getCurrent: async () => {
+      const running = await db.getAllAsync<DBEntry>(
+        `SELECT * FROM entries WHERE duration = -1;`,
+        [],
+      );
+      if (running.length > 1) {
+        throw new Error("More than one entry is running!");
+      }
+      return running.length === 1 ? running[0] : null;
+    },
+
     createFromToggl: async (entry: Entry) => {
+      // TODO: if creating an ongoing entry, we need to first stop the currently ongoing entry
+      // This is hard because it needs to have the same stop time as it would on toggl, but a new stop time if it didn't exist there...
+
       await db.runAsync(
         `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
@@ -437,6 +458,8 @@ const Database = {
     createLocal: async (
       entry: Partial<Omit<Entry, "duration">> & { start: string },
     ) => {
+      // TODO: if creating an ongoing entry, we need to first stop the currently ongoing entry
+
       // Calculate duration from start and stop
       const stop = typeof entry.stop === "string" ? entry.stop : null;
       // TODO: Verify that duration is in MS...

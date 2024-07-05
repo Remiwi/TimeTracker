@@ -13,7 +13,6 @@ import MyTagInput from "@/components/TagInput";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Toggl } from "@/apis/toggl";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
 
@@ -181,7 +180,7 @@ function Item(props: {
   );
 
   const startEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.create,
+    mutationFn: Data.Entries.start,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
@@ -414,8 +413,13 @@ function TimerControls() {
 
   const [showExtra, setShowExtra] = useState(false);
 
+  const currentEntryQuery = useQuery({
+    queryKey: ["currentEntry"],
+    queryFn: Data.Entries.getCurrent,
+  });
+
   const stopEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.stopCurrent,
+    mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
@@ -432,7 +436,12 @@ function TimerControls() {
     },
   });
   const deleteEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.deleteCurrent,
+    mutationFn: async () => {
+      if (!currentEntryQuery.isSuccess) return false;
+      if (currentEntryQuery.data === null) return false;
+      await Data.Entries.delete(currentEntryQuery.data.id);
+      return true;
+    },
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], null);
@@ -449,7 +458,14 @@ function TimerControls() {
     },
   });
   const startToLastStopMutation = useMutation({
-    mutationFn: Toggl.Entries.setCurrentStartToPrevStop,
+    mutationFn: async () => {
+      const last = await Data.Entries.getLastStopped();
+      if (last === null) return;
+      if (!currentEntryQuery.isSuccess) return false;
+      if (currentEntryQuery.data === null) return false;
+      await Data.Entries.editStart(last.id, last.start);
+      return true;
+    },
     onMutate: () => {
       const oldEntry = qc.getQueryData(["currentEntry"]);
       qc.setQueryData(["currentEntry"], {
@@ -582,7 +598,7 @@ function Timer() {
 
   const timeEntryQuery = useQuery({
     queryKey: ["currentEntry"],
-    queryFn: Toggl.Entries.getCurrent,
+    queryFn: Data.Entries.getCurrent,
   });
 
   const start = timeEntryQuery.data

@@ -174,7 +174,7 @@ export const Data = {
 
     create: async (entry: Partial<Entry> & { start: string }) => {
       const local = await Database.Entries.createLocal(entry);
-      const togglEntry = await Toggl.Entries.create(entry);
+      const togglEntry = await Toggl.Entries.create(local);
       return await Database.Entries.linkLocalWithRemote(local.id, togglEntry);
     },
 
@@ -197,16 +197,52 @@ export const Data = {
     redo: async () => {},
 
     // Convenience
-    getCurrent: async () => {},
 
-    getLastStopped: async () => {},
+    getCurrent: async () => {
+      const current = await Database.Entries.getCurrent();
+      if (current === null) return null;
+      return { ...current, tags: current.tags.split(",") } as Entry;
+    },
 
-    start: async () => {},
+    getLastStopped: async () => {
+      const last = await Database.Entries.getLastStopped();
+      if (last === null) return null;
+      return { ...last, tags: last.tags.split(",") } as Entry;
+    },
 
-    stop: async () => {},
+    // Note: start, stop, and duration are all ignored
+    start: async (entry: Partial<Entry>) => {
+      return await Data.Entries.create({
+        ...entry,
+        start: new Date().toISOString(),
+        stop: null,
+      });
+    },
 
-    editStart: async () => {},
+    stopCurrent: async () => {
+      const current = await Data.Entries.getCurrent();
+      if (current === null) {
+        return false;
+      }
+      await Data.Entries.edit({
+        id: current.id,
+        stop: new Date().toISOString(),
+      });
+      return true;
+    },
 
-    editStop: async () => {},
+    editStart: async (id: number, start: string) => {
+      return await Data.Entries.edit({
+        id,
+        start,
+      });
+    },
+
+    editStop: async (id: number, stop: string) => {
+      return await Data.Entries.edit({
+        id,
+        stop,
+      });
+    },
   },
 };

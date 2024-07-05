@@ -210,7 +210,9 @@ export const Toggl = {
     },
 
     create: async (
-      entry: Partial<Omit<Entry, "tags">> & { tags?: string | string[] },
+      entry: Omit<Entry, "tags"> & {
+        tags?: string | string[];
+      },
     ) => {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
@@ -220,11 +222,6 @@ export const Toggl = {
       }
       const tags =
         typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
-
-      const start =
-        entry.start === undefined ? new Date().toISOString() : entry.start;
-      const stop = entry.stop === undefined ? null : entry.stop;
-      const duration = entry.duration === undefined ? -1 : entry.duration;
 
       const res = await fetch(
         `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries`,
@@ -240,9 +237,9 @@ export const Toggl = {
             tags: tags || [],
             created_with: "Indev interface app",
             workspace_id: TogglConfig.workspace,
-            start,
-            stop,
-            duration,
+            start: entry.start,
+            stop: entry.stop,
+            duration: entry.duration === -1 ? -1 : undefined,
           }),
         },
       );

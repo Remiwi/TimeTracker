@@ -32,7 +32,7 @@ export type DBTemplate = Omit<Template, "tags"> & { tags: string };
 // Entries
 
 export type Entry = {
-  id: 0;
+  id: number;
   description: string | null;
   project_id: number | null;
   start: string;
