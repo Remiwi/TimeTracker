@@ -15,7 +15,7 @@ export const Data = {
           const localProjects = await Database.Projects.getAll();
           const remoteProjects = await Toggl.Projects.getAll();
 
-          // Create projects on local that were made on remote and not local
+          // Create projects on local of remote projects with no linked project
           for (const remote of remoteProjects) {
             if (localProjects.find((p) => p.id === remote.id) === undefined) {
               await Database.Projects.createFromToggl(remote);
@@ -23,30 +23,28 @@ export const Data = {
           }
 
           for (const local of localProjects) {
-            const remote = remoteProjects.find((p) => p.id === local.id);
-            if (remote === undefined) {
-              if (local.id < 0 && !local.to_delete) {
-                // Create non-deleted projects that were made on local and not remote
-                const newRemote = await Toggl.Projects.create(local);
-                await Database.Projects.linkLocalWithRemote(
-                  local.id,
-                  newRemote,
-                );
-              } else {
-                // Delete projects that were deleted on remote but not local, or that were made and deleted on local before syncing
-                await Database.Projects.delete(local.id);
-              }
+            // Create and link projects on toggl to unlinked local entries
+            if (!local.linked) {
+              const newRemote = await Toggl.Projects.create(local);
+              await Database.Projects.linkLocalWithRemote(local.id, newRemote);
               continue;
             }
 
+            const remote = remoteProjects.find((p) => p.id === local.id);
+            // Delete linked entries that were deleted on
+            if (remote === undefined) {
+              await Database.Projects.delete(local.id);
+              continue;
+            }
+
+            // Delete linked entries that were marked during offline mode
             if (local.to_delete) {
-              // Delete projects that are synced and marked for deletion
               await Toggl.Projects.delete(local.id);
               await Database.Projects.delete(local.id);
               continue;
             }
 
-            // Update any projects whose last-updated time differs between local and remote
+            // Update sides of link of last edit time differs
             const localLastUpdate = new Date(local.at);
             const remoteLastUpdate = new Date(remote.at);
             if (localLastUpdate > remoteLastUpdate) {
