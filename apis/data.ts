@@ -187,7 +187,7 @@ export const Data = {
     delete: async (id: number) => {
       await Database.Entries.markDeleted(id);
       await Toggl.Entries.delete(id);
-      return await Database.Entries.delete(id);
+      await Database.Entries.delete(id);
     },
 
     restore: async () => {},
