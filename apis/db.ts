@@ -150,6 +150,7 @@ const Database = {
     createLocal: async (project: Partial<Project> & { name: string }) => {
       let res_id: any = undefined;
       await db.withExclusiveTransactionAsync(async (tx) => {
+        // TODO: simplify this a bit... is any really needed?
         const id = (
           (await tx.getFirstAsync(
             `SELECT id FROM local_ids WHERE type = 'project';`,
@@ -159,6 +160,7 @@ const Database = {
 
         res_id = id;
 
+        // TODO: make `at` always have an ISO string everywhere
         await tx.runAsync(
           `INSERT INTO projects (id, name, color, at, active, icon, linked, to_delete)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
@@ -416,6 +418,61 @@ const Database = {
       );
     },
 
+    // Note that duration is ignored.
+    createLocal: async (
+      entry: Partial<Omit<Entry, "duration">> & { start: string },
+    ) => {
+      // Calculate duration from start and stop
+      const stop = typeof entry.stop === "string" ? entry.stop : null;
+      // TODO: Verify that duration is in MS...
+      const duration =
+        stop === null
+          ? -1
+          : new Date(stop).getTime() - new Date(entry.start).getTime();
+
+      let res_id: any = undefined;
+      await db.withExclusiveTransactionAsync(async (tx) => {
+        res_id = (
+          (await tx.getFirstAsync(
+            `SELECT id FROM local_ids WHERE type = 'entries';`,
+            [],
+          )) as any
+        ).id as number;
+
+        await tx.runAsync(
+          `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+          [
+            res_id,
+            entry.description || null,
+            entry.project_id || null,
+            entry.start,
+            stop,
+            duration,
+            new Date().toISOString(),
+            entry.tags?.join(",") || "",
+            0,
+            0,
+            0,
+          ],
+        );
+
+        await tx.runAsync(
+          `UPDATE local_ids SET id = id - 1 WHERE type = 'entries';`,
+          [],
+        );
+      });
+
+      const created = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [res_id as number],
+      );
+      if (created === null) {
+        throw Error("Entry not found after creation");
+      }
+      return { ...created, tags: created.tags.split(",") } as Entry;
+    },
+
     linkLocalWithRemote: async (local_id: number, remote: Entry) => {
       await db.runAsync(
         `UPDATE entries SET
@@ -441,10 +498,72 @@ const Database = {
           local_id,
         ],
       );
+
+      const linked = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [remote.id],
+      );
+
+      if (linked === null) {
+        throw Error("Entry not found after linking");
+      }
+
+      return { ...linked, tags: linked.tags.split(",") } as Entry;
     },
 
     delete: async (id: number) => {
       await db.runAsync(`DELETE FROM entries WHERE id = ?;`, [id]);
+    },
+
+    markDeleted: async (id: number) => {
+      await db.runAsync(`UPDATE entries SET to_delete = 1 WHERE id = ?;`, [id]);
+    },
+
+    // Note that duration is ignored.
+    editWithLocalData: async (entry: Partial<Entry> & { id: number }) => {
+      const oldEntry = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [entry.id],
+      );
+      if (oldEntry === null) {
+        throw Error("Entry not found");
+      }
+
+      const start = entry.start || oldEntry.start;
+      // Calculate duration from start and stop
+      const stop = entry.stop !== undefined ? entry.stop : oldEntry.stop;
+      // TODO: Verify that duration is in MS...
+      const duration =
+        stop === null
+          ? -1
+          : new Date(stop).getTime() - new Date(start).getTime();
+
+      await db.runAsync(
+        `UPDATE entries SET
+          description = ?,
+          project_id = ?,
+          start = ?,
+          stop = ?,
+          duration = ?,
+          at = ?,
+          tags = ?
+        WHERE id = ?;`,
+        [
+          entry.description || oldEntry.description,
+          entry.project_id || oldEntry.project_id,
+          start,
+          stop,
+          duration,
+          new Date().toISOString(),
+          entry.tags?.join(",") || oldEntry.tags,
+          entry.id,
+        ],
+      );
+
+      return await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [entry.id],
+      );
     },
 
     editWithRemoteData: async (entry: Entry) => {
@@ -478,6 +597,16 @@ const Database = {
           entry.id,
         ],
       );
+
+      const edited = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [entry.id],
+      );
+      if (edited === null) {
+        throw Error("Entry not found after edit");
+      }
+
+      return { ...edited, tags: edited.tags.split(",") } as Entry;
     },
   },
 };

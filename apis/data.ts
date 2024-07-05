@@ -1,6 +1,6 @@
 import Database from "./db";
 import { Toggl } from "./toggl";
-import { Project, Template } from "./types";
+import { Entry, Project, Template } from "./types";
 import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 
@@ -167,13 +167,28 @@ export const Data = {
         });
       }),
 
-    getAll: async () => {},
+    getAll: async () => {
+      const entries = await Database.Entries.getAll();
+      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+    },
 
-    create: async () => {},
+    create: async (entry: Partial<Entry> & { start: string }) => {
+      const local = await Database.Entries.createLocal(entry);
+      const togglEntry = await Toggl.Entries.create(entry);
+      return await Database.Entries.linkLocalWithRemote(local.id, togglEntry);
+    },
 
-    edit: async () => {},
+    edit: async (entry: Partial<Entry> & { id: number }) => {
+      await Database.Entries.editWithLocalData(entry);
+      const newRemoteData = await Toggl.Entries.edit(entry);
+      return await Database.Entries.editWithRemoteData(newRemoteData);
+    },
 
-    delete: async () => {},
+    delete: async (id: number) => {
+      await Database.Entries.markDeleted(id);
+      await Toggl.Entries.delete(id);
+      return await Database.Entries.delete(id);
+    },
 
     restore: async () => {},
 
