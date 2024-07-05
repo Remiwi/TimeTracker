@@ -19,11 +19,10 @@ export type DBProject = Project & {
 
 // Templates
 
-// TODO: Make project_id nullable
 export type Template = {
   id: number;
   name: string;
-  project_id: number;
+  project_id: number | null;
   description: string;
   tags: string[];
 };
