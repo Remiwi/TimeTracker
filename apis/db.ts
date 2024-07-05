@@ -225,10 +225,16 @@ const Database = {
         );
       });
 
-      return await db.getFirstAsync<DBProject>(
+      const linked = await db.getFirstAsync<DBProject>(
         `SELECT * FROM projects WHERE id = ?;`,
         [remote.id],
       );
+
+      if (linked === null) {
+        throw Error("Project not found after linking");
+      }
+
+      return linked as Project;
     },
 
     delete: async (id: number) => {
@@ -307,10 +313,16 @@ const Database = {
         [project.name, project.color, project.at, project.active, project.id],
       );
 
-      return await db.getFirstAsync<DBProject>(
+      const edited = await db.getFirstAsync<DBProject>(
         `SELECT * FROM projects WHERE id = ?;`,
         [project.id],
       );
+
+      if (edited === null) {
+        throw Error("Project not found after edit");
+      }
+
+      return edited as Project;
     },
   },
 

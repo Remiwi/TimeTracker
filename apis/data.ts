@@ -89,7 +89,7 @@ export const Data = {
     delete: async (id: number) => {
       await Database.Projects.markDeleted(id);
       await Toggl.Projects.delete(id);
-      return await Database.Projects.delete(id);
+      await Database.Projects.delete(id);
     },
   },
   Templates: {
