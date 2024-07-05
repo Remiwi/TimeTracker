@@ -106,7 +106,7 @@ export const Data = {
     },
 
     delete: async (id: number) => {
-      return await Database.Templates.delete(id);
+      await Database.Templates.delete(id);
     },
   },
   Entries: {
