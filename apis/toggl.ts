@@ -148,7 +148,6 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -169,18 +168,8 @@ export const Toggl = {
         throw new Error(text);
       }
 
-      return res.json() as Promise<{
-        id: number;
-        description: string | null;
-        project_id: number | null;
-        project_name: string | null;
-        project_color: string | null;
-        start: string;
-        stop: string | null;
-        duration: number;
-        tags: string[];
-      } | null>;
-    }, // TODO: Redo this one(?)
+      return res.json() as Promise<Entry | null>;
+    },
 
     getSince: async (startingAtOrAfter: string) => {
       if (TogglConfig.disabled) {

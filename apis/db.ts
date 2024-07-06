@@ -9,6 +9,15 @@ import {
   TogglProject,
 } from "./types";
 
+function getDuration(start: string, stop: string | null) {
+  if (stop === null) {
+    return -1;
+  }
+  return Math.floor(
+    (new Date(stop).getTime() - new Date(start).getTime()) / 1000,
+  );
+}
+
 const db = SQLite.openDatabaseSync("db.db");
 
 const Database = {
@@ -455,33 +464,61 @@ const Database = {
     },
 
     // Note that duration is ignored.
-    createLocal: async (
-      entry: Partial<Omit<Entry, "duration">> & { start: string },
-    ) => {
-      // TODO: if creating an ongoing entry, we need to first stop the currently ongoing entry
-
+    createLocal: async (entry: Partial<Entry> & { start: string }) => {
       // Calculate duration from start and stop
       const stop = typeof entry.stop === "string" ? entry.stop : null;
-      // TODO: Verify that duration is in MS...
-      const duration =
-        stop === null
-          ? -1
-          : new Date(stop).getTime() - new Date(entry.start).getTime();
+      const duration = getDuration(entry.start, stop);
 
-      let res_id: any = undefined;
+      let id: any = undefined;
+      let stopped: DBEntry | null = null;
       await db.withExclusiveTransactionAsync(async (tx) => {
-        res_id = (
-          (await tx.getFirstAsync(
-            `SELECT id FROM local_ids WHERE type = 'entries';`,
+        // Stop the running entry if exists and new entry is ongoing
+        if (duration === -1) {
+          const ongoing = await tx.getAllAsync<DBEntry>(
+            `SELECT * FROM entries WHERE duration = -1;`,
             [],
-          )) as any
-        ).id as number;
+          );
+          if (ongoing.length > 1) {
+            throw new Error("Invalid state: More than one entry is running!");
+          }
+          if (ongoing.length === 1) {
+            const current = ongoing[0];
+            await tx.runAsync(
+              `UPDATE entries SET duration = ?, stop = ?, at = ?, needs_push = 1 WHERE id = ?;`,
+              [
+                getDuration(current.start, entry.start),
+                entry.start,
+                new Date().toISOString(),
+                current.id,
+              ],
+            );
+            stopped = await tx.getFirstAsync<DBEntry>(
+              `SELECT * FROM entries WHERE id = ?;`,
+              [current.id],
+            );
+          }
+        }
 
+        // Get next ID
+        const idRes = await tx.getFirstAsync<{ id: number }>(
+          `SELECT id FROM local_ids WHERE type = 'entries';`,
+          [],
+        );
+        if (idRes === null) throw Error("Could not assign local id");
+        id = idRes.id;
+
+        // Increment (decrement really) the id
+        await tx.runAsync(
+          `UPDATE local_ids SET id = id - 1 WHERE type = 'entries';`,
+          [],
+        );
+
+        // Insert the new entry
         await tx.runAsync(
           `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
-            res_id,
+            id,
             entry.description || null,
             entry.project_id || null,
             entry.start,
@@ -494,21 +531,19 @@ const Database = {
             0,
           ],
         );
-
-        await tx.runAsync(
-          `UPDATE local_ids SET id = id - 1 WHERE type = 'entries';`,
-          [],
-        );
       });
 
       const created = await db.getFirstAsync<DBEntry>(
         `SELECT * FROM entries WHERE id = ?;`,
-        [res_id as number],
+        [id as number],
       );
       if (created === null) {
         throw Error("Entry not found after creation");
       }
-      return { ...created, tags: created.tags.split(",") } as Entry;
+      return {
+        created: { ...created, tags: created.tags.split(",") } as Entry,
+        stopped: stopped as DBEntry | null,
+      };
     },
 
     linkLocalWithRemote: async (local_id: number, remote: Entry) => {
@@ -523,7 +558,7 @@ const Database = {
           at = ?,
           tags = ?,
           linked = 1
-          WHERE id = ?;`,
+        WHERE id = ?;`,
         [
           remote.id,
           remote.description,
@@ -570,11 +605,7 @@ const Database = {
       const start = entry.start || oldEntry.start;
       // Calculate duration from start and stop
       const stop = entry.stop !== undefined ? entry.stop : oldEntry.stop;
-      // TODO: Verify that duration is in MS...
-      const duration =
-        stop === null
-          ? -1
-          : new Date(stop).getTime() - new Date(start).getTime();
+      const duration = getDuration(start, stop);
 
       await db.runAsync(
         `UPDATE entries SET
@@ -584,7 +615,8 @@ const Database = {
           stop = ?,
           duration = ?,
           at = ?,
-          tags = ?
+          tags = ?,
+          need_push = ?
         WHERE id = ?;`,
         [
           entry.description || oldEntry.description,
@@ -594,14 +626,20 @@ const Database = {
           duration,
           new Date().toISOString(),
           entry.tags?.join(",") || oldEntry.tags,
+          oldEntry.linked ? 1 : 0,
           entry.id,
         ],
       );
 
-      return await db.getFirstAsync<DBEntry>(
+      const edited = await db.getFirstAsync<DBEntry>(
         `SELECT * FROM entries WHERE id = ?;`,
         [entry.id],
       );
+      if (edited === null) {
+        throw Error("Entry not found after edit");
+      }
+
+      return { ...edited, tags: edited.tags.split(",") } as Entry;
     },
 
     editWithRemoteData: async (entry: Entry) => {
