@@ -223,10 +223,10 @@ function Item(props: {
           className={
             "flex h-full w-full items-center justify-center rounded-full"
           }
-          style={{ backgroundColor: thisProj?.color || "#000000" }}
+          style={{ backgroundColor: thisProj?.color || "#cccccc" }}
         >
           <MaterialCommunityIcons
-            name={thisProj?.icon as any}
+            name={(thisProj?.icon as any) || "map-marker-question"}
             size={props.isSmall ? 24 : 32}
             color="white"
           />
