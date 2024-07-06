@@ -157,17 +157,14 @@ const Database = {
     },
 
     createLocal: async (project: Partial<Project> & { name: string }) => {
-      let res_id: any = undefined;
+      let id: any = undefined;
       await db.withExclusiveTransactionAsync(async (tx) => {
-        // TODO: simplify this a bit... is any really needed?
-        const id = (
-          (await tx.getFirstAsync(
-            `SELECT id FROM local_ids WHERE type = 'project';`,
-            [],
-          )) as any
-        ).id as number;
-
-        res_id = id;
+        const res = await tx.getFirstAsync<{ id: number }>(
+          `SELECT id FROM local_ids WHERE type = 'project';`,
+          [],
+        );
+        if (res === null) throw Error("Could not assign local project id");
+        id = res.id;
 
         // TODO: make `at` always have an ISO string everywhere
         await tx.runAsync(
@@ -192,7 +189,7 @@ const Database = {
       });
       const proj = await db.getFirstAsync<DBProject>(
         `SELECT * FROM projects WHERE id = ?;`,
-        [res_id as number],
+        [id as number],
       );
       if (proj === null) {
         throw Error("Project not found after creation");
@@ -504,7 +501,7 @@ const Database = {
           `SELECT id FROM local_ids WHERE type = 'entries';`,
           [],
         );
-        if (idRes === null) throw Error("Could not assign local id");
+        if (idRes === null) throw Error("Could not assign local entry id");
         id = idRes.id;
 
         // Increment (decrement really) the id
