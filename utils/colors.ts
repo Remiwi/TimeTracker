@@ -104,10 +104,15 @@ function fromName(name: string | undefined) {
   return nameToColor.get(name.toLowerCase());
 }
 
+function random() {
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 const Colors = {
   fromTogglHex,
   fromHex,
   fromName,
+  random,
 };
 
 export default Colors;
