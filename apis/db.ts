@@ -38,6 +38,7 @@ const Database = {
           at TEXT,
           active INTEGER,
           icon TEXT,
+          linked INTEGER,
           to_delete INTEGER
         );`);
 
@@ -90,6 +91,7 @@ const Database = {
         at TEXT,
         active INTEGER,
         icon TEXT,
+        linked INTEGER,
         to_delete INTEGER
       );`);
 

@@ -37,7 +37,7 @@ setInterval(
       }
       prevState.isConnected = state.isConnected;
     }),
-  10_000,
+  1_000,
 );
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
