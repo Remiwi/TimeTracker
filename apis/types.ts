@@ -45,6 +45,6 @@ export type Entry = {
 export type DBEntry = Omit<Entry, "tags"> & {
   linked: boolean;
   to_delete: boolean;
-  need_push: boolean;
+  needs_push: boolean;
   tags: string;
 };

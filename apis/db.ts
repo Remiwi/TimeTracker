@@ -53,7 +53,7 @@ const Database = {
           tags TEXT,
           linked INTEGER,
           to_delete INTEGER,
-          need_push INTEGER
+          needs_push INTEGER
       );`);
 
       db.runSync(`CREATE TABLE IF NOT EXISTS local_ids (
@@ -106,7 +106,7 @@ const Database = {
         tags TEXT,
         linked INTEGER,
         to_delete INTEGER,
-        need_push INTEGER
+        needs_push INTEGER
     );`);
 
       await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
@@ -475,7 +475,7 @@ const Database = {
     // by Data.Entries.sync, which handles stopping the previous entry already.
     createFromToggl: async (entry: Entry) => {
       await db.runAsync(
-        `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
+        `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, needs_push)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           entry.id,
@@ -545,7 +545,7 @@ const Database = {
 
         // Insert the new entry
         await tx.runAsync(
-          `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
+          `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, needs_push)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
           [
             id,
@@ -646,7 +646,7 @@ const Database = {
           duration = ?,
           at = ?,
           tags = ?,
-          need_push = ?
+          needs_push = ?
         WHERE id = ?;`,
         [
           entry.description || oldEntry.description,
@@ -717,7 +717,7 @@ const Database = {
   },
 };
 
-// Database.Manage.dropAllTablesSync();
+Database.Manage.dropAllTablesSync();
 Database.Manage.intializeDBSync();
 
 export default Database;
