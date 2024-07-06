@@ -437,10 +437,9 @@ const Database = {
       return running.length === 1 ? running[0] : null;
     },
 
+    // Note: we don't have to care about ongoing entries here. The given toggl entry will only be ongoing if this function is called
+    // by Data.Entries.sync, which handles stopping the previous entry already.
     createFromToggl: async (entry: Entry) => {
-      // TODO: if creating an ongoing entry, we need to first stop the currently ongoing entry
-      // This is hard because it needs to have the same stop time as it would on toggl, but a new stop time if it didn't exist there...
-
       await db.runAsync(
         `INSERT INTO entries (id, description, project_id, start, stop, duration, at, tags, linked, to_delete, need_push)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
