@@ -74,6 +74,10 @@ export const Data = {
       return (await Database.Projects.getAllVisible()) as Project[];
     },
 
+    get: async (id: number) => {
+      return await Database.Projects.get(id);
+    },
+
     create: async (project: Partial<Project> & { name: string }) => {
       const local = await Database.Projects.createLocal(project);
       const togglProj = await Toggl.Projects.create(project);
@@ -99,6 +103,10 @@ export const Data = {
   Templates: {
     getAll: async () => {
       return await Database.Templates.getAll();
+    },
+
+    get: async (id: number) => {
+      return await Database.Templates.get(id);
     },
 
     create: async (template: Omit<Template, "id">) => {
@@ -235,6 +243,11 @@ export const Data = {
     getAll: async () => {
       const entries = await Database.Entries.getAll();
       return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+    },
+
+    get: async (id: number) => {
+      const entry = await Database.Entries.get(id);
+      return { ...entry, tags: entry.tags.split(",") } as Entry;
     },
 
     create: async (entry: Partial<Entry> & { start: string }) => {

@@ -353,6 +353,17 @@ const Database = {
       );
     },
 
+    get: async (id: number) => {
+      const found = await db.getFirstAsync<DBTemplate>(
+        `SELECT * FROM templates WHERE id = ?;`,
+        [id],
+      );
+      if (found === null) {
+        throw Error("Template not found");
+      }
+      return { ...found, tags: found.tags.split(",") } as Template;
+    },
+
     create: async (template: Omit<Template, "id">) => {
       const tags = template.tags.join(",");
       const res = await db.runAsync(
