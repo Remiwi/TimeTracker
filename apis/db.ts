@@ -139,6 +139,17 @@ const Database = {
       );
     },
 
+    get: async (id: number) => {
+      const found = await db.getFirstAsync<DBProject>(
+        `SELECT * FROM projects WHERE id = ?;`,
+        [id],
+      );
+      if (found === null) {
+        throw Error("Project not found");
+      }
+      return found;
+    },
+
     createFromToggl: async (project: TogglProject) => {
       await db.runAsync(
         `INSERT INTO projects (id, name, color, at, active, icon, linked, to_delete)
@@ -409,6 +420,17 @@ const Database = {
         `SELECT * FROM entries ORDER BY start DESC;`,
         [],
       );
+    },
+
+    get: async (id: number) => {
+      const found = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE id = ?;`,
+        [id],
+      );
+      if (found === null) {
+        throw Error("Entry not found");
+      }
+      return found;
     },
 
     getSince: async (startingAtOrAfter: string) => {

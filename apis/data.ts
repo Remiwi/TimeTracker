@@ -86,13 +86,16 @@ export const Data = {
       return await Database.Projects.editWithRemoteData(newRemoteData);
     },
 
-    // TODO: Make sure all deletes just delete instantly if not linked
     delete: async (id: number) => {
-      await Database.Projects.markDeleted(id);
-      await Toggl.Projects.delete(id);
+      const toDelete = await Database.Projects.get(id);
+      if (toDelete.linked) {
+        await Database.Projects.markDeleted(id);
+        await Toggl.Projects.delete(id);
+      }
       await Database.Projects.delete(id);
     },
   },
+
   Templates: {
     getAll: async () => {
       return await Database.Templates.getAll();
@@ -110,6 +113,7 @@ export const Data = {
       await Database.Templates.delete(id);
     },
   },
+
   Entries: {
     sync: async () =>
       entrySyncLock.runExclusive(async () => {
@@ -251,8 +255,11 @@ export const Data = {
     },
 
     delete: async (id: number) => {
-      await Database.Entries.markDeleted(id);
-      await Toggl.Entries.delete(id);
+      const toDelete = await Database.Entries.get(id);
+      if (toDelete.linked) {
+        await Database.Entries.markDeleted(id);
+        await Toggl.Entries.delete(id);
+      }
       await Database.Entries.delete(id);
     },
 
