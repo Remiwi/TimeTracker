@@ -86,6 +86,7 @@ export const Data = {
       return await Database.Projects.editWithRemoteData(newRemoteData);
     },
 
+    // TODO: Make sure all deletes just delete instantly if not linked
     delete: async (id: number) => {
       await Database.Projects.markDeleted(id);
       await Toggl.Projects.delete(id);

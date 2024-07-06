@@ -166,7 +166,6 @@ const Database = {
         if (res === null) throw Error("Could not assign local project id");
         id = res.id;
 
-        // TODO: make `at` always have an ISO string everywhere
         await tx.runAsync(
           `INSERT INTO projects (id, name, color, at, active, icon, linked, to_delete)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?);`,
@@ -174,7 +173,7 @@ const Database = {
             id,
             project.name,
             project.color || "",
-            project.at || "",
+            new Date().toISOString(),
             project.active === undefined || project.active ? 1 : 0,
             project.icon || "",
             0,
