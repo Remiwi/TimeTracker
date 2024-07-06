@@ -182,8 +182,8 @@ function Item(props: {
   const startEntryMutation = useMutation({
     mutationFn: Data.Entries.start,
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], {
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], {
         id: 0,
         description: props.template.description,
         project_id: props.template.project_id,
@@ -196,11 +196,11 @@ function Item(props: {
     },
     onError: (err) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], null);
+      qc.setQueryData(["entries", "current"], null);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries", "current"],
       });
     },
   });
@@ -414,24 +414,24 @@ function TimerControls() {
   const [showExtra, setShowExtra] = useState(false);
 
   const currentEntryQuery = useQuery({
-    queryKey: ["currentEntry"],
+    queryKey: ["entries", "current"],
     queryFn: Data.Entries.getCurrent,
   });
 
   const stopEntryMutation = useMutation({
     mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], null);
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], null);
       return oldEntry;
     },
     onError: (err, _, oldEntry) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], oldEntry);
+      qc.setQueryData(["entries", "current"], oldEntry);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries", "current"],
       });
     },
   });
@@ -443,17 +443,17 @@ function TimerControls() {
       return true;
     },
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], null);
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], null);
       return oldEntry;
     },
     onError: (err, _, oldEntry) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], oldEntry);
+      qc.setQueryData(["entries", "current"], oldEntry);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries", "current"],
       });
     },
   });
@@ -467,8 +467,8 @@ function TimerControls() {
       return true;
     },
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], {
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], {
         ...(oldEntry as any),
       });
       return oldEntry;
@@ -478,7 +478,7 @@ function TimerControls() {
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries", "current"],
       });
     },
   });
@@ -597,7 +597,7 @@ function Timer() {
   });
 
   const timeEntryQuery = useQuery({
-    queryKey: ["currentEntry"],
+    queryKey: ["entries", "current"],
     queryFn: Data.Entries.getCurrent,
   });
 
