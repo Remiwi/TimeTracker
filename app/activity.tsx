@@ -1,6 +1,6 @@
 import { Entry, TogglProject } from "@/apis/types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   FlatList,
   Modal,
@@ -18,6 +18,8 @@ import { Data } from "@/apis/data";
 import TimerText from "@/components/TimerText";
 
 export default function Page() {
+  const qc = useQueryClient();
+
   const [showEntryEditModal, setShowEntryEditModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<Entry | undefined>(
     undefined,
@@ -46,6 +48,12 @@ export default function Page() {
       console.error(err);
     },
     onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      qc.invalidateQueries({
+        queryKey: ["entries"],
+      });
       entriesQuery.refetch();
       projectsQuery.refetch();
     },

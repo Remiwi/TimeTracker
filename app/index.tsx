@@ -59,6 +59,25 @@ export default function Page() {
     },
   });
 
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      return await Data.Projects.sync().then(
+        async () => await Data.Entries.sync(),
+      );
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      qc.invalidateQueries({
+        queryKey: ["entries"],
+      });
+    },
+  });
+
   const templates = templatesQuery.data || [];
 
   const small = true;
@@ -84,7 +103,14 @@ export default function Page() {
           }}
         />
       )}
-      {!templateModalShown && <TimerControls />}
+      {!templateModalShown && (
+        <TimerControls
+          onSync={() => {
+            Vibration.vibrate(VIBRATION_DURATION);
+            syncMutation.mutate();
+          }}
+        />
+      )}
       <View className="flex h-full bg-gray-50 pt-4">
         <Timer />
         <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
@@ -200,7 +226,7 @@ function Item(props: {
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["entries", "current"],
+        queryKey: ["entries"],
       });
     },
   });
@@ -408,7 +434,7 @@ function TemplateEditModal(props: {
   );
 }
 
-function TimerControls() {
+function TimerControls(props: { onSync: () => void }) {
   const qc = useQueryClient();
 
   const [showExtra, setShowExtra] = useState(false);
@@ -431,7 +457,7 @@ function TimerControls() {
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["entries", "current"],
+        queryKey: ["entries"],
       });
     },
   });
@@ -478,7 +504,7 @@ function TimerControls() {
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["entries", "current"],
+        queryKey: ["entries"],
       });
     },
   });
@@ -579,9 +605,9 @@ function TimerControls() {
           </TouchableNativeFeedback>
         </View>
         <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-          <TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={props.onSync}>
             <View className="h-full w-full items-center justify-center bg-gray-600">
-              <MaterialCommunityIcons name="undo" color="white" size={24} />
+              <MaterialCommunityIcons name="sync" color="white" size={24} />
             </View>
           </TouchableNativeFeedback>
         </View>
@@ -615,34 +641,43 @@ function Timer() {
 
   return (
     <View className="pb-6">
-      <View className="flex flex-row items-end justify-between px-4 pb-1">
-        <View>
-          <Text className="pb-2 text-xl font-bold">
-            {timeEntryQuery.data ? projectName : "..."}
-          </Text>
-          <TimerText className="text-6xl" startTime={start} />
+      {!timeEntryQuery.data && (
+        <View className="flex h-36 flex-row items-center justify-center px-8">
+          <Text className="text-4xl color-gray-400">No running entry</Text>
         </View>
-        <View
-          className={
-            "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
-          }
-          style={{ backgroundColor: projectHex }}
-        >
-          <MaterialCommunityIcons
-            name={projectIcon as any}
-            color="white"
-            size={44}
-          />
-        </View>
-      </View>
-      <View className="px-4">
-        <Text className="font-light">
-          {timeEntryQuery.data?.description || "..."}
-        </Text>
-        <Text className="font-light italic text-gray-400">
-          {timeEntryQuery.data?.tags || "..."}
-        </Text>
-      </View>
+      )}
+      {timeEntryQuery.data && (
+        <>
+          <View className="flex flex-row items-end justify-between px-4 pb-1">
+            <View>
+              <Text className="pb-2 text-xl font-bold">
+                {timeEntryQuery.data ? projectName : "..."}
+              </Text>
+              <TimerText className="text-6xl" startTime={start} />
+            </View>
+            <View
+              className={
+                "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
+              }
+              style={{ backgroundColor: projectHex }}
+            >
+              <MaterialCommunityIcons
+                name={projectIcon as any}
+                color="white"
+                size={44}
+              />
+            </View>
+          </View>
+          <View className="px-4">
+            <Text className="font-light">
+              {timeEntryQuery.data?.description || "..."}
+            </Text>
+            <Text className="font-light italic text-gray-400">
+              {timeEntryQuery.data?.tags || "..."}
+            </Text>
+          </View>
+        </>
+      )}
     </View>
   );
 }
