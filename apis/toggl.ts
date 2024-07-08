@@ -226,10 +226,10 @@ export const Toggl = {
             project_id: entry.project_id || null,
             tags: tags || [],
             created_with: "Indev interface app",
-            workspace_id: TogglConfig.workspace,
+            workspace_id: Number(TogglConfig.workspace),
             start: entry.start,
             stop: entry.stop,
-            duration: entry.duration === -1 ? -1 : undefined,
+            duration: entry.stop === null ? -1 : undefined,
           }),
         },
       );

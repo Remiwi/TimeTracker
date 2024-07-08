@@ -51,6 +51,42 @@ export default function Page() {
     },
   });
 
+  const entryCreateMutation = useMutation({
+    mutationFn: async (entry: Partial<Entry> & { start: string }) => {
+      return await Data.Entries.create(entry);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      entriesQuery.refetch();
+    },
+  });
+
+  const entryEditMutation = useMutation({
+    mutationFn: async (entry: Partial<Entry> & { id: number }) => {
+      return await Data.Entries.edit(entry);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      entriesQuery.refetch();
+    },
+  });
+
+  const entryDeleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await Data.Entries.delete(id);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      entriesQuery.refetch();
+    },
+  });
+
   const entries = entriesQuery.data || [];
 
   const entries_by_date: {
@@ -78,6 +114,9 @@ export default function Page() {
   }
 
   const currentEntry = entries.find((e) => e.stop === null);
+  const currentEntryProject = projectsQuery.data?.find(
+    (p) => p.id === currentEntry?.project_id,
+  );
 
   return (
     <View className="h-full w-full bg-gray-100">
@@ -87,9 +126,18 @@ export default function Page() {
             setSelectedEntry(undefined);
             setShowEntryEditModal(false);
           }}
-          onCreate={(e) => {}}
-          onEdit={(e) => {}}
-          onDelete={(id) => {}}
+          onCreate={(e) => {
+            entryCreateMutation.mutate(e);
+            setShowEntryEditModal(false);
+          }}
+          onEdit={(e) => {
+            entryEditMutation.mutate(e);
+            setShowEntryEditModal(false);
+          }}
+          onDelete={(id) => {
+            entryDeleteMutation.mutate(id);
+            setShowEntryEditModal(false);
+          }}
           defaultEntry={selectedEntry}
           day={entryCreationDate}
         />
@@ -104,7 +152,10 @@ export default function Page() {
       )}
       {currentEntry && (
         <View className="p-2">
-          <GroupedEntry entries={[currentEntry]} />
+          <GroupedEntry
+            entries={[currentEntry]}
+            project={currentEntryProject}
+          />
         </View>
       )}
       <FlashList
@@ -297,8 +348,8 @@ function GroupedEntry(props: {
 
 function EntryEditModal(props: {
   onCancel: () => void;
-  onCreate: (e: Partial<Entry>) => void;
-  onEdit: (e: Partial<Entry>) => void;
+  onCreate: (e: Partial<Entry> & { start: string }) => void;
+  onEdit: (e: Partial<Entry> & { id: number }) => void;
   onDelete: (id: number) => void;
   day: string;
   defaultEntry?: Entry;
@@ -323,7 +374,9 @@ function EntryEditModal(props: {
     day.getUTCDate(),
   );
 
-  const [editEntry, setEditEntry] = useState<Partial<Entry>>(
+  const [editEntry, setEditEntry] = useState<
+    Partial<Entry> & { start: string }
+  >(
     props.defaultEntry || {
       id: undefined,
       description: undefined,
@@ -336,9 +389,9 @@ function EntryEditModal(props: {
 
   const onDone = () => {
     if (props.defaultEntry === undefined) {
-      props.onCreate(editEntry);
+      props.onCreate({ ...editEntry, start: editEntry.start! });
     } else {
-      props.onEdit(editEntry);
+      props.onEdit({ ...editEntry, id: props.defaultEntry.id });
     }
   };
 

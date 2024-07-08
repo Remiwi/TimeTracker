@@ -137,15 +137,15 @@ export const Data = {
           let ongoingRemote: undefined | Entry = undefined;
           // Create entries on local of remote entries with no linked entry
           for (const remote of recentRemoteEntries) {
-            if (remote.duration === -1) {
-              // This one is ongoing, so creating it can have side-effects if there is another ongoing entry already
-              // Skip it until after all finished entries are synced
-              ongoingRemote = remote;
-              continue;
-            }
             if (
               recentLocalEntries.find((p) => p.id === remote.id) === undefined
             ) {
+              if (remote.stop === null) {
+                // This one is ongoing, so creating it can have side-effects if there is another ongoing entry already
+                // Skip it until after all finished entries are synced
+                ongoingRemote = remote;
+                continue;
+              }
               await Database.Entries.createFromToggl(remote);
             }
           }
@@ -154,7 +154,7 @@ export const Data = {
           for (const local of recentLocalEntries) {
             // Create and link entries on toggl to unlinked local entries
             if (!local.linked) {
-              if (local.duration === -1) {
+              if (local.stop === null) {
                 // Again, this one is ongoing, so creation can have side-effects. Skip until end.
                 ongoingLocal = local;
                 continue;
