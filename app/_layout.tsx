@@ -15,10 +15,25 @@ import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
+import { TogglConfig } from "@/apis/toggl";
 
 const prevState = {
   isConnected: false as boolean | null,
 };
+
+const sync = async () => {
+  await Data.Projects.sync();
+  TogglConfig.push_disabled = true;
+  await Data.Entries.sync().catch((e) => {
+    if (e !== "Toggl API has been programatically disabled") {
+      throw e;
+    } else {
+      console.log("Tooggl API has been disabled");
+    }
+  });
+  TogglConfig.push_disabled = false;
+};
+
 setInterval(
   async () =>
     await NetInfo.fetch().then(async (state) => {
@@ -27,7 +42,7 @@ setInterval(
         let i = 0;
         while (i < 3) {
           try {
-            await Data.Projects.sync();
+            await sync();
             i = 3;
           } catch (e) {
             console.error(e);
@@ -87,10 +102,10 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
-              name="settings"
+              name="activity"
               options={{
-                drawerLabel: "Settings",
-                headerTitle: "Settings",
+                drawerLabel: "Activity",
+                headerTitle: "Activity",
               }}
             />
             <Drawer.Screen

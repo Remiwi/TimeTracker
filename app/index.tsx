@@ -300,7 +300,7 @@ function TemplateEditModal(props: {
 
   const [name, setName] = useState(props.defaultTemplate?.name || "");
   const [project_id, setProjectID] = useState(
-    props.defaultTemplate?.project_id || -1,
+    props.defaultTemplate?.project_id || null,
   );
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
