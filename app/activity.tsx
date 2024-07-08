@@ -14,6 +14,7 @@ import { FlashList } from "@shopify/flash-list";
 import StyledTextInput from "@/components/TextInput";
 import MyDropDown from "@/components/DropDown";
 import MyTagInput from "@/components/TagInput";
+import { Data } from "@/apis/data";
 
 export default function Page() {
   const [showEntryEditModal, setShowEntryEditModal] = useState(false);
@@ -24,22 +25,17 @@ export default function Page() {
     new Date().toISOString().split("T")[0],
   );
 
-  const testEntriesQuery = useQuery({
-    queryKey: ["entries", "toggl"],
-    queryFn: async () =>
-      Toggl.Entries.getSince(
-        new Date(
-          new Date().getTime() - 12 * 7 * 24 * 60 * 60 * 1000,
-        ).toISOString(),
-      ),
+  const entriesQuery = useQuery({
+    queryKey: ["entries"],
+    queryFn: Data.Entries.getAll,
   });
 
-  const testProjectsQuery = useQuery({
-    queryKey: ["projects", "toggl"],
-    queryFn: async () => Toggl.Projects.getAll(),
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
   });
 
-  if (testEntriesQuery.isLoading) {
+  if (entriesQuery.isLoading) {
     return (
       <View>
         <Text>Loading...</Text>
@@ -47,10 +43,10 @@ export default function Page() {
     );
   }
 
-  if (testEntriesQuery.isError || !testEntriesQuery.data) {
+  if (entriesQuery.isError || !entriesQuery.data) {
     return (
       <View>
-        <Text>Error: {testEntriesQuery.error?.message}</Text>
+        <Text>Error: {entriesQuery.error?.message}</Text>
       </View>
     );
   }
@@ -60,8 +56,8 @@ export default function Page() {
     entries: Entry[];
     latest_at: string;
   }[] = [];
-  for (const entry of testEntriesQuery.data) {
-    if (entry.duration === -1) continue;
+  for (const entry of entriesQuery.data) {
+    if (entry.stop === null) continue;
 
     const date = entry.start.split("T")[0];
     if (entries_by_date.length === 0) {
@@ -102,7 +98,7 @@ export default function Page() {
             date={item.date}
             entries={item.entries}
             latest_at={item.latest_at}
-            projects={testProjectsQuery.data}
+            projects={projectsQuery.data}
             onEntryPress={(e) => {
               setSelectedEntry(e);
               setShowEntryEditModal(true);
@@ -282,8 +278,8 @@ function EntryEditModal(props: {
   defaultEntry?: Entry;
 }) {
   const projectsQuery = useQuery({
-    queryKey: ["projects", "toggl"],
-    queryFn: async () => Toggl.Projects.getAll(),
+    queryKey: ["projects"],
+    queryFn: Data.Projects.getAll,
   });
 
   const day = new Date(props.day);
