@@ -15,7 +15,6 @@ import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
-import { TogglConfig } from "@/apis/toggl";
 
 const prevState = {
   isConnected: false as boolean | null,
@@ -23,15 +22,7 @@ const prevState = {
 
 const sync = async () => {
   await Data.Projects.sync();
-  TogglConfig.push_disabled = true;
-  await Data.Entries.sync().catch((e) => {
-    if (e !== "Toggl API has been programatically disabled") {
-      throw e;
-    } else {
-      console.log("Tooggl API has been disabled");
-    }
-  });
-  TogglConfig.push_disabled = false;
+  await Data.Entries.sync();
 };
 
 setInterval(

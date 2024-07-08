@@ -462,7 +462,7 @@ const Database = {
 
     getCurrent: async () => {
       const running = await db.getAllAsync<DBEntry>(
-        `SELECT * FROM entries WHERE duration = -1;`,
+        `SELECT * FROM entries WHERE stop = NULL;`,
         [],
       );
       if (running.length > 1) {
