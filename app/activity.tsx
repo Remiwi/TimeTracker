@@ -51,28 +51,14 @@ export default function Page() {
     },
   });
 
-  if (entriesQuery.isLoading) {
-    return (
-      <View>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (entriesQuery.isError || !entriesQuery.data) {
-    return (
-      <View>
-        <Text>Error: {entriesQuery.error?.message}</Text>
-      </View>
-    );
-  }
+  const entries = entriesQuery.data || [];
 
   const entries_by_date: {
     date: string;
     entries: Entry[];
     latest_at: string;
   }[] = [];
-  for (const entry of entriesQuery.data) {
+  for (const entry of entries) {
     if (entry.stop === null) continue;
 
     const date = entry.start.split("T")[0];
@@ -91,7 +77,7 @@ export default function Page() {
     }
   }
 
-  const currentEntry = entriesQuery.data.find((e) => e.stop === null);
+  const currentEntry = entries.find((e) => e.stop === null);
 
   return (
     <View className="h-full w-full bg-gray-100">
