@@ -5,7 +5,7 @@ import Database from "./db";
 
 beforeAll(async () => {
   TogglConfig.disabled = false;
-  TogglConfig.workspace = Number(process.env.TOGGL_TEST_WORKSPACE);
+  TogglConfig.workspace = process.env.TOGGL_TEST_WORKSPACE || null;
   TogglConfig.token = process.env.TOGGL_TEST_API_KEY || null;
 
   // const projs = await Toggl.Projects.getAll();

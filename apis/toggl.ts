@@ -4,13 +4,13 @@ import { Entry, TogglProject } from "./types";
 
 export const TogglConfig = {
   token: null as string | null,
-  // workspace: 5930509,
-  workspace: 8497311,
+  workspace: null as string | null,
   disabled: false,
 };
 
 (async () => {
   TogglConfig.token = await SecureStore.getItemAsync("togglToken");
+  TogglConfig.workspace = await SecureStore.getItemAsync("togglWorkspace");
 })();
 
 export const Toggl = {
