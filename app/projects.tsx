@@ -56,6 +56,7 @@ export default function Page() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
+      projectsQuery.refetch();
     },
   });
 
@@ -86,7 +87,6 @@ export default function Page() {
             setProjectModalOpen(true);
           }}
           onSync={() => {
-            projectsQuery.refetch();
             syncMutation.mutate();
           }}
         />
