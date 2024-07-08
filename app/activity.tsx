@@ -1,4 +1,3 @@
-import { Toggl } from "@/apis/toggl";
 import { Entry, TogglProject } from "@/apis/types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -7,6 +6,7 @@ import {
   Modal,
   Text,
   TouchableNativeFeedback,
+  Vibration,
   View,
 } from "react-native";
 import React, { useState } from "react";
@@ -15,6 +15,7 @@ import StyledTextInput from "@/components/TextInput";
 import MyDropDown from "@/components/DropDown";
 import MyTagInput from "@/components/TagInput";
 import { Data } from "@/apis/data";
+import TimerText from "@/components/TimerText";
 
 export default function Page() {
   const [showEntryEditModal, setShowEntryEditModal] = useState(false);
@@ -89,6 +90,9 @@ export default function Page() {
       entries_by_date.push({ date, entries: [entry], latest_at: entry.at });
     }
   }
+
+  const currentEntry = entriesQuery.data.find((e) => e.stop === null);
+
   return (
     <View className="h-full w-full bg-gray-100">
       {showEntryEditModal && (
@@ -107,9 +111,15 @@ export default function Page() {
       {!showEntryEditModal && (
         <FABs
           onSync={() => {
+            Vibration.vibrate(50);
             syncMutation.mutate();
           }}
         />
+      )}
+      {currentEntry && (
+        <View className="p-2">
+          <GroupedEntry entries={[currentEntry]} />
+        </View>
       )}
       <FlashList
         data={entries_by_date}
@@ -281,9 +291,17 @@ function GroupedEntry(props: {
             )}
           </View>
           <View className="flex flex-grow flex-row justify-end pr-4 pt-2">
-            <Text className="font-bold">
-              {hours}:{minutes}:{seconds}
-            </Text>
+            {props.entries[0].stop && (
+              <Text className="font-bold">
+                {hours}:{minutes}:{seconds}
+              </Text>
+            )}
+            {!props.entries[0].stop && (
+              <TimerText
+                startTime={new Date(props.entries[0].start)}
+                className="font-bold"
+              />
+            )}
           </View>
         </View>
       </TouchableNativeFeedback>
