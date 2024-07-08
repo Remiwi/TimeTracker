@@ -6,6 +6,7 @@ export const TogglConfig = {
   token: null as string | null,
   workspace: null as string | null,
   disabled: false,
+  push_disabled: false,
 };
 
 (async () => {
@@ -43,7 +44,7 @@ export const Toggl = {
     },
 
     create: async (project: Partial<TogglProject> & { name: string }) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (!TogglConfig.token) {
@@ -79,7 +80,7 @@ export const Toggl = {
     },
 
     delete: async (id: number) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (id < 0) {
@@ -109,7 +110,7 @@ export const Toggl = {
     },
 
     edit: async (project: Partial<TogglProject> & { id: number }) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (project.id < 0) {
@@ -203,7 +204,7 @@ export const Toggl = {
         tags?: string | string[];
       },
     ) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (!TogglConfig.token) {
@@ -241,7 +242,7 @@ export const Toggl = {
     },
 
     delete: async (id: number) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (!TogglConfig.token) {
@@ -273,7 +274,7 @@ export const Toggl = {
         tags?: string | string[];
       },
     ) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (!TogglConfig.token) {
