@@ -1,7 +1,7 @@
 import { Toggl } from "@/apis/toggl";
 import { Entry, TogglProject } from "@/apis/types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   FlatList,
   Modal,
@@ -33,6 +33,21 @@ export default function Page() {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
+  });
+
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      return await Data.Projects.sync().then(
+        async () => await Data.Entries.sync(),
+      );
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      entriesQuery.refetch();
+      projectsQuery.refetch();
+    },
   });
 
   if (entriesQuery.isLoading) {
@@ -87,6 +102,13 @@ export default function Page() {
           onDelete={(id) => {}}
           defaultEntry={selectedEntry}
           day={entryCreationDate}
+        />
+      )}
+      {!showEntryEditModal && (
+        <FABs
+          onSync={() => {
+            syncMutation.mutate();
+          }}
         />
       )}
       <FlashList
@@ -441,5 +463,21 @@ function EntryEditModal(props: {
         </View>
       </View>
     </Modal>
+  );
+}
+
+function FABs(props: { onSync?: () => void }) {
+  return (
+    <View className="absolute bottom-5 right-5 z-50 flex items-center gap-4">
+      <View className="flex flex-row-reverse items-end justify-center gap-4">
+        <View className="flex h-20 w-20 overflow-hidden rounded-full shadow-lg shadow-slate-950">
+          <TouchableNativeFeedback onPress={props.onSync}>
+            <View className="h-full w-full items-center justify-center bg-gray-600">
+              <MaterialCommunityIcons name="sync" color="white" size={52} />
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+      </View>
+    </View>
   );
 }

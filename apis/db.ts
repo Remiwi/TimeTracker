@@ -717,7 +717,7 @@ const Database = {
   },
 };
 
-Database.Manage.dropAllTablesSync();
+// Database.Manage.dropAllTablesSync();
 Database.Manage.intializeDBSync();
 
 export default Database;
