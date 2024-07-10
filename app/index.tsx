@@ -13,9 +13,9 @@ import MyTagInput from "@/components/TagInput";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Toggl } from "@/apis/toggl";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
+import { Dates } from "@/utils/dates";
 
 const VIBRATION_DURATION = 80;
 
@@ -60,6 +60,25 @@ export default function Page() {
     },
   });
 
+  const syncMutation = useMutation({
+    mutationFn: async () => {
+      return await Data.Projects.sync().then(
+        async () => await Data.Entries.sync(),
+      );
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({
+        queryKey: ["projects"],
+      });
+      qc.invalidateQueries({
+        queryKey: ["entries"],
+      });
+    },
+  });
+
   const templates = templatesQuery.data || [];
 
   const small = true;
@@ -85,7 +104,14 @@ export default function Page() {
           }}
         />
       )}
-      {!templateModalShown && <TimerControls />}
+      {!templateModalShown && (
+        <TimerControls
+          onSync={() => {
+            Vibration.vibrate(VIBRATION_DURATION);
+            syncMutation.mutate();
+          }}
+        />
+      )}
       <View className="flex h-full bg-gray-50 pt-4">
         <Timer />
         <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
@@ -181,14 +207,14 @@ function Item(props: {
   );
 
   const startEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.start,
+    mutationFn: Data.Entries.start,
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], {
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], {
         id: 0,
         description: props.template.description,
         project_id: props.template.project_id,
-        start: new Date().toISOString(),
+        start: Dates.toISOExtended(new Date()),
         stop: null,
         duration: -1,
         tags: props.template.tags,
@@ -197,11 +223,11 @@ function Item(props: {
     },
     onError: (err) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], null);
+      qc.setQueryData(["entries", "current"], null);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries"],
       });
     },
   });
@@ -224,10 +250,10 @@ function Item(props: {
           className={
             "flex h-full w-full items-center justify-center rounded-full"
           }
-          style={{ backgroundColor: thisProj?.color || "#000000" }}
+          style={{ backgroundColor: thisProj?.color || "#cccccc" }}
         >
           <MaterialCommunityIcons
-            name={thisProj?.icon as any}
+            name={(thisProj?.icon as any) || "map-marker-question"}
             size={props.isSmall ? 24 : 32}
             color="white"
           />
@@ -244,7 +270,7 @@ function Item(props: {
           onPress={() => {
             startEntryMutation.mutate({
               description: props.template.description,
-              projectID: props.template.project_id,
+              project_id: props.template.project_id,
               tags: props.template.tags,
             });
             Vibration.vibrate(VIBRATION_DURATION);
@@ -301,7 +327,7 @@ function TemplateEditModal(props: {
 
   const [name, setName] = useState(props.defaultTemplate?.name || "");
   const [project_id, setProjectID] = useState(
-    props.defaultTemplate?.project_id || -1,
+    props.defaultTemplate?.project_id || null,
   );
   const [description, setDescription] = useState(
     props.defaultTemplate?.description || "",
@@ -409,50 +435,60 @@ function TemplateEditModal(props: {
   );
 }
 
-function TimerControls() {
+function TimerControls(props: { onSync: () => void }) {
   const qc = useQueryClient();
 
   const [showExtra, setShowExtra] = useState(false);
 
+  const currentEntryQuery = useQuery({
+    queryKey: ["entries", "current"],
+    queryFn: Data.Entries.getCurrent,
+  });
+
   const stopEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.stopCurrent,
+    mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], null);
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], null);
       return oldEntry;
     },
     onError: (err, _, oldEntry) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], oldEntry);
+      qc.setQueryData(["entries", "current"], oldEntry);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries"],
       });
     },
   });
   const deleteEntryMutation = useMutation({
-    mutationFn: Toggl.Entries.deleteCurrent,
+    mutationFn: async () => {
+      if (!currentEntryQuery.isSuccess) return false;
+      if (currentEntryQuery.data === null) return false;
+      await Data.Entries.delete(currentEntryQuery.data.id);
+      return true;
+    },
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], null);
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], null);
       return oldEntry;
     },
     onError: (err, _, oldEntry) => {
       console.error(err);
-      qc.setQueryData(["currentEntry"], oldEntry);
+      qc.setQueryData(["entries", "current"], oldEntry);
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries", "current"],
       });
     },
   });
   const startToLastStopMutation = useMutation({
-    mutationFn: Toggl.Entries.setCurrentStartToPrevStop,
+    mutationFn: Data.Entries.setCurrentStartToPrevStop,
     onMutate: () => {
-      const oldEntry = qc.getQueryData(["currentEntry"]);
-      qc.setQueryData(["currentEntry"], {
+      const oldEntry = qc.getQueryData(["entries", "current"]);
+      qc.setQueryData(["entries", "current"], {
         ...(oldEntry as any),
       });
       return oldEntry;
@@ -462,7 +498,7 @@ function TimerControls() {
     },
     onSettled: () => {
       qc.invalidateQueries({
-        queryKey: ["currentEntry"],
+        queryKey: ["entries"],
       });
     },
   });
@@ -563,9 +599,9 @@ function TimerControls() {
           </TouchableNativeFeedback>
         </View>
         <View className="flex h-12 w-12 overflow-hidden rounded-full shadow-lg shadow-slate-950">
-          <TouchableNativeFeedback>
+          <TouchableNativeFeedback onPress={props.onSync}>
             <View className="h-full w-full items-center justify-center bg-gray-600">
-              <MaterialCommunityIcons name="undo" color="white" size={24} />
+              <MaterialCommunityIcons name="sync" color="white" size={24} />
             </View>
           </TouchableNativeFeedback>
         </View>
@@ -581,17 +617,17 @@ function Timer() {
   });
 
   const timeEntryQuery = useQuery({
-    queryKey: ["currentEntry"],
-    queryFn: Toggl.Entries.getCurrent,
+    queryKey: ["entries", "current"],
+    queryFn: Data.Entries.getCurrent,
   });
 
   const start = timeEntryQuery.data
     ? new Date(timeEntryQuery.data.start)
     : undefined;
 
-  const projectID = timeEntryQuery.data?.project_id || -1;
+  const project_id = timeEntryQuery.data?.project_id || -1;
   const project = projectsQuery.data?.find((v) => {
-    return v.id === projectID;
+    return v.id === project_id;
   });
   const projectName = project ? project.name : "No Project";
   const projectHex = project ? project.color : "#cccccc";
@@ -599,34 +635,43 @@ function Timer() {
 
   return (
     <View className="pb-6">
-      <View className="flex flex-row items-end justify-between px-4 pb-1">
-        <View>
-          <Text className="pb-2 text-xl font-bold">
-            {timeEntryQuery.data ? projectName : "..."}
-          </Text>
-          <TimerText className="text-6xl" startTime={start} />
+      {!timeEntryQuery.data && (
+        <View className="flex h-36 flex-row items-center justify-center px-8">
+          <Text className="text-4xl color-gray-400">No running entry</Text>
         </View>
-        <View
-          className={
-            "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
-          }
-          style={{ backgroundColor: projectHex }}
-        >
-          <MaterialCommunityIcons
-            name={projectIcon as any}
-            color="white"
-            size={44}
-          />
-        </View>
-      </View>
-      <View className="px-4">
-        <Text className="font-light">
-          {timeEntryQuery.data?.description || "..."}
-        </Text>
-        <Text className="font-light italic text-gray-400">
-          {timeEntryQuery.data?.tags || "..."}
-        </Text>
-      </View>
+      )}
+      {timeEntryQuery.data && (
+        <>
+          <View className="flex flex-row items-end justify-between px-4 pb-1">
+            <View>
+              <Text className="pb-2 text-xl font-bold">
+                {timeEntryQuery.data ? projectName : "..."}
+              </Text>
+              <TimerText className="text-6xl" startTime={start} />
+            </View>
+            <View
+              className={
+                "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
+              }
+              style={{ backgroundColor: projectHex }}
+            >
+              <MaterialCommunityIcons
+                name={projectIcon as any}
+                color="white"
+                size={44}
+              />
+            </View>
+          </View>
+          <View className="px-4">
+            <Text className="font-light">
+              {timeEntryQuery.data?.description || "..."}
+            </Text>
+            <Text className="font-light italic text-gray-400">
+              {timeEntryQuery.data?.tags || "..."}
+            </Text>
+          </View>
+        </>
+      )}
     </View>
   );
 }

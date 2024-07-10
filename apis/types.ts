@@ -1,3 +1,5 @@
+// Projects
+
 export type TogglProject = {
   id: number;
   name: string;
@@ -15,12 +17,34 @@ export type DBProject = Project & {
   to_delete: boolean;
 };
 
+// Templates
+
 export type Template = {
   id: number;
   name: string;
-  project_id: number;
+  project_id: number | null;
   description: string;
   tags: string[];
 };
 
 export type DBTemplate = Omit<Template, "tags"> & { tags: string };
+
+// Entries
+
+export type Entry = {
+  id: number;
+  description: string | null;
+  project_id: number | null;
+  start: string;
+  stop: string | null;
+  duration: number;
+  at: string;
+  tags: string[];
+};
+
+export type DBEntry = Omit<Entry, "tags"> & {
+  linked: boolean;
+  to_delete: boolean;
+  needs_push: boolean;
+  tags: string;
+};

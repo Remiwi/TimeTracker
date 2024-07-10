@@ -1,15 +1,18 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
-import { TogglProject } from "./types";
+import { Entry, TogglProject } from "./types";
+import { Dates } from "@/utils/dates";
 
 export const TogglConfig = {
   token: null as string | null,
-  workspace: 5930509,
+  workspace: null as string | null,
   disabled: false,
+  push_disabled: false,
 };
 
 (async () => {
   TogglConfig.token = await SecureStore.getItemAsync("togglToken");
+  TogglConfig.workspace = await SecureStore.getItemAsync("togglWorkspace");
 })();
 
 export const Toggl = {
@@ -18,7 +21,6 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -43,10 +45,9 @@ export const Toggl = {
     },
 
     create: async (project: Partial<TogglProject> & { name: string }) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -80,13 +81,12 @@ export const Toggl = {
     },
 
     delete: async (id: number) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (id < 0) {
         throw Error("This project only exists on local!");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -111,13 +111,12 @@ export const Toggl = {
     },
 
     edit: async (project: Partial<TogglProject> & { id: number }) => {
-      if (TogglConfig.disabled) {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
       if (project.id < 0) {
         throw Error("This project only exists on local!");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -151,7 +150,6 @@ export const Toggl = {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
@@ -172,31 +170,50 @@ export const Toggl = {
         throw new Error(text);
       }
 
-      return res.json() as Promise<{
-        id: number;
-        description: string | null;
-        project_id: number | null;
-        project_name: string | null;
-        project_color: string | null;
-        start: string;
-        stop: string | null;
-        duration: number;
-        tags: string[];
-      } | null>;
+      return res.json() as Promise<Entry | null>;
     },
 
-    start: async (data: {
-      description: string;
-      projectID: number;
-      tags: string[];
-    }) => {
+    getSince: async (startingAtOrAfter: string) => {
       if (TogglConfig.disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
+
+      const start = Dates.toISOSimple(new Date(startingAtOrAfter));
+      const end = Dates.toISOSimple(new Date());
+
+      const res = await fetch(
+        `https://api.track.toggl.com/api/v9/me/time_entries?start_date=${start}&end_date=${end}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
+          },
+        },
+      );
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      return (await res.json()) as Entry[];
+    },
+
+    create: async (
+      entry: Omit<Entry, "tags"> & {
+        tags?: string | string[];
+      },
+    ) => {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      if (!TogglConfig.token) {
+        throw new Error("No token found");
+      }
+      const tags =
+        typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
 
       const res = await fetch(
         `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries`,
@@ -207,70 +224,37 @@ export const Toggl = {
             Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
           },
           body: JSON.stringify({
-            description: data.description,
-            project_id: data.projectID !== -1 ? data.projectID : null,
-            tags: data.tags,
+            description: entry.description || null,
+            project_id: entry.project_id || null,
+            tags: tags || [],
             created_with: "Indev interface app",
-            workspace_id: TogglConfig.workspace,
-            duration: -1,
-            start: new Date().toISOString(),
+            workspace_id: Number(TogglConfig.workspace),
+            start: Dates.toISOSimple(new Date(entry.start)),
+            stop: entry.stop ? Dates.toISOSimple(new Date(entry.stop)) : null,
+            duration: entry.stop === null ? -1 : undefined,
           }),
         },
       );
-
       if (!res.ok) {
         const text = await res.text();
         throw new Error(text);
       }
 
-      return res.json();
+      const created = (await res.json()) as Entry;
+
+      return {
+        ...created,
+        start: Dates.toISOExtended(new Date(created.start)),
+        stop: created.stop ? Dates.toISOExtended(new Date(created.stop)) : null,
+      };
     },
 
-    stopCurrent: async () => {
-      if (TogglConfig.disabled) {
+    delete: async (id: number) => {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
-      }
-
-      const id = await Toggl.Entries.getCurrent().then((entry) => entry?.id);
-      if (!id) {
-        throw new Error("No time entry found");
-      }
-
-      const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${id}/stop`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
-          },
-        },
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
-      }
-
-      return res.json();
-    },
-
-    deleteCurrent: async () => {
-      if (TogglConfig.disabled) {
-        throw new Error("Toggl API has been programatically disabled");
-      }
-
-      if (!TogglConfig.token) {
-        throw new Error("No token found");
-      }
-
-      const id = await Toggl.Entries.getCurrent().then((entry) => entry?.id);
-      if (!id) {
-        throw new Error("No time entry found");
       }
 
       const res = await fetch(
@@ -292,59 +276,41 @@ export const Toggl = {
       return res.status;
     },
 
-    getLastFinished: async () => {
-      if (TogglConfig.disabled) {
-        throw new Error("Toggl API has been programatically disabled");
-      }
-
-      if (!TogglConfig.token) {
-        throw new Error("No token found");
-      }
-
-      const res = await fetch(
-        "https://api.track.toggl.com/api/v9/me/time_entries",
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
-          },
-        },
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text);
-      }
-
-      const entries = await res.json();
-      const lastFinishedIdx = entries[0].stop === null ? 1 : 0;
-      return entries[lastFinishedIdx] as {
+    edit: async (
+      entry: Partial<Omit<Entry, "tags">> & {
         id: number;
-        stop: string;
-      };
-    },
-
-    setCurrentStartToPrevStop: async () => {
-      if (TogglConfig.disabled) {
+        tags?: string | string[];
+      },
+    ) => {
+      if (TogglConfig.disabled || TogglConfig.push_disabled) {
         throw new Error("Toggl API has been programatically disabled");
       }
-
       if (!TogglConfig.token) {
         throw new Error("No token found");
       }
 
-      const lastFinished = await Toggl.Entries.getLastFinished();
-      const id = await Toggl.Entries.getCurrent().then((entry) => entry?.id);
-      if (!id) {
-        throw new Error("No time entry found");
-      }
+      const tags =
+        typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
+      const start = entry.start
+        ? Dates.toISOSimple(new Date(entry.start))
+        : undefined;
+      const stop =
+        entry.stop === null
+          ? null
+          : entry.stop
+            ? Dates.toISOSimple(new Date(entry.stop))
+            : undefined;
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${id}`,
+        `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${entry.id}`,
         {
           method: "PUT",
-          body: JSON.stringify({ start: lastFinished.stop }),
+          body: JSON.stringify({
+            ...entry,
+            tags: tags,
+            start: start,
+            stop: stop,
+          }),
           headers: {
             "Content-Type": "application/json",
             Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
@@ -357,7 +323,13 @@ export const Toggl = {
         throw new Error(text);
       }
 
-      return res.json();
+      const edited = (await res.json()) as Entry;
+
+      return {
+        ...edited,
+        start: Dates.toISOExtended(new Date(edited.start)),
+        stop: edited.stop ? Dates.toISOExtended(new Date(edited.stop)) : null,
+      };
     },
   },
 };

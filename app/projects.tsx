@@ -56,6 +56,7 @@ export default function Page() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["projects"] });
+      projectsQuery.refetch();
     },
   });
 
@@ -86,7 +87,6 @@ export default function Page() {
             setProjectModalOpen(true);
           }}
           onSync={() => {
-            projectsQuery.refetch();
             syncMutation.mutate();
           }}
         />
@@ -136,7 +136,9 @@ function ProjectModal(props: {
   defaultProject?: Project;
 }) {
   const [name, setName] = useState(props.defaultProject?.name || "");
-  const [color, setColor] = useState(props.defaultProject?.color || "");
+  const [color, setColor] = useState(
+    props.defaultProject?.color || Colors.random().toggl_hex,
+  );
   const [icon, setIcon] = useState(props.defaultProject?.icon || "");
 
   const iconOptions = [
@@ -222,17 +224,20 @@ function ProjectModal(props: {
             placeholder="Icon"
           />
         </View>
-        <View className="w-full items-center justify-center pb-2">
-          <View className="overflow-hidden rounded-full">
-            <TouchableNativeFeedback onPress={onDelete}>
-              <View className="p-4 px-6">
-                <Text className="text-lg font-bold color-red-600">
-                  Delete Project
-                </Text>
-              </View>
-            </TouchableNativeFeedback>
+        {props.defaultProject && (
+          <View className="w-full items-center justify-center pb-2">
+            <View className="overflow-hidden rounded-full">
+              <TouchableNativeFeedback onPress={onDelete}>
+                <View className="p-4 px-6">
+                  <Text className="text-lg font-bold color-red-600">
+                    Delete Project
+                  </Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
           </View>
-        </View>
+        )}
+        {!props.defaultProject && <View className="h-16" />}
       </View>
     </BottomSheet>
   );

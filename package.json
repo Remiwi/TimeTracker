@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test-watch": "jest --watchAll",
-    "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand",
+    "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand --bail",
     "lint": "expo lint"
   },
   "jest": {
@@ -54,7 +54,8 @@
     "react-tag-input-component": "^2.0.2",
     "sqlite": "^5.1.1",
     "tailwindcss": "^3.4.4",
-    "@react-native-community/netinfo": "11.3.1"
+    "@react-native-community/netinfo": "11.3.1",
+    "@shopify/flash-list": "1.6.4"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

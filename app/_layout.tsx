@@ -19,6 +19,12 @@ import NetInfo from "@react-native-community/netinfo";
 const prevState = {
   isConnected: false as boolean | null,
 };
+
+const sync = async () => {
+  await Data.Projects.sync();
+  await Data.Entries.sync();
+};
+
 setInterval(
   async () =>
     await NetInfo.fetch().then(async (state) => {
@@ -27,7 +33,7 @@ setInterval(
         let i = 0;
         while (i < 3) {
           try {
-            await Data.Projects.sync();
+            await sync();
             i = 3;
           } catch (e) {
             console.error(e);
@@ -37,7 +43,7 @@ setInterval(
       }
       prevState.isConnected = state.isConnected;
     }),
-  10_000,
+  1_000,
 );
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -87,10 +93,10 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
-              name="settings"
+              name="activity"
               options={{
-                drawerLabel: "Settings",
-                headerTitle: "Settings",
+                drawerLabel: "Activity",
+                headerTitle: "Activity",
               }}
             />
             <Drawer.Screen
