@@ -16,6 +16,7 @@ import MyDropDown from "@/components/DropDown";
 import MyTagInput from "@/components/TagInput";
 import { Data } from "@/apis/data";
 import TimerText from "@/components/TimerText";
+import { Dates } from "@/utils/dates";
 
 export default function Page() {
   const qc = useQueryClient();
@@ -203,9 +204,7 @@ function Day(props: {
   onEntryCreate?: (date: string) => void;
 }) {
   const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(new Date().getTime() - 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+  const yesterday = Dates.daysAgo(1).toISOString().split("T")[0];
 
   const groups: {
     description: string | null;
@@ -390,8 +389,8 @@ function EntryEditModal(props: {
       description: undefined,
       project_id: undefined,
       tags: [],
-      start: defaultStart.toISOString(),
-      stop: defaultStop.toISOString(),
+      start: Dates.toISOExtended(defaultStart),
+      stop: Dates.toISOExtended(defaultStop),
     },
   );
 
@@ -407,6 +406,23 @@ function EntryEditModal(props: {
     if (props.defaultEntry !== undefined) {
       props.onDelete(props.defaultEntry.id);
     }
+  };
+
+  const updateStartTime = (time: string) => {
+    const oldDate = editEntry.start?.split("T")[0];
+    setEditEntry({ ...editEntry, start: `${oldDate}T${time}+00:00` });
+  };
+  const updateStopTime = (time: string) => {
+    const oldDate = editEntry.stop?.split("T")[0];
+    setEditEntry({ ...editEntry, stop: `${oldDate}T${time}+00:00` });
+  };
+  const updateStartDate = (date: string) => {
+    const oldTime = editEntry.start?.split("T")[1];
+    setEditEntry({ ...editEntry, start: `${date}T${oldTime}` });
+  };
+  const updateStopDate = (date: string) => {
+    const oldTime = editEntry.stop?.split("T")[1];
+    setEditEntry({ ...editEntry, stop: `${date}T${oldTime}` });
   };
 
   return (
@@ -458,26 +474,13 @@ function EntryEditModal(props: {
           <View className="flex flex-grow flex-row justify-between gap-4 pb-4">
             <StyledTextInput
               value={editEntry.start?.split("T")[0]}
-              onChange={(t) => {
-                setEditEntry({
-                  ...editEntry,
-                  start:
-                    t +
-                    "T" +
-                    editEntry.start?.split("T")[1].split("+")[0].split(".")[0],
-                });
-              }}
+              onChange={updateStartDate}
               className="flex-grow"
               label="Start Date"
             />
             <StyledTextInput
-              value={editEntry.start?.split("T")[1].split("+")[0].split(".")[0]}
-              onChange={(t) => {
-                setEditEntry({
-                  ...editEntry,
-                  start: editEntry.start?.split("T")[0] + "T" + t + "+00:00",
-                });
-              }}
+              value={editEntry.start?.split("T")[1].split("+")[0]}
+              onChange={updateStartTime}
               className="flex-grow"
               label="Start Time"
             />
@@ -485,26 +488,13 @@ function EntryEditModal(props: {
           <View className="flex flex-grow flex-row justify-between gap-4 pb-4">
             <StyledTextInput
               value={editEntry.stop?.split("T")[0]}
-              onChange={(t) => {
-                setEditEntry({
-                  ...editEntry,
-                  stop:
-                    t +
-                    "T" +
-                    editEntry.stop?.split("T")[1].split("+")[0].split(".")[0],
-                });
-              }}
+              onChange={updateStopDate}
               className="flex-grow"
               label="Stop Date"
             />
             <StyledTextInput
-              value={editEntry.stop?.split("T")[1].split("+")[0].split(".")[0]}
-              onChange={(t) => {
-                setEditEntry({
-                  ...editEntry,
-                  stop: editEntry.stop?.split("T")[0] + "T" + t + "+00:00",
-                });
-              }}
+              value={editEntry.stop?.split("T")[1].split("+")[0]}
+              onChange={updateStopTime}
               className="flex-grow"
               label="Stop Time"
             />
