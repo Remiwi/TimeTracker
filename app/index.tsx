@@ -15,6 +15,7 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
+import { Dates } from "@/utils/dates";
 
 const VIBRATION_DURATION = 80;
 
@@ -213,7 +214,7 @@ function Item(props: {
         id: 0,
         description: props.template.description,
         project_id: props.template.project_id,
-        start: new Date().toISOString(),
+        start: Dates.toISOExtended(new Date()),
         stop: null,
         duration: -1,
         tags: props.template.tags,
