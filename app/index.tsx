@@ -118,15 +118,6 @@ export default function Page() {
       <View className="flex h-full bg-gray-50 pt-4">
         <Timer />
         <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
-          <View className="flex w-full flex-row gap-2 p-2 pb-8">
-            <Folder active={true} />
-            <Folder />
-            <Folder />
-            <Folder />
-          </View>
-          <View className="flex items-center justify-center pb-6">
-            <View className="h-0.5 w-2/3 rounded-full bg-gray-300" />
-          </View>
           {templatesQuery.isSuccess && (
             <FlatList
               numColumns={small ? 3 : 2}
@@ -295,23 +286,6 @@ function Item(props: {
           </View>
         </TouchableNativeFeedback>
       </View>
-    </View>
-  );
-}
-
-function Folder(props: { active?: boolean }) {
-  const inactiveClassName = "bg-white shadow-sm";
-  const activeClassName = "bg-gray-200 shadow-inner";
-
-  return (
-    <View
-      className={
-        "flex h-24 w-32 items-center justify-center rounded-2xl pt-1 shadow-black " +
-        (props.active ? activeClassName : inactiveClassName)
-      }
-    >
-      <View className="h-16 w-16 bg-black" />
-      <Text>Folder name</Text>
     </View>
   );
 }
