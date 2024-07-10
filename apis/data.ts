@@ -399,6 +399,25 @@ export const Data = {
       });
     },
 
+    setCurrentStartToPrevStop: async () => {
+      const current = await Data.Entries.getCurrent();
+      if (current === null) {
+        return false;
+      }
+      const last = await Data.Entries.getLastStopped();
+      if (last === null) {
+        return false;
+      }
+      if (last.stop === null) {
+        throw "Last stopped entry has stop set to null";
+      }
+
+      return await Data.Entries.edit({
+        id: current.id,
+        start: last.stop,
+      });
+    },
+
     editStop: async (id: number, stop: string) => {
       return await Data.Entries.edit({
         id,

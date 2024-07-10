@@ -484,14 +484,7 @@ function TimerControls(props: { onSync: () => void }) {
     },
   });
   const startToLastStopMutation = useMutation({
-    mutationFn: async () => {
-      const last = await Data.Entries.getLastStopped();
-      if (last === null) return;
-      if (!currentEntryQuery.isSuccess) return false;
-      if (currentEntryQuery.data === null) return false;
-      await Data.Entries.editStart(last.id, last.start);
-      return true;
-    },
+    mutationFn: Data.Entries.setCurrentStartToPrevStop,
     onMutate: () => {
       const oldEntry = qc.getQueryData(["entries", "current"]);
       qc.setQueryData(["entries", "current"], {
