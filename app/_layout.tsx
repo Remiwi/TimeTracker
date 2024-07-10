@@ -71,7 +71,7 @@ export default function RootLayout() {
           <Drawer
             screenOptions={{
               headerShown: true,
-              swipeEdgeWidth: 200,
+              swipeEnabled: false,
               headerStyle: {
                 borderBottomWidth: 1,
                 borderColor: "#f0f0f0",
