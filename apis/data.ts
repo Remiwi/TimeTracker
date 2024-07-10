@@ -288,7 +288,8 @@ export const Data = {
     },
 
     edit: async (entry: Partial<Entry> & { id: number }) => {
-      await Database.Entries.editWithLocalData(entry);
+      const edited = await Database.Entries.editWithLocalData(entry);
+      if (edited.id < 0) return edited;
       const newRemoteData = await Toggl.Entries.edit(entry);
       return await Database.Entries.editWithRemoteData(newRemoteData);
     },
