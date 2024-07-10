@@ -8,6 +8,48 @@ import { Dates } from "@/utils/dates";
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
 
+// Return undefined if no difference, "local" if a is newer, "remote" if b is newer
+// If there is a difference but both were edited at the same time, the "newer" one is whichever has a defined stop
+// If they both have a defined/undefined stop, then `a` is newer if it's needs_push flag is set and b is newer otherwise
+function getNewerEntry(a: DBEntry, b: Entry) {
+  // Check if there even is a difference
+  const a_tags = a.tags.split(",");
+  const same_tags =
+    b.tags.every((t) => a_tags.includes(t)) &&
+    a_tags.every((t) => b.tags.includes(t));
+  if (
+    a.id === b.id &&
+    a.description === b.description &&
+    a.project_id === b.project_id &&
+    a.start === b.start &&
+    a.stop === b.stop &&
+    a.duration === b.duration &&
+    a.at === b.at &&
+    same_tags
+  ) {
+    return undefined;
+  }
+
+  const aLastUpdate = new Date(a.at);
+  const bLastUpdate = new Date(b.at);
+  if (aLastUpdate > bLastUpdate) {
+    return "local";
+  } else if (bLastUpdate > aLastUpdate) {
+    return "remote";
+  }
+
+  if (a.stop === null && b.stop !== null) {
+    return "remote";
+  } else if (a.stop !== null && b.stop === null) {
+    return "local";
+  }
+
+  if (a.needs_push) {
+    return "local";
+  }
+  return "remote";
+}
+
 export const Data = {
   Projects: {
     sync: async () =>
@@ -138,6 +180,7 @@ export const Data = {
           for (const remote of recentRemoteEntries) {
             if (
               recentLocalEntries.find((p) => p.id === remote.id) === undefined
+              // If there is no local entry with the same id, it is unlinked
             ) {
               if (remote.stop === null) {
                 // This one is ongoing, so creating it can have side-effects if there is another ongoing entry already
@@ -178,17 +221,17 @@ export const Data = {
             }
 
             // Update sides of link of last edit time differs
-            const localLastUpdate = new Date(local.at);
-            const remoteLastUpdate = new Date(remote.at);
-            if (localLastUpdate > remoteLastUpdate) {
+            const newer = getNewerEntry(local, remote);
+            if (newer === "local") {
               const newRemoteData = await Toggl.Entries.edit(local);
               await Database.Entries.editWithRemoteData(newRemoteData);
-            } else if (remoteLastUpdate > localLastUpdate) {
+            } else if (newer === "remote") {
               await Database.Entries.editWithRemoteData(remote);
             }
           }
 
           // Now that all entries that were finished locally or remotely are synced, we can handle ongoing entries
+          // These are defined only if they are unlinked.
           if (ongoingLocal === undefined && ongoingRemote !== undefined) {
             // If there's an ongoing remote entry but no local entry, it's safe to create
             await Database.Entries.createFromToggl(ongoingRemote);
@@ -197,6 +240,11 @@ export const Data = {
             ongoingRemote === undefined
           ) {
             // If there's an ongoing local entry but no remote entry, it's safe to create
+            const currentRemote = await Toggl.Entries.getCurrent();
+            if (currentRemote !== null) {
+              throw "Remote has an ongoing entry that isn't linked";
+            }
+
             const newRemote = await Toggl.Entries.create(ongoingLocal);
             await Database.Entries.linkLocalWithRemote(
               ongoingLocal.id,

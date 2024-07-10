@@ -240,7 +240,13 @@ export const Toggl = {
         throw new Error(text);
       }
 
-      return res.json() as Promise<Entry>;
+      const created = (await res.json()) as Entry;
+
+      return {
+        ...created,
+        start: Dates.toISOExtended(new Date(created.start)),
+        stop: created.stop ? Dates.toISOExtended(new Date(created.stop)) : null,
+      };
     },
 
     delete: async (id: number) => {
@@ -317,7 +323,13 @@ export const Toggl = {
         throw new Error(text);
       }
 
-      return res.json() as Promise<Entry>;
+      const edited = (await res.json()) as Entry;
+
+      return {
+        ...edited,
+        start: Dates.toISOExtended(new Date(edited.start)),
+        stop: edited.stop ? Dates.toISOExtended(new Date(edited.stop)) : null,
+      };
     },
   },
 };

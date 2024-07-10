@@ -16,10 +16,10 @@ beforeAll(async () => {
   TogglConfig.token = process.env.TOGGL_TEST_API_KEY || null;
 
   const entries = await Toggl.Entries.getSince(ereyesterdayString);
-  entries.forEach(async (e) => {
-    await Toggl.Entries.delete(e.id);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  });
+  for (const entry of entries) {
+    await Toggl.Entries.delete(entry.id);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
 
   await Database.Manage.dropAllTablesAsync();
   await Database.Manage.initializeDBAsync();
@@ -40,6 +40,7 @@ describe("Entries", () => {
     });
     expect(newEntry1).toBeDefined();
     expect(newEntry1.id).toBeGreaterThan(0);
+    expect(newEntry1.start).not.toContain("Z");
 
     await Data.Entries.sync();
     const entries2 = await Data.Entries.getSince(yesterdayString);
@@ -48,6 +49,7 @@ describe("Entries", () => {
     expect(entries2[0].id).toBe(newEntry1.id);
     expect(entries2[0].description).toBe("Entry 1");
     expect(entries2[0].duration).toBe(60 * 60 * 24);
+    expect(entries2[0].start).not.toContain("Z");
   });
 
   it("can get and create entries when offline and sync later", async () => {
@@ -153,6 +155,7 @@ describe("Entries", () => {
   });
 
   it("can update entries that have been updated on toggl", async () => {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
     const entries = await Data.Entries.getSince(yesterdayString);
     const editing = entries.find((e) => e.tags.includes("Automated Testing"));
     expect(editing).toBeDefined();
@@ -161,6 +164,8 @@ describe("Entries", () => {
       tags: ["Automated Testing", "Edited on Toggl"],
     });
     expect(edited).toBeDefined();
+    expect(edited!.id).toBe(editing!.id);
+    expect(edited!.tags).toContain("Edited on Toggl");
 
     await Data.Entries.sync();
 
@@ -243,12 +248,10 @@ describe("Entries", () => {
     expect(editing!.id).toBeLessThan(0);
     expect(editing!.description).toBe("Local Entry");
 
-    await expect(
-      Data.Entries.edit({
-        ...editing!,
-        tags: ["Automated Testing", "Edited Locally"],
-      }),
-    ).rejects.toThrow();
+    await Data.Entries.edit({
+      ...editing!,
+      tags: ["Automated Testing", "Edited Locally"],
+    });
 
     const entries2 = await Data.Entries.getSinceVisible(yesterdayString);
     const edited = entries2.find((e) => e.id === editing!.id);
@@ -256,7 +259,7 @@ describe("Entries", () => {
     expect(edited!.tags).toContain("Edited Locally");
     expect(edited!.description).toBe("Local Entry");
 
-    await expect(Data.Entries.delete(editing!.id)).rejects.toThrow();
+    await Data.Entries.delete(editing!.id);
 
     const entries3 = await Data.Entries.getSinceVisible(yesterdayString);
     const deleted = entries3.find((e) => e.id === editing!.id);
@@ -297,10 +300,10 @@ describe("Entries", () => {
     expect(ongoing!.stop).toBeDefined();
 
     const localCurrent = await Data.Entries.getCurrent();
-    expect(localCurrent).toBeUndefined();
+    expect(localCurrent).toBeNull();
 
     const togglCurrent = await Toggl.Entries.getCurrent();
-    expect(togglCurrent).toBeUndefined();
+    expect(togglCurrent).toBeNull();
 
     await Data.Entries.delete(ongoing!.id);
   });
@@ -371,47 +374,48 @@ describe("Entries", () => {
   });
 
   it("can start entries online when one is ongoing", async () => {
-    const ongoing = await Data.Entries.create({
+    const ongoing4a = await Data.Entries.create({
       start: Dates.toISOExtended(Dates.secondsAgo(30)),
       description: "Ongoing Entry 4",
       tags: ["Automated Testing"],
     });
-    expect(ongoing).toBeDefined();
-    expect(ongoing.id).toBeGreaterThan(0);
-    expect(ongoing.stop).toBeNull();
+    expect(ongoing4a).toBeDefined();
+    expect(ongoing4a.id).toBeGreaterThan(0);
+    expect(ongoing4a.stop).toBeNull();
 
-    const ongoing2 = await Data.Entries.create({
+    const ongoing5a = await Data.Entries.create({
       start: Dates.toISOExtended(Dates.secondsAgo(10)),
       description: "Ongoing Entry 5",
       tags: ["Automated Testing"],
     });
-    expect(ongoing2).toBeDefined();
-    expect(ongoing2.id).toBeGreaterThan(0);
-    expect(ongoing2.stop).toBeNull();
+    expect(ongoing5a).toBeDefined();
+    expect(ongoing5a.id).toBeGreaterThan(0);
+    expect(ongoing5a.stop).toBeNull();
 
     await Data.Entries.stopCurrent();
     const entries = await Data.Entries.getSince(yesterdayString);
-    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 5");
-    expect(ongoing3).toBeDefined();
-    expect(ongoing3!.stop).toBeDefined();
-    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 4");
-    expect(ongoing4).toBeDefined();
-    expect(ongoing4!.stop).toBeNull();
-    expect(ongoing3!.stop).toBe(ongoing4!.start);
+    const ongoing4b = entries.find((e) => e.description === "Ongoing Entry 4");
+    const ongoing5b = entries.find((e) => e.description === "Ongoing Entry 5");
+    expect(ongoing5b).toBeDefined();
+    expect(ongoing4b).toBeDefined();
+    expect(ongoing5b!.stop).toBeDefined();
+    expect(ongoing4b!.stop).toBe(ongoing5b!.start);
+    expect(ongoing4b!.start).toBe(ongoing4a.start);
+    expect(ongoing5b!.start).toBe(ongoing5a.start);
 
-    await Data.Entries.delete(ongoing.id);
-    await Data.Entries.delete(ongoing2.id);
+    await Data.Entries.delete(ongoing4a.id);
+    await Data.Entries.delete(ongoing5a.id);
   });
 
-  it("can start entries offline when one is going and sync later", async () => {
-    const ongoing = await Data.Entries.create({
+  it("can start entries offline when one is ongoing and sync later", async () => {
+    const ongoing6a = await Data.Entries.create({
       start: Dates.toISOExtended(Dates.secondsAgo(30)),
       description: "Ongoing Entry 6",
       tags: ["Automated Testing"],
     });
-    expect(ongoing).toBeDefined();
-    expect(ongoing.id).toBeGreaterThan(0);
-    expect(ongoing.stop).toBeNull();
+    expect(ongoing6a).toBeDefined();
+    expect(ongoing6a.id).toBeGreaterThan(0);
+    expect(ongoing6a.stop).toBeNull();
 
     TogglConfig.disabled = true;
 
@@ -422,39 +426,39 @@ describe("Entries", () => {
         tags: ["Automated Testing"],
       }),
     ).rejects.toThrow();
-    const ongoing2 = await Data.Entries.getCurrent();
-    expect(ongoing2).toBeDefined();
-    expect(ongoing2!.id).toBeLessThan(0);
-    expect(ongoing2!.stop).toBeNull();
+    const ongoing7a = await Data.Entries.getCurrent();
+    expect(ongoing7a).toBeDefined();
+    expect(ongoing7a!.id).toBeLessThan(0);
+    expect(ongoing7a!.stop).toBeNull();
 
     TogglConfig.disabled = false;
     await Data.Entries.sync();
 
     const entries = await Data.Entries.getSince(yesterdayString);
-    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 6");
-    expect(ongoing3).toBeDefined();
-    expect(ongoing3!.stop).toBeDefined();
-    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 7");
-    expect(ongoing4).toBeDefined();
-    expect(ongoing4!.id).toBeGreaterThan(0);
-    expect(ongoing4!.stop).toBeNull();
-    expect(ongoing3!.stop).toBe(ongoing4!.start);
+    const ongoing6b = entries.find((e) => e.description === "Ongoing Entry 6");
+    const ongoing7b = entries.find((e) => e.description === "Ongoing Entry 7");
+    expect(ongoing6b).toBeDefined();
+    expect(ongoing7b).toBeDefined();
+    expect(ongoing7b!.start).not.toContain("Z");
+    expect(ongoing6b!.stop).toBe(ongoing7b!.start);
+    expect(ongoing7b!.stop).toBeNull();
+    expect(ongoing7b!.id).toBeGreaterThan(0);
 
-    await Data.Entries.delete(ongoing3!.id);
-    await Data.Entries.delete(ongoing4!.id);
+    await Data.Entries.delete(ongoing6b!.id);
+    await Data.Entries.delete(ongoing7b!.id);
   });
 
   it("can start entries from ongoing toggl entries when one is ongoing", async () => {
-    const ongoing = await Data.Entries.create({
+    const ongoing8a = await Data.Entries.create({
       start: Dates.toISOExtended(Dates.secondsAgo(30)),
       description: "Ongoing Entry 8",
       tags: ["Automated Testing"],
     });
-    expect(ongoing).toBeDefined();
-    expect(ongoing.id).toBeGreaterThan(0);
-    expect(ongoing.stop).toBeNull();
+    expect(ongoing8a).toBeDefined();
+    expect(ongoing8a.id).toBeGreaterThan(0);
+    expect(ongoing8a.stop).toBeNull();
 
-    const ongoing2 = await Toggl.Entries.create({
+    const ongoing9a = await Toggl.Entries.create({
       start: Dates.toISOExtended(Dates.secondsAgo(10)),
       stop: null,
       description: "Ongoing Entry 9",
@@ -464,23 +468,22 @@ describe("Entries", () => {
       duration: -1, // ignored
       id: -1, // ignored
     });
-    expect(ongoing2).toBeDefined();
-    expect(ongoing2.id).toBeGreaterThan(0);
-    expect(ongoing2.stop).toBeNull();
+    expect(ongoing9a).toBeDefined();
+    expect(ongoing9a.id).toBeGreaterThan(0);
+    expect(ongoing9a.stop).toBeNull();
 
     await Data.Entries.sync();
 
     const entries = await Data.Entries.getSince(yesterdayString);
-    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 8");
-    expect(ongoing3).toBeDefined();
-    expect(ongoing3!.stop).toBeDefined();
-    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 9");
-    expect(ongoing4).toBeDefined();
-    expect(ongoing4!.stop).toBeNull();
-    expect(ongoing3!.stop).toBe(ongoing4!.start);
+    const ongoing8b = entries.find((e) => e.description === "Ongoing Entry 8");
+    const ongoing9b = entries.find((e) => e.description === "Ongoing Entry 9");
+    expect(ongoing8b).toBeDefined();
+    expect(ongoing9b).toBeDefined();
+    expect(ongoing8b!.stop).toBe(ongoing9b!.start);
+    expect(ongoing9b!.stop).toBeNull();
 
-    await Data.Entries.delete(ongoing.id);
-    await Data.Entries.delete(ongoing2.id);
+    await Data.Entries.delete(ongoing8a.id);
+    await Data.Entries.delete(ongoing9a.id);
   });
 
   it("can start entries locally when one is running locally", async () => {
