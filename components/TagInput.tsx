@@ -74,7 +74,8 @@ export default function MyTagInput(props: {
                       return;
                     }
                     if (nativeEvent.key === "Backspace") {
-                      setText(text.slice(0, -1));
+                      if (text !== "") setText(text.slice(0, -1));
+                      else props.onChange?.(tags.slice(0, -1));
                       return;
                     }
                   }}
