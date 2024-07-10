@@ -454,9 +454,16 @@ const Database = {
       );
     },
 
+    getSinceVisible: async (startingAtOrAfter: string) => {
+      return await db.getAllAsync<DBEntry>(
+        `SELECT * FROM entries WHERE start >= ? AND to_delete = 0 ORDER BY start DESC;`,
+        [startingAtOrAfter],
+      );
+    },
+
     getLastStopped: async () => {
       return await db.getFirstAsync<DBEntry>(
-        `SELECT * FROM entries WHERE duration != -1 ORDER BY start DESC LIMIT 1;`,
+        `SELECT * FROM entries WHERE duration != -1 AND to_delete = 0 ORDER BY start DESC LIMIT 1;`,
         [],
       );
     },

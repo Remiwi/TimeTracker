@@ -15,12 +15,8 @@ beforeAll(async () => {
   TogglConfig.workspace = process.env.TOGGL_TEST_WORKSPACE || null;
   TogglConfig.token = process.env.TOGGL_TEST_API_KEY || null;
 
-  const current = await Toggl.Entries.getCurrent();
-  console.log(current);
-
   const entries = await Toggl.Entries.getSince(ereyesterdayString);
   entries.forEach(async (e) => {
-    console.log(e);
     await Toggl.Entries.delete(e.id);
     await new Promise((resolve) => setTimeout(resolve, 100));
   });
@@ -194,12 +190,13 @@ describe("Entries", () => {
   it("can delete entries offline and sync later", async () => {
     TogglConfig.disabled = true;
 
-    const entries = await Data.Entries.getSince(yesterdayString);
+    const entries = await Data.Entries.getSinceVisible(yesterdayString);
     const deleting = entries.find((e) => e.tags.includes("Automated Testing"));
     expect(deleting).toBeDefined();
+    expect(deleting!.id).toBeGreaterThan(0);
     await expect(Data.Entries.delete(deleting!.id)).rejects.toThrow();
 
-    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const entries2 = await Data.Entries.getSinceVisible(yesterdayString);
     const deleted = entries2.find((e) => e.id === deleting!.id);
     expect(deleted).toBeUndefined();
 
@@ -240,7 +237,7 @@ describe("Entries", () => {
       }),
     ).rejects.toThrow();
 
-    const entries = await Data.Entries.getSince(yesterdayString);
+    const entries = await Data.Entries.getSinceVisible(yesterdayString);
     const editing = entries.find((e) => e.tags.includes("Automated Testing"));
     expect(editing).toBeDefined();
     expect(editing!.id).toBeLessThan(0);
@@ -253,7 +250,7 @@ describe("Entries", () => {
       }),
     ).rejects.toThrow();
 
-    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const entries2 = await Data.Entries.getSinceVisible(yesterdayString);
     const edited = entries2.find((e) => e.id === editing!.id);
     expect(edited).toBeDefined();
     expect(edited!.tags).toContain("Edited Locally");
@@ -261,7 +258,7 @@ describe("Entries", () => {
 
     await expect(Data.Entries.delete(editing!.id)).rejects.toThrow();
 
-    const entries3 = await Data.Entries.getSince(yesterdayString);
+    const entries3 = await Data.Entries.getSinceVisible(yesterdayString);
     const deleted = entries3.find((e) => e.id === editing!.id);
     expect(deleted).toBeUndefined();
     expect(entries3.length).toBe(entries2.length - 1);

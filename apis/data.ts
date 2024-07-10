@@ -266,6 +266,11 @@ export const Data = {
       return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
     },
 
+    getSinceVisible: async (since: string) => {
+      const entries = await Database.Entries.getSinceVisible(since);
+      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+    },
+
     get: async (id: number) => {
       const entry = await Database.Entries.get(id);
       return { ...entry, tags: entry.tags.split(",") } as Entry;
