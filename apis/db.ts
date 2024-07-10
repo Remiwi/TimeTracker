@@ -8,6 +8,7 @@ import {
   Template,
   TogglProject,
 } from "./types";
+import { Dates } from "@/utils/dates";
 
 function getDuration(start: string, stop: string | null) {
   if (stop === null) {
@@ -186,7 +187,7 @@ const Database = {
             id,
             project.name,
             project.color || "",
-            new Date().toISOString(),
+            Dates.toISOExtended(new Date()),
             project.active === undefined || project.active ? 1 : 0,
             project.icon || "",
             0,
@@ -300,7 +301,7 @@ const Database = {
           project.name || oldProject.name,
           project.color || oldProject.color,
           project.icon || oldProject.icon,
-          new Date().toISOString(),
+          Dates.toISOExtended(new Date()),
           project.active === undefined || project.active ? 1 : 0,
           project.id,
         ],
@@ -518,7 +519,7 @@ const Database = {
               [
                 getDuration(current.start, entry.start),
                 entry.start,
-                new Date().toISOString(),
+                Dates.toISOExtended(new Date()),
                 current.id,
               ],
             );
@@ -554,7 +555,7 @@ const Database = {
             entry.start,
             stop,
             duration,
-            new Date().toISOString(),
+            Dates.toISOExtended(new Date()),
             entry.tags?.join(",") || "",
             0,
             0,
@@ -654,7 +655,7 @@ const Database = {
           start,
           stop,
           duration,
-          new Date().toISOString(),
+          Dates.toISOExtended(new Date()),
           entry.tags?.join(",") || oldEntry.tags,
           oldEntry.linked ? 1 : 0,
           entry.id,

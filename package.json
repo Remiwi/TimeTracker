@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test-watch": "jest --watchAll",
-    "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand",
+    "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand --bail",
     "lint": "expo lint"
   },
   "jest": {

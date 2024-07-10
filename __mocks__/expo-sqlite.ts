@@ -41,6 +41,10 @@ export function openDatabaseSync(name: string) {
         runAsync: async (source: string, params: any[]) => {
           await conn.run(source, params);
         },
+
+        getAllAsync: async (source: string, params: any[]) => {
+          return await conn.all(source, params);
+        },
       };
 
       await conn.exec("BEGIN EXCLUSIVE TRANSACTION;");

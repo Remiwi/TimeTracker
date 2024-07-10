@@ -3,6 +3,7 @@ import { Toggl } from "./toggl";
 import { DBEntry, Entry, Project, Template } from "./types";
 import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
+import { Dates } from "@/utils/dates";
 
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
@@ -126,9 +127,7 @@ export const Data = {
     sync: async () =>
       entrySyncLock
         .runExclusive(async () => {
-          const twelveWeeksAgo = new Date(
-            new Date().getTime() - 12 * 7 * 24 * 60 * 60 * 1000,
-          ).toISOString();
+          const twelveWeeksAgo = Dates.toISOExtended(Dates.daysAgo(7 * 12));
           const recentLocalEntries =
             await Database.Entries.getSince(twelveWeeksAgo);
           const recentRemoteEntries =
@@ -262,6 +261,11 @@ export const Data = {
       return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
     },
 
+    getSince: async (since: string) => {
+      const entries = await Database.Entries.getSince(since);
+      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+    },
+
     get: async (id: number) => {
       const entry = await Database.Entries.get(id);
       return { ...entry, tags: entry.tags.split(",") } as Entry;
@@ -317,7 +321,7 @@ export const Data = {
     start: async (entry: Partial<Entry>) => {
       return await Data.Entries.create({
         ...entry,
-        start: new Date().toISOString(),
+        start: Dates.toISOExtended(new Date()),
         stop: null,
       });
     },
@@ -329,7 +333,7 @@ export const Data = {
       }
       await Data.Entries.edit({
         id: current.id,
-        stop: new Date().toISOString(),
+        stop: Dates.toISOExtended(new Date()),
       });
       return true;
     },

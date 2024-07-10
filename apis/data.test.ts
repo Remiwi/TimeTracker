@@ -1,361 +1,542 @@
-import Colors, { colors } from "@/utils/colors";
 import { Data } from "./data";
 import { Toggl, TogglConfig } from "./toggl";
 import Database from "./db";
+import { Dates } from "@/utils/dates";
+
+const now = new Date();
+const yesterday = Dates.daysAgo(1);
+const ereyesterday = Dates.daysAgo(2);
+const nowString = Dates.toISOExtended(now);
+const yesterdayString = Dates.toISOExtended(yesterday);
+const ereyesterdayString = Dates.toISOExtended(ereyesterday);
 
 beforeAll(async () => {
   TogglConfig.disabled = false;
   TogglConfig.workspace = process.env.TOGGL_TEST_WORKSPACE || null;
   TogglConfig.token = process.env.TOGGL_TEST_API_KEY || null;
 
-  // const projs = await Toggl.Projects.getAll();
-  // for (const proj of projs) {
-  //   await Toggl.Projects.delete(proj.id);
-  // }
-});
+  const current = await Toggl.Entries.getCurrent();
+  console.log(current);
 
-describe("Toggl", () => {
-  it("has the right configs", async () => {
-    expect(TogglConfig.token).toBeDefined();
-    expect(TogglConfig.workspace).toBe(8497311);
+  const entries = await Toggl.Entries.getSince(ereyesterdayString);
+  entries.forEach(async (e) => {
+    console.log(e);
+    await Toggl.Entries.delete(e.id);
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
-  it("can fetch entries", async () => {
-    const now = new Date();
-    const twelveWeeksAgo = new Date(
-      now.getTime() - 1000 * 60 * 60 * 24 * 7 * 12,
-    );
-    const entries = await Toggl.Entries.getSince(twelveWeeksAgo.toISOString());
+  await Database.Manage.dropAllTablesAsync();
+  await Database.Manage.initializeDBAsync();
+  await Data.Entries.sync();
+});
+
+describe("Entries", () => {
+  it("can get and create entries when online", async () => {
+    const entries = await Data.Entries.getSince(yesterdayString);
     expect(entries).toBeDefined();
-    console.log(entries[0]);
+    expect(entries.length).toBe(0);
+
+    const newEntry1 = await Data.Entries.create({
+      start: yesterdayString,
+      stop: nowString,
+      description: "Entry 1",
+      tags: ["Automated Testing"],
+    });
+    expect(newEntry1).toBeDefined();
+    expect(newEntry1.id).toBeGreaterThan(0);
+
+    await Data.Entries.sync();
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    expect(entries2).toBeDefined();
+    expect(entries2.length).toBe(1);
+    expect(entries2[0].id).toBe(newEntry1.id);
+    expect(entries2[0].description).toBe("Entry 1");
+    expect(entries2[0].duration).toBe(60 * 60 * 24);
   });
 
-  // it("can fetch projects", async () => {
-  //   const projs = await Toggl.Projects.getAll();
-  //   expect(projs).toEqual([]);
-  // });
+  it("can get and create entries when offline and sync later", async () => {
+    TogglConfig.disabled = true;
 
-  // it("can create projects", async () => {
-  //   const proj1 = await Toggl.Projects.create({
-  //     name: "No Color Given",
-  //   });
-  //   const proj2 = await Toggl.Projects.create({
-  //     name: "Red",
-  //     color: Colors.fromName("red")!.toggl_hex,
-  //     active: false,
-  //   });
-  //   expect(proj1.name).toBe("No Color Given");
-  //   expect(proj2.name).toBe("Red");
-  //   expect(proj1.active).toBe(true);
-  //   expect(proj2.active).toBe(false);
-  //   expect(proj2.color.toUpperCase()).toMatch(
-  //     Colors.fromName("red")!.toggl_hex,
-  //   );
-  //   expect(proj1.at).toBeDefined();
-  //   expect(proj2.at).toBeDefined();
+    await expect(
+      Data.Entries.create({
+        start: yesterdayString,
+        stop: nowString,
+        description: "Entry 2",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
 
-  //   const projs = await Toggl.Projects.getAll();
-  //   expect(projs.length).toBe(2);
-  //   expect(projs.some((p) => p.id === proj1.id)).toBe(true);
-  //   expect(projs.some((p) => p.id === proj2.id)).toBe(true);
-  // });
+    const entries = await Data.Entries.getSince(yesterdayString);
+    expect(entries).toBeDefined();
+    expect(entries.length).toBe(2);
+    const foundEntry2 = entries.find((e) => e.description === "Entry 2");
+    expect(foundEntry2).toBeDefined();
+    expect(foundEntry2!.description).toBe("Entry 2");
+    expect(foundEntry2!.duration).toBe(60 * 60 * 24);
+    expect(foundEntry2!.id).toBeLessThan(0);
 
-  // it("can edit projects", async () => {
-  //   const proj = (await Toggl.Projects.getAll())[0];
-  //   expect(proj).toBeDefined();
+    TogglConfig.disabled = false;
+    await Data.Entries.sync();
 
-  //   const edited = await Toggl.Projects.edit({
-  //     id: proj.id,
-  //     name: "Edited",
-  //   });
-  //   expect(edited.id).toBe(proj.id);
-  //   expect(edited.name).toBe("Edited");
-  //   expect(edited.color).toBe(proj.color);
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    expect(entries2).toBeDefined();
+    expect(entries2.length).toBe(2);
+    const foundEntry2Online = entries2.find((e) => e.description === "Entry 2");
+    expect(foundEntry2Online).toBeDefined();
+    expect(foundEntry2Online!.description).toBe("Entry 2");
+    expect(foundEntry2Online!.duration).toBe(60 * 60 * 24);
+    expect(foundEntry2Online!.id).toBeGreaterThan(0);
+  });
 
-  //   const editedAgain = await Toggl.Projects.edit({
-  //     id: proj.id,
-  //     color: Colors.fromName("blue")!.toggl_hex,
-  //     name: "Blue",
-  //   });
-  //   expect(editedAgain.id).toBe(proj.id);
-  //   expect(editedAgain.name).toBe("Blue");
-  //   expect(editedAgain.color.toUpperCase()).toBe(
-  //     Colors.fromName("blue")!.toggl_hex,
-  //   );
-  // });
+  it("can recieve new entries made from Toggl", async () => {
+    const newEntry3 = await Toggl.Entries.create({
+      start: yesterdayString,
+      stop: nowString,
+      description: "Entry 3",
+      tags: ["Automated Testing"],
+      project_id: null,
+      at: "", // ignored
+      duration: -1, // ignored
+      id: -1, // ignored
+    });
+    expect(newEntry3).toBeDefined();
 
-  // it("can delete projects", async () => {
-  //   const projs = await Toggl.Projects.getAll();
-  //   let newProjs = undefined;
-  //   for (const proj of projs) {
-  //     await Toggl.Projects.delete(proj.id);
-  //     newProjs = await Toggl.Projects.getAll();
-  //     expect(newProjs.some((p) => p.id === proj.id)).toBe(false);
-  //   }
-  //   expect(newProjs).toEqual([]);
-  // });
+    await Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    expect(entries.length).toBe(3);
+    const foundEntry3 = entries.find((e) => e.id === newEntry3.id);
+    expect(foundEntry3).toBeDefined();
+    expect(foundEntry3!.description).toBe("Entry 3");
+    expect(foundEntry3!.duration).toBe(60 * 60 * 24);
+  });
+
+  it("can update entries online", async () => {
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const editing = entries[0];
+    const edited = await Data.Entries.edit({
+      ...editing,
+      tags: ["Automated Testing", "Edited"],
+    });
+    expect(edited).toBeDefined();
+    expect(edited.tags).toContain("Edited");
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const edited2 = entries2.find((e) => e.id === editing.id);
+    expect(edited2).toBeDefined();
+    expect(edited2!.tags).toContain("Edited");
+    expect(edited2!.description).toBe(editing.description);
+  });
+
+  it("can update entries offline and sync later", async () => {
+    TogglConfig.disabled = true;
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const editing = entries.find((e) => e.tags.includes("Automated Testing"));
+    expect(editing).toBeDefined();
+    await expect(
+      Data.Entries.edit({
+        ...editing!,
+        tags: ["Automated Testing", "Edited Offline"],
+      }),
+    ).rejects.toThrow();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const edited = entries2.find((e) => e.id === editing!.id);
+    expect(edited).toBeDefined();
+    expect(edited!.tags).toContain("Edited Offline");
+    expect(edited!.description).toBe(editing!.description);
+
+    TogglConfig.disabled = false;
+    await Data.Entries.sync();
+
+    const entries3 = await Data.Entries.getSince(yesterdayString);
+    const edited2 = entries3.find((e) => e.id === editing!.id);
+    expect(edited2).toBeDefined();
+    expect(edited2!.tags).toContain("Edited Offline");
+    expect(edited2!.description).toBe(editing!.description);
+  });
+
+  it("can update entries that have been updated on toggl", async () => {
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const editing = entries.find((e) => e.tags.includes("Automated Testing"));
+    expect(editing).toBeDefined();
+    const edited = await Toggl.Entries.edit({
+      ...editing!,
+      tags: ["Automated Testing", "Edited on Toggl"],
+    });
+    expect(edited).toBeDefined();
+
+    await Data.Entries.sync();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const edited2 = entries2.find((e) => e.id === editing!.id);
+    expect(edited2).toBeDefined();
+    expect(edited2!.tags).toContain("Edited on Toggl");
+    expect(edited2!.description).toBe(editing!.description);
+  });
+
+  it("can delete entries online", async () => {
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const deleting = entries[0];
+    await Data.Entries.delete(deleting.id);
+
+    await Data.Entries.sync();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const deleted = entries2.find((e) => e.id === deleting.id);
+    expect(deleted).toBeUndefined();
+
+    const togglEntries = await Toggl.Entries.getSince(yesterdayString);
+    const togglDeleted = togglEntries.find((e) => e.id === deleting.id);
+    expect(togglDeleted).toBeUndefined();
+  });
+
+  it("can delete entries offline and sync later", async () => {
+    TogglConfig.disabled = true;
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const deleting = entries.find((e) => e.tags.includes("Automated Testing"));
+    expect(deleting).toBeDefined();
+    await expect(Data.Entries.delete(deleting!.id)).rejects.toThrow();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const deleted = entries2.find((e) => e.id === deleting!.id);
+    expect(deleted).toBeUndefined();
+
+    TogglConfig.disabled = false;
+    await Data.Entries.sync();
+
+    const entries3 = await Data.Entries.getSince(yesterdayString);
+    const deleted2 = entries3.find((e) => e.id === deleting!.id);
+    expect(deleted2).toBeUndefined();
+
+    const togglEntries = await Toggl.Entries.getSince(yesterdayString);
+    const togglDeleted = togglEntries.find((e) => e.id === deleting!.id);
+    expect(togglDeleted).toBeUndefined();
+  });
+
+  it("can delete entries that have been deleted on toggl", async () => {
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const deleting = entries.find((e) => e.tags.includes("Automated Testing"));
+    expect(deleting).toBeDefined();
+    await Toggl.Entries.delete(deleting!.id);
+
+    await Data.Entries.sync();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const deleted = entries2.find((e) => e.id === deleting!.id);
+    expect(deleted).toBeUndefined;
+  });
+
+  it("can edit and delete entries that only exist locally", async () => {
+    TogglConfig.disabled = true;
+
+    await expect(
+      Data.Entries.create({
+        start: yesterdayString,
+        stop: nowString,
+        description: "Local Entry",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const editing = entries.find((e) => e.tags.includes("Automated Testing"));
+    expect(editing).toBeDefined();
+    expect(editing!.id).toBeLessThan(0);
+    expect(editing!.description).toBe("Local Entry");
+
+    await expect(
+      Data.Entries.edit({
+        ...editing!,
+        tags: ["Automated Testing", "Edited Locally"],
+      }),
+    ).rejects.toThrow();
+
+    const entries2 = await Data.Entries.getSince(yesterdayString);
+    const edited = entries2.find((e) => e.id === editing!.id);
+    expect(edited).toBeDefined();
+    expect(edited!.tags).toContain("Edited Locally");
+    expect(edited!.description).toBe("Local Entry");
+
+    await expect(Data.Entries.delete(editing!.id)).rejects.toThrow();
+
+    const entries3 = await Data.Entries.getSince(yesterdayString);
+    const deleted = entries3.find((e) => e.id === editing!.id);
+    expect(deleted).toBeUndefined();
+    expect(entries3.length).toBe(entries2.length - 1);
+
+    TogglConfig.disabled = false;
+  });
+
+  it("can start entries online", async () => {
+    const ongoing = await Data.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(30)),
+      description: "Ongoing Entry 1",
+      tags: ["Automated Testing"],
+    });
+    expect(ongoing).toBeDefined();
+    expect(ongoing.id).toBeGreaterThan(0);
+    expect(ongoing.stop).toBeNull();
+
+    const localCurrent = await Data.Entries.getCurrent();
+    expect(localCurrent).toBeDefined();
+    expect(localCurrent!.id).toBe(ongoing.id);
+    expect(localCurrent!.description).toBe("Ongoing Entry 1");
+    expect(localCurrent!.stop).toBeNull();
+
+    const togglCurrent = await Toggl.Entries.getCurrent();
+    expect(togglCurrent).toBeDefined();
+    expect(togglCurrent!.id).toBe(ongoing.id);
+    expect(togglCurrent!.description).toBe("Ongoing Entry 1");
+    expect(togglCurrent!.stop).toBeNull();
+  });
+
+  it("can stop entries online", async () => {
+    await Data.Entries.stopCurrent();
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing = entries.find((e) => e.description === "Ongoing Entry 1");
+    expect(ongoing).toBeDefined();
+    expect(ongoing!.stop).toBeDefined();
+
+    const localCurrent = await Data.Entries.getCurrent();
+    expect(localCurrent).toBeUndefined();
+
+    const togglCurrent = await Toggl.Entries.getCurrent();
+    expect(togglCurrent).toBeUndefined();
+
+    await Data.Entries.delete(ongoing!.id);
+  });
+
+  it("can start entries offline and sync later", async () => {
+    TogglConfig.disabled = true;
+
+    await expect(
+      Data.Entries.create({
+        start: Dates.toISOExtended(Dates.secondsAgo(30)),
+        description: "Ongoing Entry 2",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
+    const ongoing = await Data.Entries.getCurrent();
+    expect(ongoing).toBeDefined();
+    expect(ongoing!.id).toBeLessThan(0);
+    expect(ongoing!.stop).toBeNull();
+
+    TogglConfig.disabled = false;
+    await Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing2 = entries.find((e) => e.description === "Ongoing Entry 2");
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2!.id).toBeGreaterThan(0);
+    expect(ongoing2!.stop).toBeNull();
+
+    const toggl = await Toggl.Entries.getSince(yesterdayString);
+    const togglOngoing = toggl.find((e) => e.description === "Ongoing Entry 2");
+    expect(togglOngoing).toBeDefined();
+    expect(togglOngoing!.id).toBe(ongoing2!.id);
+    expect(togglOngoing!.stop).toBeNull();
+
+    await Data.Entries.delete(ongoing2!.id);
+  });
+
+  it("can create ongoing entries that have been started on toggl", async () => {
+    const ongoing = await Toggl.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(30)),
+      stop: null,
+      description: "Ongoing Entry 3",
+      tags: ["Automated Testing"],
+      project_id: null,
+      at: "", // ignored
+      duration: -1, // ignored
+      id: -1, // ignored
+    });
+    expect(ongoing).toBeDefined();
+    expect(ongoing.id).toBeGreaterThan(0);
+    expect(ongoing.stop).toBeNull();
+
+    await Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing2 = entries.find((e) => e.description === "Ongoing Entry 3");
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2!.id).toBe(ongoing.id);
+    expect(ongoing2!.stop).toBeNull();
+
+    const toggl = await Toggl.Entries.getSince(yesterdayString);
+    const togglOngoing = toggl.find((e) => e.description === "Ongoing Entry 3");
+    expect(togglOngoing).toBeDefined();
+    expect(togglOngoing!.id).toBe(ongoing.id);
+    expect(togglOngoing!.stop).toBeNull();
+
+    await Data.Entries.delete(ongoing2!.id);
+  });
+
+  it("can start entries online when one is ongoing", async () => {
+    const ongoing = await Data.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(30)),
+      description: "Ongoing Entry 4",
+      tags: ["Automated Testing"],
+    });
+    expect(ongoing).toBeDefined();
+    expect(ongoing.id).toBeGreaterThan(0);
+    expect(ongoing.stop).toBeNull();
+
+    const ongoing2 = await Data.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(10)),
+      description: "Ongoing Entry 5",
+      tags: ["Automated Testing"],
+    });
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2.id).toBeGreaterThan(0);
+    expect(ongoing2.stop).toBeNull();
+
+    await Data.Entries.stopCurrent();
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 5");
+    expect(ongoing3).toBeDefined();
+    expect(ongoing3!.stop).toBeDefined();
+    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 4");
+    expect(ongoing4).toBeDefined();
+    expect(ongoing4!.stop).toBeNull();
+    expect(ongoing3!.stop).toBe(ongoing4!.start);
+
+    await Data.Entries.delete(ongoing.id);
+    await Data.Entries.delete(ongoing2.id);
+  });
+
+  it("can start entries offline when one is going and sync later", async () => {
+    const ongoing = await Data.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(30)),
+      description: "Ongoing Entry 6",
+      tags: ["Automated Testing"],
+    });
+    expect(ongoing).toBeDefined();
+    expect(ongoing.id).toBeGreaterThan(0);
+    expect(ongoing.stop).toBeNull();
+
+    TogglConfig.disabled = true;
+
+    await expect(
+      Data.Entries.create({
+        start: Dates.toISOExtended(Dates.secondsAgo(10)),
+        description: "Ongoing Entry 7",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
+    const ongoing2 = await Data.Entries.getCurrent();
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2!.id).toBeLessThan(0);
+    expect(ongoing2!.stop).toBeNull();
+
+    TogglConfig.disabled = false;
+    await Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 6");
+    expect(ongoing3).toBeDefined();
+    expect(ongoing3!.stop).toBeDefined();
+    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 7");
+    expect(ongoing4).toBeDefined();
+    expect(ongoing4!.id).toBeGreaterThan(0);
+    expect(ongoing4!.stop).toBeNull();
+    expect(ongoing3!.stop).toBe(ongoing4!.start);
+
+    await Data.Entries.delete(ongoing3!.id);
+    await Data.Entries.delete(ongoing4!.id);
+  });
+
+  it("can start entries from ongoing toggl entries when one is ongoing", async () => {
+    const ongoing = await Data.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(30)),
+      description: "Ongoing Entry 8",
+      tags: ["Automated Testing"],
+    });
+    expect(ongoing).toBeDefined();
+    expect(ongoing.id).toBeGreaterThan(0);
+    expect(ongoing.stop).toBeNull();
+
+    const ongoing2 = await Toggl.Entries.create({
+      start: Dates.toISOExtended(Dates.secondsAgo(10)),
+      stop: null,
+      description: "Ongoing Entry 9",
+      tags: ["Automated Testing"],
+      project_id: null,
+      at: "", // ignored
+      duration: -1, // ignored
+      id: -1, // ignored
+    });
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2.id).toBeGreaterThan(0);
+    expect(ongoing2.stop).toBeNull();
+
+    await Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing3 = entries.find((e) => e.description === "Ongoing Entry 8");
+    expect(ongoing3).toBeDefined();
+    expect(ongoing3!.stop).toBeDefined();
+    const ongoing4 = entries.find((e) => e.description === "Ongoing Entry 9");
+    expect(ongoing4).toBeDefined();
+    expect(ongoing4!.stop).toBeNull();
+    expect(ongoing3!.stop).toBe(ongoing4!.start);
+
+    await Data.Entries.delete(ongoing.id);
+    await Data.Entries.delete(ongoing2.id);
+  });
+
+  it("can start entries locally when one is running locally", async () => {
+    TogglConfig.disabled = true;
+
+    await expect(
+      Data.Entries.create({
+        start: Dates.toISOExtended(Dates.secondsAgo(30)),
+        description: "Ongoing Entry 10",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
+    const ongoing = await Data.Entries.getCurrent();
+    expect(ongoing).toBeDefined();
+    expect(ongoing!.id).toBeLessThan(0);
+    expect(ongoing!.stop).toBeNull();
+
+    await expect(
+      Data.Entries.create({
+        start: Dates.toISOExtended(Dates.secondsAgo(10)),
+        description: "Ongoing Entry 11",
+        tags: ["Automated Testing"],
+      }),
+    ).rejects.toThrow();
+    const ongoing2 = await Data.Entries.getCurrent();
+    expect(ongoing2).toBeDefined();
+    expect(ongoing2!.id).toBeLessThan(0);
+    expect(ongoing2!.stop).toBeNull();
+
+    const localEntries = await Data.Entries.getSince(yesterdayString);
+    const ongoing3 = localEntries.find(
+      (e) => e.description === "Ongoing Entry 10",
+    );
+    expect(ongoing3).toBeDefined();
+    const ongoing4 = localEntries.find(
+      (e) => e.description === "Ongoing Entry 11",
+    );
+    expect(ongoing4).toBeDefined();
+    expect(ongoing3!.stop).toBe(ongoing4!.start);
+
+    TogglConfig.disabled = false;
+    Data.Entries.sync();
+
+    const entries = await Data.Entries.getSince(yesterdayString);
+    const ongoing5 = entries.find((e) => e.description === "Ongoing Entry 10");
+    expect(ongoing5).toBeDefined();
+    expect(ongoing5!.id).toBeGreaterThan(0);
+    const ongoing6 = entries.find((e) => e.description === "Ongoing Entry 11");
+    expect(ongoing6).toBeDefined();
+    expect(ongoing6!.id).toBeGreaterThan(0);
+    expect(ongoing5!.stop).toBe(ongoing6!.start);
+
+    await Data.Entries.delete(ongoing5!.id);
+    await Data.Entries.delete(ongoing6!.id);
+  });
 });
-
-// describe("Data", () => {
-//   beforeAll(async () => {
-//     await Database.Manage.dropAllTablesAsync();
-//     await Database.Manage.initializeDBAsync();
-//   });
-
-//   it("can read projects", async () => {
-//     const projs = await Data.Projects.getAll();
-//     expect(projs).toEqual([]);
-//   });
-
-//   it("can fill projects from toggl", async () => {
-//     const proj1 = await Toggl.Projects.create({ name: "Project 1" });
-//     const proj2 = await Toggl.Projects.create({ name: "Project 2" });
-//     const proj3 = await Toggl.Projects.create({ name: "Project 3" });
-//     await Data.Projects.sync();
-//     const projs = await Data.Projects.getAll();
-//     expect(projs.length).toBe(3);
-//     expect(projs.some((p) => p.id === proj1.id && p.name === proj1.name)).toBe(
-//       true,
-//     );
-//     expect(projs.some((p) => p.id === proj2.id && p.name === proj2.name)).toBe(
-//       true,
-//     );
-//     expect(projs.some((p) => p.id === proj3.id && p.name === proj3.name)).toBe(
-//       true,
-//     );
-//   });
-
-//   it("can create projects when online", async () => {
-//     const proj4 = await Data.Projects.create({ name: "Project 4" });
-//     const projs = await Data.Projects.getAll();
-//     const togglProjs = await Toggl.Projects.getAll();
-//     expect(proj4!.id > 0);
-//     expect(proj4!.at).not.toBeNull();
-//     expect(proj4).not.toBe(null);
-//     expect(projs.length).toBe(4);
-//     expect(
-//       projs.some((p) => p.id === proj4!.id && p.name === proj4!.name),
-//     ).toBe(true);
-//     expect(
-//       togglProjs.some((p) => p.id === proj4!.id && p.name === proj4!.name),
-//     ).toBe(true);
-//   });
-
-//   it("can create projects when offline", async () => {
-//     TogglConfig.disabled = true;
-//     await expect(Data.Projects.create({ name: "Project 5" })).rejects.toThrow(
-//       Error("Toggl API has been programatically disabled"),
-//     );
-//     await expect(
-//       Data.Projects.create({
-//         name: "Project 6",
-//         color: Colors.fromName("indigo")?.toggl_hex,
-//         icon: "hat",
-//       }),
-//     ).rejects.toThrow(Error("Toggl API has been programatically disabled"));
-//     await expect(Data.Projects.create({ name: "Project 7" })).rejects.toThrow(
-//       Error("Toggl API has been programatically disabled"),
-//     );
-//     const localProjs = await Data.Projects.getAll();
-
-//     expect(localProjs.length).toBe(7);
-//     const proj5 = localProjs.find((p) => p.name === "Project 5");
-//     expect(proj5).toBeDefined();
-//     expect(proj5!.id < 0);
-//     const proj6 = localProjs.find((p) => p.name === "Project 6");
-//     expect(proj6).toBeDefined();
-//     expect(proj6!.id).toBe(proj5!.id - 1);
-//     expect(proj6!.color).toMatch(Colors.fromName("indigo")!.toggl_hex);
-//     expect(proj6!.icon).toMatch("hat");
-//   });
-
-//   it("can edit offline only projects", async () => {
-//     const projs = await Data.Projects.getAll();
-//     const proj6 = projs.find((p) => p.name === "Project 6");
-//     expect(proj6).toBeDefined();
-//     await expect(
-//       Data.Projects.edit({
-//         id: proj6!.id,
-//         name: "Project SEX ahaha",
-//         icon: "bear",
-//       }),
-//     ).rejects.toThrow(Error("Toggl API has been programatically disabled"));
-//     const newprojs = await Data.Projects.getAll();
-//     const newproj = newprojs.find((p) => p.id === proj6!.id);
-//     expect(newproj).toBeDefined();
-//     expect(newproj!.name).toMatch("Project SEX ahaha");
-//     expect(newproj!.icon).toMatch("bear");
-//     expect(newproj!.color).toMatch(Colors.fromName("indigo")!.toggl_hex);
-//   });
-
-//   it("can delete offline only projects", async () => {
-//     const projs = await Data.Projects.getAll();
-//     const proj7 = projs.find((p) => p.name === "Project 7");
-//     expect(proj7).toBeDefined();
-//     await expect(Data.Projects.delete(proj7!.id)).rejects.toThrow(
-//       Error("Toggl API has been programatically disabled"),
-//     );
-//     const newprojs = await Data.Projects.getAll();
-//     expect(newprojs.length).toBe(6);
-//     expect(newprojs.some((p) => p.id === proj7!.id)).toBe(false);
-//   });
-
-//   it("can sync local only projects to toggl", async () => {
-//     TogglConfig.disabled = false;
-//     await Data.Projects.sync();
-//     const projs = await Data.Projects.getAll();
-//     const togglProjs = await Toggl.Projects.getAll();
-//     expect(projs.length).toBe(6);
-//     expect(togglProjs.length).toBe(6);
-//     for (const proj of projs) {
-//       const togglProj = togglProjs.find((p) => p.id === proj.id);
-//       expect(togglProj).toBeDefined();
-//       expect(togglProj!.name).toBe(proj.name);
-//       expect(togglProj!.color).toBe(proj.color);
-//       expect(togglProj!.at).toBe(proj.at);
-//     }
-//   });
-
-//   it("can edit projects when offline, then sync", async () => {
-//     TogglConfig.disabled = true;
-//     const projs = await Data.Projects.getAll();
-//     const proj1 = projs.find((p) => p.name === "Project 1");
-//     await expect(
-//       Data.Projects.edit({
-//         id: proj1!.id,
-//         name: "Project 1 Edited",
-//         icon: "doggy",
-//         color: Colors.fromName("green")!.toggl_hex,
-//         active: false,
-//       }),
-//     ).rejects.toThrow(Error("Toggl API has been programatically disabled"));
-//     const editedProjs = await Data.Projects.getAll();
-//     const editedProj = editedProjs.find((p) => p.id === proj1!.id);
-//     expect(editedProj).toBeDefined();
-//     expect(editedProj!.name).toBe("Project 1 Edited");
-//     expect(editedProj!.icon).toBe("doggy");
-//     expect(editedProj!.color).toMatch(Colors.fromName("green")!.toggl_hex);
-//     expect(editedProj!.active).toBeFalsy();
-//     TogglConfig.disabled = false;
-//     await Data.Projects.sync();
-//     const togglProjs = await Toggl.Projects.getAll();
-//     const togglProj = togglProjs.find((p) => p.id === proj1!.id);
-//     expect(togglProj).toBeDefined();
-//     expect(togglProj!.name).toBe("Project 1 Edited");
-//     expect(togglProj!.color.toUpperCase()).toMatch(
-//       Colors.fromName("green")!.toggl_hex,
-//     );
-//     expect(togglProj!.active).toBe(false);
-//     expect(togglProjs.length).toBe(6);
-//     const syncedProjs = await Data.Projects.getAll();
-//     const syncedProj = syncedProjs.find((p) => p.id === proj1!.id);
-//     expect(syncedProj).toBeDefined();
-//     expect(syncedProj!.name).toBe("Project 1 Edited");
-//     expect(syncedProj!.icon).toBe("doggy");
-//     expect(syncedProj!.color).toMatch(Colors.fromName("green")!.toggl_hex);
-//     expect(syncedProj!.active).toBeFalsy();
-//     expect(syncedProjs.length).toBe(6);
-//   });
-
-//   it("can delete projects when offline, then sync", async () => {
-//     TogglConfig.disabled = true;
-//     const projs = await Data.Projects.getAll();
-//     const proj2 = projs.find((p) => p.name === "Project 2");
-//     await expect(Data.Projects.delete(proj2!.id)).rejects.toThrow(
-//       Error("Toggl API has been programatically disabled"),
-//     );
-//     const newProjs = await Data.Projects.getAll();
-//     expect(newProjs.length).toBe(5);
-//     expect(newProjs.some((p) => p.id === proj2!.id)).toBe(false);
-//     TogglConfig.disabled = false;
-//     await Data.Projects.sync();
-//     const togglProjs = await Toggl.Projects.getAll();
-//     expect(togglProjs.length).toBe(5);
-//     expect(togglProjs.some((p) => p.id === proj2!.id)).toBe(false);
-//     const syncedProjs = await Data.Projects.getAll();
-//     expect(syncedProjs.length).toBe(5);
-//     expect(syncedProjs.some((p) => p.id === proj2!.id)).toBe(false);
-//   });
-
-//   it("can edit projects on toggl, then sync", async () => {
-//     TogglConfig.disabled = false;
-//     const proj = (await Data.Projects.getAll())[0];
-//     expect(proj).toBeDefined();
-//     expect(proj.id).toBeGreaterThan(0);
-
-//     const edited = await Toggl.Projects.edit({
-//       id: proj.id,
-//       name: "Edited",
-//     });
-//     expect(edited.id).toBe(proj.id);
-//     expect(edited.name).toBe("Edited");
-
-//     await expect(Data.Projects.sync()).resolves.toBe(true);
-//     const synced = await Data.Projects.getAll();
-//     const syncedProj = synced.find((p) => p.id === proj.id);
-//     expect(syncedProj).toBeDefined();
-//     expect(syncedProj!.name).toBe("Edited");
-//   });
-
-//   it("can delete projects on toggl, then sync", async () => {
-//     TogglConfig.disabled = false;
-//     const proj = (await Data.Projects.getAll())[0];
-//     expect(proj).toBeDefined();
-//     expect(proj.id).toBeGreaterThan(0);
-//     await expect(Toggl.Projects.delete(proj.id)).resolves.toBeDefined();
-
-//     await expect(Data.Projects.sync()).resolves.toBe(true);
-//     const synced = await Data.Projects.getAll();
-//     expect(synced.some((p) => p.id === proj.id)).toBe(false);
-//   });
-
-//   it("overrides older edits with newer edits", async () => {
-//     TogglConfig.disabled = false;
-//     const proj = (await Data.Projects.getAll())[0];
-//     expect(proj).toBeDefined();
-//     expect(proj.id).toBeGreaterThan(0);
-//     const older = await Toggl.Projects.edit({
-//       id: proj.id,
-//       name: "Older",
-//       color: Colors.fromName("fuscia")!.toggl_hex,
-//     });
-//     expect(older).toBeDefined();
-//     expect(older.name).toBe("Older");
-//     expect(older.color.toUpperCase()).toMatch(
-//       Colors.fromName("fuscia")!.toggl_hex,
-//     );
-
-//     await new Promise((resolve) => setTimeout(resolve, 2000));
-
-//     TogglConfig.disabled = true;
-//     await expect(
-//       Data.Projects.edit({
-//         id: proj.id,
-//         name: "Newer",
-//       }),
-//     ).rejects.toThrow(Error("Toggl API has been programatically disabled"));
-//     const projs = await Data.Projects.getAll();
-//     const newer = projs.find((p) => p.id === proj.id);
-//     expect(new Date(older.at) < new Date(newer!.at)).toBeTruthy();
-
-//     TogglConfig.disabled = false;
-//     await Data.Projects.sync();
-//     const synced = await Data.Projects.getAll();
-//     const syncedProj = synced.find((p) => p.id === proj.id);
-//     expect(syncedProj).toBeDefined();
-//     expect(syncedProj!.name).toBe("Newer");
-//     expect(syncedProj!.color).toMatch(proj.color);
-//   });
-
-//   it("Can handle multiple sync's being called at the same time", async () => {
-//     const sync1 = Data.Projects.sync();
-//     const sync2 = Data.Projects.sync();
-//     const sync3 = Data.Projects.sync();
-
-//     await expect(sync1).resolves.toBe(true);
-//     await expect(sync2).resolves.toBe(false);
-//     await expect(sync3).resolves.toBe(false);
-
-//     await expect(Data.Projects.sync()).resolves.toBe(true);
-//   });
-// });

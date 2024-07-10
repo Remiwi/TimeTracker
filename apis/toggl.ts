@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
 import { Entry, TogglProject } from "./types";
+import { Dates } from "@/utils/dates";
 
 export const TogglConfig = {
   token: null as string | null,
@@ -180,10 +181,11 @@ export const Toggl = {
         throw new Error("No token found");
       }
 
-      const end = new Date().toISOString();
+      const start = Dates.toISOSimple(new Date(startingAtOrAfter));
+      const end = Dates.toISOSimple(new Date());
 
       const res = await fetch(
-        `https://api.track.toggl.com/api/v9/me/time_entries?start_date=${startingAtOrAfter}&end_date=${end}`,
+        `https://api.track.toggl.com/api/v9/me/time_entries?start_date=${start}&end_date=${end}`,
         {
           method: "GET",
           headers: {
@@ -227,8 +229,8 @@ export const Toggl = {
             tags: tags || [],
             created_with: "Indev interface app",
             workspace_id: Number(TogglConfig.workspace),
-            start: entry.start,
-            stop: entry.stop,
+            start: Dates.toISOSimple(new Date(entry.start)),
+            stop: entry.stop ? Dates.toISOSimple(new Date(entry.stop)) : null,
             duration: entry.stop === null ? -1 : undefined,
           }),
         },
@@ -283,6 +285,15 @@ export const Toggl = {
 
       const tags =
         typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
+      const start = entry.start
+        ? Dates.toISOSimple(new Date(entry.start))
+        : undefined;
+      const stop =
+        entry.stop === null
+          ? null
+          : entry.stop
+            ? Dates.toISOSimple(new Date(entry.stop))
+            : undefined;
 
       const res = await fetch(
         `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries/${entry.id}`,
@@ -291,6 +302,8 @@ export const Toggl = {
           body: JSON.stringify({
             ...entry,
             tags: tags,
+            start: start,
+            stop: stop,
           }),
           headers: {
             "Content-Type": "application/json",
