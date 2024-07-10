@@ -5,6 +5,7 @@ import {
   Text,
   TouchableNativeFeedback,
   View,
+  ScrollView,
   Vibration,
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
@@ -16,6 +17,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Data } from "@/apis/data";
 import { Template } from "@/apis/types";
 import { Dates } from "@/utils/dates";
+import ChipBar from "@/components/ChipBar";
+import ActionChip from "@/components/ActionChip";
 
 const VIBRATION_DURATION = 80;
 
@@ -634,10 +637,46 @@ function Timer() {
   const projectIcon = project ? project.icon : "";
 
   return (
-    <View className="pb-6">
+    <View className="">
       {!timeEntryQuery.data && (
-        <View className="flex h-36 flex-row items-center justify-center px-8">
-          <Text className="text-4xl color-gray-400">No running entry</Text>
+        <View className="flex items-center justify-between">
+          <View className="flex h-36 flex-grow items-center justify-center">
+            <Text className="px-8 text-4xl color-gray-400">
+              No running entry
+            </Text>
+          </View>
+          <ChipBar>
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+          </ChipBar>
         </View>
       )}
       {timeEntryQuery.data && (
@@ -670,6 +709,38 @@ function Timer() {
               {timeEntryQuery.data?.tags || "..."}
             </Text>
           </View>
+          <ChipBar>
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+            <ActionChip
+              text="Action"
+              leadingIcon="check"
+              trailingIcon="close"
+            />
+          </ChipBar>
         </>
       )}
     </View>
