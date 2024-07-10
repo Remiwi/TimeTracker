@@ -4,6 +4,7 @@ import { DBEntry, Entry, Project, Template } from "./types";
 import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 import { Dates } from "@/utils/dates";
+import { Tags } from "@/utils/tags";
 
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
@@ -13,7 +14,7 @@ const entrySyncLock = tryAcquire(new Mutex());
 // If they both have a defined/undefined stop, then `a` is newer if it's needs_push flag is set and b is newer otherwise
 function getNewerEntry(a: DBEntry, b: Entry) {
   // Check if there even is a difference
-  const a_tags = a.tags.split(",");
+  const a_tags = Tags.toList(a.tags);
   const same_tags =
     b.tags.every((t) => a_tags.includes(t)) &&
     a_tags.every((t) => b.tags.includes(t));
@@ -306,22 +307,25 @@ export const Data = {
 
     getAll: async () => {
       const entries = await Database.Entries.getAll();
-      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+      return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
     },
 
     getSince: async (since: string) => {
       const entries = await Database.Entries.getSince(since);
-      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+      return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
     },
 
     getSinceVisible: async (since: string) => {
       const entries = await Database.Entries.getSinceVisible(since);
-      return entries.map((e) => ({ ...e, tags: e.tags.split(",") }) as Entry);
+      return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
     },
 
     get: async (id: number) => {
       const entry = await Database.Entries.get(id);
-      return { ...entry, tags: entry.tags.split(",") } as Entry;
+      return {
+        ...entry,
+        tags: Tags.toList(entry.tags),
+      } as Entry;
     },
 
     create: async (entry: Partial<Entry> & { start: string }) => {
@@ -362,13 +366,19 @@ export const Data = {
     getCurrent: async () => {
       const current = await Database.Entries.getCurrent();
       if (current === null) return null;
-      return { ...current, tags: current.tags.split(",") } as Entry;
+      return {
+        ...current,
+        tags: Tags.toList(current.tags),
+      } as Entry;
     },
 
     getLastStopped: async () => {
       const last = await Database.Entries.getLastStopped();
       if (last === null) return null;
-      return { ...last, tags: last.tags.split(",") } as Entry;
+      return {
+        ...last,
+        tags: Tags.toList(last.tags),
+      } as Entry;
     },
 
     // Note: start, stop, and duration are all ignored

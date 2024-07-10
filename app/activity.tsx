@@ -17,6 +17,7 @@ import MyTagInput from "@/components/TagInput";
 import { Data } from "@/apis/data";
 import TimerText from "@/components/TimerText";
 import { Dates } from "@/utils/dates";
+import { Tags } from "@/utils/tags";
 
 export default function Page() {
   const qc = useQueryClient();
@@ -218,7 +219,7 @@ function Day(props: {
       groups.push({
         description: entry.description,
         project_id: entry.project_id,
-        tags: entry.tags.join(","),
+        tags: Tags.toString(entry.tags),
         entries: [entry],
       });
       continue;
@@ -227,14 +228,14 @@ function Day(props: {
     if (
       prev_group.description === entry.description &&
       prev_group.project_id === entry.project_id &&
-      prev_group.tags === entry.tags.join(",")
+      prev_group.tags === Tags.toString(entry.tags)
     ) {
       prev_group.entries.push(entry);
     } else {
       groups.push({
         description: entry.description,
         project_id: entry.project_id,
-        tags: entry.tags.join(","),
+        tags: Tags.toString(entry.tags),
         entries: [entry],
       });
     }

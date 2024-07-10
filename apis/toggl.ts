@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
 import { Entry, TogglProject } from "./types";
 import { Dates } from "@/utils/dates";
+import { Tags } from "@/utils/tags";
 
 export const TogglConfig = {
   token: null as string | null,
@@ -213,7 +214,7 @@ export const Toggl = {
         throw new Error("No token found");
       }
       const tags =
-        typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
+        typeof entry.tags === "string" ? Tags.toList(entry.tags) : entry.tags;
 
       const res = await fetch(
         `https://api.track.toggl.com/api/v9/workspaces/${TogglConfig.workspace}/time_entries`,
@@ -290,7 +291,7 @@ export const Toggl = {
       }
 
       const tags =
-        typeof entry.tags === "string" ? entry.tags.split(",") : entry.tags;
+        typeof entry.tags === "string" ? Tags.toList(entry.tags) : entry.tags;
       const start = entry.start
         ? Dates.toISOSimple(new Date(entry.start))
         : undefined;

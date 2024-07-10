@@ -9,6 +9,7 @@ import {
   TogglProject,
 } from "./types";
 import { Dates } from "@/utils/dates";
+import { Tags } from "@/utils/tags";
 
 function getDuration(start: string, stop: string | null) {
   if (stop === null) {
@@ -352,7 +353,11 @@ const Database = {
         [],
       );
       return data.map(
-        (row) => ({ ...row, tags: row.tags.split(",") }) as Template,
+        (row) =>
+          ({
+            ...row,
+            tags: Tags.toList(row.tags),
+          }) as Template,
       );
     },
 
@@ -364,11 +369,14 @@ const Database = {
       if (found === null) {
         throw Error("Template not found");
       }
-      return { ...found, tags: found.tags.split(",") } as Template;
+      return {
+        ...found,
+        tags: Tags.toList(found.tags),
+      } as Template;
     },
 
     create: async (template: Omit<Template, "id">) => {
-      const tags = template.tags.join(",");
+      const tags = Tags.toString(template.tags);
       const res = await db.runAsync(
         `INSERT INTO templates (name, project_id, description, tags)
         VALUES (?, ?, ?, ?);`,
@@ -403,7 +411,7 @@ const Database = {
             ? template.project_id
             : oldTemplate.project_id,
           template.description || oldTemplate.description,
-          template.tags?.join(",") || oldTemplate.tags,
+          template.tags ? Tags.toString(template.tags) : oldTemplate.tags,
           template.id,
         ],
       );
@@ -416,7 +424,7 @@ const Database = {
         throw Error("Template not found after edit");
       }
 
-      const tags = edited.tags.split(",");
+      const tags = Tags.toList(edited.tags);
       return { ...edited, tags } as Template;
     },
 
@@ -493,7 +501,7 @@ const Database = {
           entry.stop,
           entry.duration,
           entry.at,
-          entry.tags.join(","),
+          Tags.toString(entry.tags),
           1,
           0,
           0,
@@ -563,7 +571,7 @@ const Database = {
             stop,
             duration,
             Dates.toISOExtended(new Date()),
-            entry.tags?.join(",") || "",
+            entry.tags ? Tags.toString(entry.tags) : "",
             0,
             0,
             0,
@@ -579,7 +587,10 @@ const Database = {
         throw Error("Entry not found after creation");
       }
       return {
-        created: { ...created, tags: created.tags.split(",") } as Entry,
+        created: {
+          ...created,
+          tags: Tags.toList(created.tags),
+        } as Entry,
         stopped: stopped as DBEntry | null,
       };
     },
@@ -605,7 +616,7 @@ const Database = {
           remote.stop,
           remote.duration,
           remote.at,
-          remote.tags.join(","),
+          Tags.toString(remote.tags),
           local_id,
         ],
       );
@@ -619,7 +630,10 @@ const Database = {
         throw Error("Entry not found after linking");
       }
 
-      return { ...linked, tags: linked.tags.split(",") } as Entry;
+      return {
+        ...linked,
+        tags: Tags.toList(linked.tags),
+      } as Entry;
     },
 
     delete: async (id: number) => {
@@ -663,7 +677,7 @@ const Database = {
           stop,
           duration,
           Dates.toISOExtended(new Date()),
-          entry.tags?.join(",") || oldEntry.tags,
+          entry.tags ? Tags.toString(entry.tags) : oldEntry.tags,
           oldEntry.linked ? 1 : 0,
           entry.id,
         ],
@@ -677,7 +691,10 @@ const Database = {
         throw Error("Entry not found after edit");
       }
 
-      return { ...edited, tags: edited.tags.split(",") } as Entry;
+      return {
+        ...edited,
+        tags: Tags.toList(edited.tags),
+      } as Entry;
     },
 
     editWithRemoteData: async (entry: Entry) => {
@@ -707,7 +724,7 @@ const Database = {
           entry.stop,
           entry.duration,
           entry.at,
-          entry.tags.join(","),
+          Tags.toString(entry.tags),
           entry.id,
         ],
       );
@@ -720,7 +737,10 @@ const Database = {
         throw Error("Entry not found after edit");
       }
 
-      return { ...edited, tags: edited.tags.split(",") } as Entry;
+      return {
+        ...edited,
+        tags: Tags.toList(edited.tags),
+      } as Entry;
     },
   },
 };
