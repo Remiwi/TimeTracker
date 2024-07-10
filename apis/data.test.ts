@@ -440,7 +440,7 @@ describe("Entries", () => {
     expect(ongoing6b).toBeDefined();
     expect(ongoing7b).toBeDefined();
     expect(ongoing7b!.start).not.toContain("Z");
-    expect(ongoing6b!.stop).toBe(ongoing7b!.start);
+    expect(ongoing6b!.stop).toBe(ongoing7b!.start); // We set prev ongoing stop to new ongoing start
     expect(ongoing7b!.stop).toBeNull();
     expect(ongoing7b!.id).toBeGreaterThan(0);
 
@@ -479,7 +479,7 @@ describe("Entries", () => {
     const ongoing9b = entries.find((e) => e.description === "Ongoing Entry 9");
     expect(ongoing8b).toBeDefined();
     expect(ongoing9b).toBeDefined();
-    expect(ongoing8b!.stop).toBe(ongoing9b!.start);
+    expect(ongoing8b!.stop).not.toBeNull(); // Toggl create stops prev ongoing based on request time, not new entry time
     expect(ongoing9b!.stop).toBeNull();
 
     await Data.Entries.delete(ongoing8a.id);
@@ -496,10 +496,10 @@ describe("Entries", () => {
         tags: ["Automated Testing"],
       }),
     ).rejects.toThrow();
-    const ongoing = await Data.Entries.getCurrent();
-    expect(ongoing).toBeDefined();
-    expect(ongoing!.id).toBeLessThan(0);
-    expect(ongoing!.stop).toBeNull();
+    const ongoing10a = await Data.Entries.getCurrent();
+    expect(ongoing10a).toBeDefined();
+    expect(ongoing10a!.id).toBeLessThan(0);
+    expect(ongoing10a!.stop).toBeNull();
 
     await expect(
       Data.Entries.create({
@@ -508,35 +508,39 @@ describe("Entries", () => {
         tags: ["Automated Testing"],
       }),
     ).rejects.toThrow();
-    const ongoing2 = await Data.Entries.getCurrent();
-    expect(ongoing2).toBeDefined();
-    expect(ongoing2!.id).toBeLessThan(0);
-    expect(ongoing2!.stop).toBeNull();
+    const ongoing11a = await Data.Entries.getCurrent();
+    expect(ongoing11a).toBeDefined();
+    expect(ongoing11a!.id).toBeLessThan(0);
+    expect(ongoing11a!.stop).toBeNull();
 
     const localEntries = await Data.Entries.getSince(yesterdayString);
-    const ongoing3 = localEntries.find(
+    const ongoing10b = localEntries.find(
       (e) => e.description === "Ongoing Entry 10",
     );
-    expect(ongoing3).toBeDefined();
-    const ongoing4 = localEntries.find(
+    const ongoing11b = localEntries.find(
       (e) => e.description === "Ongoing Entry 11",
     );
-    expect(ongoing4).toBeDefined();
-    expect(ongoing3!.stop).toBe(ongoing4!.start);
+    expect(ongoing10b).toBeDefined();
+    expect(ongoing11b).toBeDefined();
+    expect(ongoing10b!.stop).toBe(ongoing11b!.start);
 
     TogglConfig.disabled = false;
-    Data.Entries.sync();
+    await Data.Entries.sync();
 
     const entries = await Data.Entries.getSince(yesterdayString);
-    const ongoing5 = entries.find((e) => e.description === "Ongoing Entry 10");
-    expect(ongoing5).toBeDefined();
-    expect(ongoing5!.id).toBeGreaterThan(0);
-    const ongoing6 = entries.find((e) => e.description === "Ongoing Entry 11");
-    expect(ongoing6).toBeDefined();
-    expect(ongoing6!.id).toBeGreaterThan(0);
-    expect(ongoing5!.stop).toBe(ongoing6!.start);
+    const ongoing10c = entries.find(
+      (e) => e.description === "Ongoing Entry 10",
+    );
+    const ongoing11c = entries.find(
+      (e) => e.description === "Ongoing Entry 11",
+    );
+    expect(ongoing10c).toBeDefined();
+    expect(ongoing11c).toBeDefined();
+    expect(ongoing10c!.id).toBeGreaterThan(0);
+    expect(ongoing11c!.id).toBeGreaterThan(0);
+    expect(ongoing10c!.stop).toBe(ongoing11c!.start);
 
-    await Data.Entries.delete(ongoing5!.id);
-    await Data.Entries.delete(ongoing6!.id);
+    await Data.Entries.delete(ongoing10c!.id);
+    await Data.Entries.delete(ongoing11c!.id);
   });
 });
