@@ -550,14 +550,15 @@ function Timer() {
               }}
             />
             <ChipBar>
+              {/* Projects */}
               <ActionChip
                 backgroundColor={
                   ongoingQuery.data.project_color || "transparent"
                 }
-                textColor={ongoingQuery.data.project_id ? "#eeeeee" : undefined}
-                leadingIconColor={
-                  ongoingQuery.data.project_id ? "#eeeeee" : undefined
+                borderColor={
+                  ongoingQuery.data.project_id ? "transparent" : undefined
                 }
+                textColor={ongoingQuery.data.project_id ? "#eeeeee" : undefined}
                 trailingIconColor={
                   ongoingQuery.data.project_id ? "#eeeeee" : undefined
                 }
