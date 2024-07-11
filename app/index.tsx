@@ -190,6 +190,9 @@ function Item(props: {
         stop: null,
         duration: -1,
         tags: props.template.tags,
+        project_name: thisProj?.name || null,
+        project_icon: thisProj?.icon || null,
+        project_color: thisProj?.color || null,
       });
       return oldEntry;
     },
