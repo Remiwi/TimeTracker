@@ -479,7 +479,7 @@ const Database = {
 
     getCurrent: async () => {
       const running = await db.getAllAsync<DBEntry>(
-        `SELECT * FROM entries WHERE stop IS NULL;`,
+        `SELECT * FROM entries WHERE stop IS NULL AND to_delete = 0;`,
         [],
       );
       if (running.length > 1) {
