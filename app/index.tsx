@@ -520,6 +520,26 @@ function Timer() {
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!ongoingQuery.data) {
+        return;
+      }
+      await Data.Entries.delete(ongoingQuery.data.id);
+    },
+    onMutate: () => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", "current"], null);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
+  });
+
   const start = ongoingQuery.data
     ? new Date(ongoingQuery.data.start)
     : undefined;
@@ -745,10 +765,15 @@ function Timer() {
                 }}
                 hide={templateMade && !addTemplateMutation.isPending}
               />
+              {/* Delete Entry */}
               <ActionChip
-                text="Action"
-                leadingIcon="check"
-                trailingIcon="close"
+                borderColor="transparent"
+                backgroundColor="#444444"
+                textColor="#eeeeee"
+                leadingIconColor="#eeeeee"
+                text="Delete"
+                leadingIcon="delete"
+                onPress={deleteMutation.mutate}
               />
             </ChipBar>
           </View>
