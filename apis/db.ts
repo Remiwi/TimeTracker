@@ -686,8 +686,12 @@ const Database = {
           needs_push = ?
         WHERE id = ?;`,
         [
-          entry.description || oldEntry.description,
-          entry.project_id || oldEntry.project_id,
+          entry.description === undefined
+            ? oldEntry.description
+            : entry.description,
+          entry.project_id === undefined
+            ? oldEntry.project_id
+            : entry.project_id,
           start,
           stop,
           duration,

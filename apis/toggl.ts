@@ -311,6 +311,7 @@ export const Toggl = {
             tags: tags,
             start: start,
             stop: stop,
+            description: entry.description || "",
           }),
           headers: {
             "Content-Type": "application/json",
