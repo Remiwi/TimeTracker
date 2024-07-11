@@ -19,6 +19,8 @@ import { Dates } from "@/utils/dates";
 import ChipBar from "@/components/ChipBar";
 import ActionChip from "@/components/ActionChip";
 import ListModal from "@/components/ListModal";
+import { useAtom } from "jotai";
+import { templateMadeAtom } from "@/utils/atoms";
 
 const VIBRATION_DURATION = 80;
 
@@ -173,9 +175,12 @@ function Item(props: {
     (p) => p.id === props.template.project_id,
   );
 
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
+
   const startEntryMutation = useMutation({
     mutationFn: Data.Entries.start,
     onMutate: () => {
+      setTemplateMade(true);
       const oldEntry = qc.getQueryData(["entries", "current"]);
       qc.setQueryData(["entries", "current"], {
         id: 0,
@@ -395,6 +400,8 @@ function Timer() {
     height: 0,
   });
 
+  const [templateMade, setTemplateMade] = useAtom(templateMadeAtom);
+
   const qc = useQueryClient();
 
   const ongoingQuery = useQuery({
@@ -423,6 +430,7 @@ function Timer() {
       });
     },
     onMutate: (project: Project | null) => {
+      setTemplateMade(false);
       qc.setQueryData(["entries", "current"], {
         ...ongoingQuery.data,
         project_id: project?.id || null,
@@ -443,6 +451,7 @@ function Timer() {
   const stopMutation = useMutation({
     mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
+      setTemplateMade(false);
       qc.setQueryData(["entries", "previous"], ongoingQuery.data);
       qc.setQueryData(["entries", "current"], null);
     },
@@ -495,6 +504,19 @@ function Timer() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
       ongoingQuery.refetch();
+    },
+  });
+
+  const addTemplateMutation = useMutation({
+    mutationFn: Data.Templates.create,
+    onMutate: () => {
+      setTemplateMade(true);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["templates"] });
     },
   });
 
@@ -699,6 +721,29 @@ function Timer() {
                 text="Set start to now"
                 leadingIcon="start"
                 onPress={setStartToNowMutation.mutate}
+              />
+              {/* Make Template */}
+              <ActionChip
+                borderColor={
+                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
+                }
+                textColor={
+                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
+                }
+                leadingIconColor={
+                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
+                }
+                text="Template"
+                leadingIcon="add-circle"
+                onPress={() => {
+                  addTemplateMutation.mutate({
+                    name: "",
+                    project_id: ongoingQuery.data?.project_id || null,
+                    description: ongoingQuery.data?.description || "",
+                    tags: ongoingQuery.data?.tags || [],
+                  });
+                }}
+                hide={templateMade && !addTemplateMutation.isPending}
               />
               <ActionChip
                 text="Action"
