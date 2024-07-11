@@ -402,8 +402,10 @@ function Timer() {
     width: 0,
     height: 0,
   });
-  const [projectChipModalVisible, setProjectChipModalVisible] = useState(false);
-  const [tagChipModalVisible, setTagChipModalVisible] = useState(false);
+  const [projectStartModalVisible, setProjectStartModalVisible] =
+    useState(false);
+  const [projectEditModalVisible, setProjectEditModalVisible] = useState(false);
+  const [tagModalVisible, setTagModalVisible] = useState(false);
 
   const [templateMade, setTemplateMade] = useAtom(templateMadeAtom);
 
@@ -422,6 +424,36 @@ function Timer() {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
+  });
+
+  const startEntryMutation = useMutation({
+    mutationFn: async (project: Project | null) => {
+      await Data.Entries.start({
+        project_id: project?.id || null,
+      });
+    },
+    onMutate: (project: Project | null) => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", "current"], {
+        id: 0,
+        description: "",
+        project_id: project?.id || null,
+        start: Dates.toISOExtended(new Date()),
+        stop: null,
+        duration: -1,
+        tags: [],
+        project_name: project?.name || null,
+        project_icon: project?.icon || null,
+        project_color: project?.color || null,
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
   });
 
   const editOngoingProjectMutation = useMutation({
@@ -584,38 +616,64 @@ function Timer() {
               No running entry
             </Text>
           </View>
-          <ChipBar>
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
+          <View
+            className="relative"
+            ref={chipBarRef}
+            onLayout={(event) => {
+              // var { width, height } = event.nativeEvent.layout;
+              if (chipBarRef.current === null) return;
+              chipBarRef.current.measure((rx, ry, width, height, x, y) => {
+                setChipBarLayout({ x, y: y + 10, width, height });
+              });
+            }}
+          >
+            {/* Projects Start */}
+            <ListModal
+              options={projectsQuery.data || []}
+              visible={projectStartModalVisible}
+              backgroundColor="#f0f0f0"
+              height={300}
+              positionRelativeTo={chipBarLayout}
+              renderOption={(option: Project) => (
+                <View className="flex flex-row gap-4 border-b border-slate-300 px-4 py-2">
+                  <View
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    style={{ backgroundColor: option.color }}
+                  >
+                    <MaterialCommunityIcons
+                      name={option.icon as any}
+                      color={"white"}
+                      size={16}
+                    />
+                  </View>
+                  <Text className="text-xl" style={{ color: option.color }}>
+                    {option.name}
+                  </Text>
+                </View>
+              )}
+              onClose={() => setProjectStartModalVisible(false)}
+              onSelect={(selected: Project) => {
+                startEntryMutation.mutate(selected);
+                setProjectStartModalVisible(false);
+              }}
             />
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
-            />
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
-            />
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
-            />
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
-            />
-            <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
-            />
-          </ChipBar>
+            <ChipBar>
+              {/* Start from empty */}
+              <ActionChip
+                text="Start empty"
+                leadingIcon="play-arrow"
+                onPress={() => startEntryMutation.mutate(null)}
+              />
+              {/* Start from project */}
+              <ActionChip
+                text="Start from project"
+                leadingIcon="play-arrow"
+                onPress={() => setProjectStartModalVisible(true)}
+              />
+              {/* Restore from trash */}
+              <ActionChip text="Restore" leadingIcon="restore-from-trash" />
+            </ChipBar>
+          </View>
         </View>
       )}
       {ongoingQuery.data && (
@@ -656,10 +714,10 @@ function Timer() {
               });
             }}
           >
-            {/* Projects */}
+            {/* Projects Edit */}
             <ListModal
               options={projectsQuery.data || []}
-              visible={projectChipModalVisible}
+              visible={projectEditModalVisible}
               backgroundColor="#f0f0f0"
               height={300}
               positionRelativeTo={chipBarLayout}
@@ -680,21 +738,21 @@ function Timer() {
                   </Text>
                 </View>
               )}
-              onClose={() => setProjectChipModalVisible(false)}
+              onClose={() => setProjectEditModalVisible(false)}
               onSelect={(selected: Project) => {
                 editOngoingProjectMutation.mutate(selected);
-                setProjectChipModalVisible(false);
+                setProjectEditModalVisible(false);
               }}
             />
             {/* Tags */}
             <TagModal
               tags={ongoingQuery.data.tags}
-              visible={tagChipModalVisible}
+              visible={tagModalVisible}
               backgroundColor="#f0f0f0"
               height={300}
               positionRelativeTo={chipBarLayout}
               onClose={() => {
-                setTagChipModalVisible(false);
+                setTagModalVisible(false);
                 if (!ongoingQuery.data) {
                   return;
                 }
@@ -726,7 +784,7 @@ function Timer() {
                   if (ongoingQuery.data?.project_id) {
                     editOngoingProjectMutation.mutate(null);
                   } else {
-                    setProjectChipModalVisible(true);
+                    setProjectEditModalVisible(true);
                   }
                 }}
               />
@@ -748,7 +806,7 @@ function Timer() {
                 trailingIcon={
                   ongoingQuery.data?.tags.length > 0 ? "edit" : "add"
                 }
-                onPress={() => setTagChipModalVisible(true)}
+                onPress={() => setTagModalVisible(true)}
               />
               {/* Stop */}
               <ActionChip
