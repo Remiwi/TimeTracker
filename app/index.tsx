@@ -5,7 +5,6 @@ import {
   Text,
   TouchableNativeFeedback,
   View,
-  ScrollView,
   Vibration,
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
@@ -15,10 +14,11 @@ import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Data } from "@/apis/data";
-import { Template } from "@/apis/types";
+import { Project, Template } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import ChipBar from "@/components/ChipBar";
 import ActionChip from "@/components/ActionChip";
+import OptionChip from "@/components/OptionChip";
 
 const VIBRATION_DURATION = 80;
 
@@ -63,30 +63,11 @@ export default function Page() {
     },
   });
 
-  const syncMutation = useMutation({
-    mutationFn: async () => {
-      return await Data.Projects.sync().then(
-        async () => await Data.Entries.sync(),
-      );
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({
-        queryKey: ["projects"],
-      });
-      qc.invalidateQueries({
-        queryKey: ["entries"],
-      });
-    },
-  });
-
   const templates = templatesQuery.data || [];
 
   const small = true;
   return (
-    <>
+    <View className="bg-gray-100">
       {templateModalShown && (
         <TemplateEditModal
           defaultTemplate={selectedTemplate}
@@ -107,9 +88,9 @@ export default function Page() {
           }}
         />
       )}
-      <View className="flex h-full bg-gray-50 pt-4">
+      <View className="flex h-full">
         <Timer />
-        <View className="h-full flex-shrink rounded-t-3xl bg-gray-100 pt-6 shadow-xl shadow-black">
+        <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
               numColumns={small ? 3 : 2}
@@ -174,7 +155,7 @@ export default function Page() {
           )}
         </View>
       </View>
-    </>
+    </View>
   );
 }
 
@@ -405,31 +386,52 @@ function TemplateEditModal(props: {
 }
 
 function Timer() {
+  const qc = useQueryClient();
+
+  const ongoingQuery = useQuery({
+    queryKey: ["entries", "current"],
+    queryFn: Data.Entries.getCurrentWithProject,
+  });
+
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
   });
 
-  const timeEntryQuery = useQuery({
-    queryKey: ["entries", "current"],
-    queryFn: Data.Entries.getCurrent,
+  const editOngoingProjectMutation = useMutation({
+    mutationFn: async (project: Project | null) => {
+      if (!ongoingQuery.data) {
+        return;
+      }
+      await Data.Entries.edit({
+        id: ongoingQuery.data.id,
+        project_id: project?.id || null,
+      });
+    },
+    onMutate: (project: Project | null) => {
+      qc.setQueryData(["entries", "current"], {
+        ...ongoingQuery.data,
+        project_id: project?.id || null,
+        project_name: project?.name || null,
+        project_icon: project?.icon || null,
+        project_color: project?.color || null,
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      ongoingQuery.refetch();
+    },
   });
 
-  const start = timeEntryQuery.data
-    ? new Date(timeEntryQuery.data.start)
+  const start = ongoingQuery.data
+    ? new Date(ongoingQuery.data.start)
     : undefined;
 
-  const project_id = timeEntryQuery.data?.project_id || -1;
-  const project = projectsQuery.data?.find((v) => {
-    return v.id === project_id;
-  });
-  const projectName = project ? project.name : "No Project";
-  const projectHex = project ? project.color : "#cccccc";
-  const projectIcon = project ? project.icon : "";
-
   return (
-    <View className="">
-      {!timeEntryQuery.data && (
+    <View className="rounded-b-3xl bg-white pt-4 shadow-md shadow-black">
+      {!ongoingQuery.data && (
         <View className="flex items-center justify-between">
           <View className="flex h-36 flex-grow items-center justify-center">
             <Text className="px-8 text-4xl color-gray-400">
@@ -470,12 +472,12 @@ function Timer() {
           </ChipBar>
         </View>
       )}
-      {timeEntryQuery.data && (
+      {ongoingQuery.data && (
         <>
-          <View className="flex flex-row items-end justify-between px-4 pb-1">
+          <View className="flex flex-row items-end justify-between px-4">
             <View>
-              <Text className="pb-2 text-xl font-bold">
-                {timeEntryQuery.data ? projectName : "..."}
+              <Text className="pb-2 text-2xl font-semibold">
+                {ongoingQuery.data.description || "..."}
               </Text>
               <TimerText className="text-6xl" startTime={start} />
             </View>
@@ -483,28 +485,56 @@ function Timer() {
               className={
                 "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
               }
-              style={{ backgroundColor: projectHex }}
+              style={{
+                backgroundColor: ongoingQuery.data.project_color || "#cccccc",
+              }}
             >
               <MaterialCommunityIcons
-                name={projectIcon as any}
+                name={ongoingQuery.data.project_icon as any}
                 color="white"
                 size={44}
               />
             </View>
           </View>
-          <View className="px-4">
-            <Text className="font-light">
-              {timeEntryQuery.data?.description || "..."}
-            </Text>
-            <Text className="font-light italic text-gray-400">
-              {timeEntryQuery.data?.tags || "..."}
-            </Text>
-          </View>
+          <Text className="px-4 font-light italic text-gray-400">
+            {ongoingQuery.data?.tags || "..."}
+          </Text>
           <ChipBar>
             <ActionChip
-              text="Action"
-              leadingIcon="check"
-              trailingIcon="close"
+              backgroundColor={ongoingQuery.data.project_color || "transparent"}
+              textColor={ongoingQuery.data.project_id ? "#eeeeee" : undefined}
+              leadingIconColor={
+                ongoingQuery.data.project_id ? "#eeeeee" : undefined
+              }
+              trailingIconColor={
+                ongoingQuery.data.project_id ? "#eeeeee" : undefined
+              }
+              text={ongoingQuery.data.project_name || "Project"}
+              trailingIcon={ongoingQuery.data.project_id ? "close" : "add"}
+              onPress={() => editOngoingProjectMutation.mutate(null)}
+            />
+            <OptionChip
+              text="Project"
+              options={projectsQuery.data || []}
+              optionsBackgroundColor="#e7e5e4"
+              renderOption={(option: Project) => (
+                <View className="flex flex-row gap-4 border-b border-slate-300 px-4 py-2">
+                  <View
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    style={{ backgroundColor: option.color }}
+                  >
+                    <MaterialCommunityIcons
+                      name={option.icon as any}
+                      color={"white"}
+                      size={16}
+                    />
+                  </View>
+                  <Text className="text-xl" style={{ color: option.color }}>
+                    {option.name}
+                  </Text>
+                </View>
+              )}
+              onChange={(option) => editOngoingProjectMutation.mutate(option)}
             />
             <ActionChip
               text="Action"
@@ -532,6 +562,9 @@ function Timer() {
               trailingIcon="close"
             />
           </ChipBar>
+          <View className="flex w-full items-center justify-center pb-3">
+            <View className="h-1 w-32 rounded-full bg-gray-300" />
+          </View>
         </>
       )}
     </View>

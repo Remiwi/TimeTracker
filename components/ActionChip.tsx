@@ -1,6 +1,8 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 
+const defaultColor = "#555555";
+
 export default function ActionChip(props: {
   text: string;
   textColor?: string;
@@ -16,9 +18,9 @@ export default function ActionChip(props: {
     <View className="h-9 overflow-hidden rounded-lg">
       <TouchableNativeFeedback onPress={props.onPress}>
         <View
-          className="flex h-9 flex-row items-center rounded-lg border border-black px-2"
+          className="flex h-9 flex-row items-center rounded-lg border px-2"
           style={{
-            borderColor: props.borderColor || "black",
+            borderColor: props.borderColor || defaultColor,
             backgroundColor: props.backgroundColor || "transparent",
           }}
         >
@@ -26,13 +28,13 @@ export default function ActionChip(props: {
             <MaterialIcons
               name={props.leadingIcon as any}
               size={18}
-              color={props.leadingIconColor || "black"}
+              color={props.leadingIconColor || defaultColor}
             />
           )}
           <Text
             className="px-2 font-bold"
             style={{
-              color: props.textColor || "black",
+              color: props.textColor || defaultColor,
             }}
           >
             {props.text}
@@ -41,7 +43,7 @@ export default function ActionChip(props: {
             <MaterialIcons
               name={props.trailingIcon as any}
               size={18}
-              color={props.trailingIconColor || "black"}
+              color={props.trailingIconColor || defaultColor}
             />
           )}
         </View>
