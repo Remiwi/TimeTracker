@@ -473,6 +473,31 @@ function Timer() {
     },
   });
 
+  const setStartToNowMutation = useMutation({
+    mutationFn: async () => {
+      if (!ongoingQuery.data) {
+        return;
+      }
+      await Data.Entries.edit({
+        id: ongoingQuery.data?.id,
+        start: Dates.toISOExtended(new Date()),
+      });
+    },
+    onMutate: () => {
+      qc.setQueryData(["entries", "current"], {
+        ...ongoingQuery.data,
+        start: Dates.toISOExtended(new Date()),
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
+  });
+
   const start = ongoingQuery.data
     ? new Date(ongoingQuery.data.start)
     : undefined;
@@ -660,10 +685,20 @@ function Timer() {
                   !fillToLastStopMutation.isPending
                 }
               />
+              {/* Set start to now */}
               <ActionChip
-                text="Action"
-                leadingIcon="check"
-                trailingIcon="close"
+                borderColor={
+                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
+                }
+                textColor={
+                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
+                }
+                leadingIconColor={
+                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
+                }
+                text="Set start to now"
+                leadingIcon="start"
+                onPress={setStartToNowMutation.mutate}
               />
               <ActionChip
                 text="Action"
