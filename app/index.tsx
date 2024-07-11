@@ -6,6 +6,7 @@ import {
   TouchableNativeFeedback,
   View,
   Vibration,
+  TextInput,
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
@@ -22,6 +23,7 @@ import ListModal from "@/components/ListModal";
 import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
 import TagModal from "@/components/TagModal";
+import { processColorsInProps } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 
 const VIBRATION_DURATION = 80;
 
@@ -456,7 +458,34 @@ function Timer() {
     },
   });
 
-  const editOngoingProjectMutation = useMutation({
+  const editDescriptionMutation = useMutation({
+    mutationFn: async (description: string | null) => {
+      console.log(description);
+      if (!ongoingQuery.data) {
+        return;
+      }
+      await Data.Entries.edit({
+        id: ongoingQuery.data.id,
+        description,
+      });
+    },
+    onMutate: (description: string | null) => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", "current"], {
+        ...ongoingQuery.data,
+        description,
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
+  });
+
+  const editProjectMutation = useMutation({
     mutationFn: async (project: Project | null) => {
       if (!ongoingQuery.data) {
         return;
@@ -680,9 +709,26 @@ function Timer() {
         <>
           <View className="flex flex-row items-end justify-between px-4">
             <View>
-              <Text className="pb-2 text-2xl font-semibold">
-                {ongoingQuery.data.description || "..."}
-              </Text>
+              <View className="flex flex-row items-center gap-2">
+                <MaterialIcons
+                  name="edit"
+                  size={16}
+                  color={ongoingQuery.data.description ? "black" : "#a8a29e"}
+                  className="pb-2"
+                />
+                <StatefulTextInput
+                  className="pb-2 text-2xl"
+                  value={ongoingQuery.data.description || ""}
+                  placeholder="Enter description..."
+                  placeholderClassName="color-stone-400"
+                  style={{ fontWeight: "bold" }}
+                  placeholderStyle={{ fontWeight: "normal" }}
+                  onChange={(t) => {
+                    const text = t.trim();
+                    editDescriptionMutation.mutate(text || null);
+                  }}
+                />
+              </View>
               <TimerText className="text-6xl" startTime={start} />
             </View>
             <View
@@ -740,7 +786,7 @@ function Timer() {
               )}
               onClose={() => setProjectEditModalVisible(false)}
               onSelect={(selected: Project) => {
-                editOngoingProjectMutation.mutate(selected);
+                editProjectMutation.mutate(selected);
                 setProjectEditModalVisible(false);
               }}
             />
@@ -782,7 +828,7 @@ function Timer() {
                 trailingIcon={ongoingQuery.data.project_id ? "close" : "add"}
                 onPress={() => {
                   if (ongoingQuery.data?.project_id) {
-                    editOngoingProjectMutation.mutate(null);
+                    editProjectMutation.mutate(null);
                   } else {
                     setProjectEditModalVisible(true);
                   }
@@ -894,5 +940,39 @@ function Timer() {
         <View className="h-1 w-32 rounded-full bg-gray-300" />
       </View>
     </View>
+  );
+}
+
+function StatefulTextInput(props: {
+  value: string;
+  onChange?: (text: string) => void;
+  className?: string;
+  placeholder?: string;
+  placeholderClassName?: string;
+  style?: any;
+  placeholderStyle?: any;
+}) {
+  const [useSelfText, setUseSelfText] = useState(false);
+  const [text, setText] = useState("");
+
+  const val = useSelfText ? text : props.value;
+
+  return (
+    <TextInput
+      className={props.className}
+      placeholderClassName={props.placeholderClassName}
+      style={val.trim() === "" ? props.placeholderStyle : props.style}
+      value={val}
+      onChangeText={setText}
+      placeholder={props.placeholder}
+      onFocus={() => {
+        setText(props.value);
+        setUseSelfText(true);
+      }}
+      onBlur={() => {
+        setUseSelfText(false);
+        props.onChange?.(text);
+      }}
+    />
   );
 }
