@@ -1,6 +1,6 @@
 import Database from "./db";
 import { Toggl } from "./toggl";
-import { DBEntry, Entry, Project, Template } from "./types";
+import { DBEntry, Entry, EntryWithProject, Project, Template } from "./types";
 import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 import { Dates } from "@/utils/dates";
@@ -379,6 +379,15 @@ export const Data = {
         ...last,
         tags: Tags.toList(last.tags),
       } as Entry;
+    },
+
+    getCurrentWithProject: async () => {
+      const current = await Database.Entries.getCurrentWithProject();
+      if (current === null) return null;
+      return {
+        ...current,
+        tags: Tags.toList(current.tags),
+      } as EntryWithProject;
     },
 
     // Note: start, stop, and duration are all ignored

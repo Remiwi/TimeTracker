@@ -48,3 +48,15 @@ export type DBEntry = Omit<Entry, "tags"> & {
   needs_push: boolean;
   tags: string;
 };
+
+export type EntryWithProject = Entry & {
+  project_name: string | null;
+  project_color: string | null;
+  project_icon: string | null;
+};
+
+export type DBEntryWithProject = DBEntry & {
+  project_name: string | null;
+  project_color: string | null;
+  project_icon: string | null;
+};

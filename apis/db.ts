@@ -1,6 +1,7 @@
 import * as SQLite from "expo-sqlite";
 import {
   DBEntry,
+  DBEntryWithProject,
   DBProject,
   DBTemplate,
   Entry,
@@ -479,6 +480,20 @@ const Database = {
     getCurrent: async () => {
       const running = await db.getAllAsync<DBEntry>(
         `SELECT * FROM entries WHERE stop IS NULL;`,
+        [],
+      );
+      if (running.length > 1) {
+        throw new Error("More than one entry is running!");
+      }
+      return running.length === 1 ? running[0] : null;
+    },
+
+    getCurrentWithProject: async () => {
+      const running = await db.getAllAsync<DBEntryWithProject>(
+        `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM entries
+        LEFT JOIN projects ON entries.project_id = projects.id
+        WHERE stop IS NULL;`,
         [],
       );
       if (running.length > 1) {
