@@ -9,6 +9,10 @@ import { Tags } from "@/utils/tags";
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
 
+const actions = {
+  bin: null as null | EntryWithProject,
+};
+
 // Return undefined if no difference, "local" if a is newer, "remote" if b is newer
 // If there is a difference but both were edited at the same time, the "newer" one is whichever has a defined stop
 // If they both have a defined/undefined stop, then `a` is newer if it's needs_push flag is set and b is newer otherwise
@@ -355,7 +359,30 @@ export const Data = {
       await Database.Entries.delete(id);
     },
 
-    restore: async () => {},
+    deleteCurrent: async () => {
+      const toDelete = await Database.Entries.getCurrentWithProject();
+      if (toDelete === null) return;
+      if (toDelete.linked) {
+        await Database.Entries.markDeleted(toDelete.id).then(() => {
+          actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+        });
+        await Toggl.Entries.delete(toDelete.id);
+      }
+      await Database.Entries.delete(toDelete.id).then(() => {
+        actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+      });
+    },
+
+    restore: async () => {
+      if (actions.bin === null) return null;
+      const entry = await Data.Entries.create(actions.bin);
+      actions.bin = null;
+      return entry;
+    },
+
+    getBin: async () => {
+      return actions.bin;
+    },
 
     undo: async () => {},
 

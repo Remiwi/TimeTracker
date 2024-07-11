@@ -423,6 +423,11 @@ function Timer() {
     queryFn: Data.Entries.getLastStopped,
   });
 
+  const binQuery = useQuery({
+    queryKey: ["entries", "bin"],
+    queryFn: Data.Entries.getBin,
+  });
+
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
@@ -455,6 +460,28 @@ function Timer() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
       ongoingQuery.refetch();
+    },
+  });
+
+  const restoreEntryMutation = useMutation({
+    mutationFn: Data.Entries.restore,
+    onMutate: () => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", "current"], {
+        ...binQuery.data,
+        start: Dates.toISOExtended(new Date()),
+        stop: null,
+      });
+      qc.setQueryData(["entries", "bin"], null);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+      previousQuery.refetch();
+      binQuery.refetch();
     },
   });
 
@@ -613,14 +640,10 @@ function Timer() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!ongoingQuery.data) {
-        return;
-      }
-      await Data.Entries.delete(ongoingQuery.data.id);
-    },
+    mutationFn: Data.Entries.deleteCurrent,
     onMutate: () => {
       setTemplateMade(false);
+      qc.setQueryData(["entries", "bin"], ongoingQuery.data);
       qc.setQueryData(["entries", "current"], null);
     },
     onError: (err) => {
@@ -629,6 +652,7 @@ function Timer() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
       ongoingQuery.refetch();
+      binQuery.refetch();
     },
   });
 
@@ -700,7 +724,12 @@ function Timer() {
                 onPress={() => setProjectStartModalVisible(true)}
               />
               {/* Restore from trash */}
-              <ActionChip text="Restore" leadingIcon="restore-from-trash" />
+              <ActionChip
+                text="Restore"
+                leadingIcon="restore-from-trash"
+                onPress={() => restoreEntryMutation.mutate()}
+                hide={!binQuery.data}
+              />
             </ChipBar>
           </View>
         </View>
