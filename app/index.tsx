@@ -571,15 +571,24 @@ function Timer() {
                   }
                 }}
               />
+              {/* Tags */}
               <ActionChip
-                text="Action"
-                leadingIcon="check"
-                trailingIcon="close"
-              />
-              <ActionChip
-                text="Action"
-                leadingIcon="check"
-                trailingIcon="close"
+                text="Tags"
+                backgroundColor={
+                  ongoingQuery.data?.tags.length > 0 ? "#9e8e9e" : "transparent"
+                }
+                borderColor={
+                  ongoingQuery.data?.tags.length > 0 ? "transparent" : "add"
+                }
+                textColor={
+                  ongoingQuery.data?.tags.length > 0 ? "#eeeeee" : undefined
+                }
+                trailingIconColor={
+                  ongoingQuery.data?.tags.length > 0 ? "#eeeeee" : undefined
+                }
+                trailingIcon={
+                  ongoingQuery.data?.tags.length > 0 ? "edit" : "add"
+                }
               />
               <ActionChip
                 text="Action"
