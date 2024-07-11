@@ -670,7 +670,7 @@ function Timer() {
             </Text>
           </View>
           <View
-            className="relative"
+            className="relative w-full"
             ref={chipBarRef}
             onLayout={(event) => {
               // var { width, height } = event.nativeEvent.layout;
@@ -779,7 +779,7 @@ function Timer() {
             {ongoingQuery.data?.tags || "..."}
           </Text>
           <View
-            className="relative"
+            className="relative w-full"
             ref={chipBarRef}
             onLayout={(event) => {
               // var { width, height } = event.nativeEvent.layout;
