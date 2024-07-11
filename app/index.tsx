@@ -830,11 +830,11 @@ function Timer() {
               />
             </ChipBar>
           </View>
-          <View className="flex w-full items-center justify-center pb-3">
-            <View className="h-1 w-32 rounded-full bg-gray-300" />
-          </View>
         </>
       )}
+      <View className="flex w-full items-center justify-center pb-3">
+        <View className="h-1 w-32 rounded-full bg-gray-300" />
+      </View>
     </View>
   );
 }
