@@ -13,7 +13,10 @@ export default function ActionChip(props: {
   borderColor?: string;
   backgroundColor?: string;
   onPress?: () => void;
+  hide?: boolean;
 }) {
+  if (props.hide) return <></>;
+
   return (
     <View className="h-9 overflow-hidden rounded-lg">
       <TouchableNativeFeedback onPress={props.onPress}>
