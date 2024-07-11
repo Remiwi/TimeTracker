@@ -402,6 +402,11 @@ function Timer() {
     queryFn: Data.Entries.getCurrentWithProject,
   });
 
+  const previousQuery = useQuery({
+    queryKey: ["entries", "previous"],
+    queryFn: Data.Entries.getLastStopped,
+  });
+
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: Data.Projects.getAll,
@@ -438,7 +443,26 @@ function Timer() {
   const stopMutation = useMutation({
     mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
+      qc.setQueryData(["entries", "previous"], ongoingQuery.data);
       qc.setQueryData(["entries", "current"], null);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      previousQuery.refetch();
+      ongoingQuery.refetch();
+    },
+  });
+
+  const fillToLastStopMutation = useMutation({
+    mutationFn: Data.Entries.setCurrentStartToPrevStop,
+    onMutate: () => {
+      qc.setQueryData(["entries", "current"], {
+        ...ongoingQuery.data,
+        start: previousQuery.data?.stop,
+      });
     },
     onError: (err) => {
       console.error(err);
@@ -616,10 +640,25 @@ function Timer() {
                 trailingIcon="stop-circle"
                 onPress={stopMutation.mutate}
               />
+              {/* Fill to last stop */}
               <ActionChip
-                text="Action"
-                leadingIcon="check"
-                trailingIcon="close"
+                borderColor={
+                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
+                }
+                textColor={
+                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
+                }
+                leadingIconColor={
+                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
+                }
+                text="Fill to last stop"
+                leadingIcon="arrow-circle-left"
+                onPress={fillToLastStopMutation.mutate}
+                hide={
+                  !!previousQuery.data &&
+                  previousQuery.data?.stop === ongoingQuery.data.start &&
+                  !fillToLastStopMutation.isPending
+                }
               />
               <ActionChip
                 text="Action"
