@@ -21,6 +21,7 @@ import ActionChip from "@/components/ActionChip";
 import ListModal from "@/components/ListModal";
 import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
+import TagModal from "@/components/TagModal";
 
 const VIBRATION_DURATION = 80;
 
@@ -395,13 +396,14 @@ function TemplateEditModal(props: {
 
 function Timer() {
   const chipBarRef = useRef<View>(null);
-  const [projectChipModalVisible, setProjectChipModalVisible] = useState(false);
   const [chipBarLayout, setChipBarLayout] = useState({
     x: 0,
     y: 0,
     width: 0,
     height: 0,
   });
+  const [projectChipModalVisible, setProjectChipModalVisible] = useState(false);
+  const [tagChipModalVisible, setTagChipModalVisible] = useState(false);
 
   const [templateMade, setTemplateMade] = useAtom(templateMadeAtom);
 
@@ -440,6 +442,32 @@ function Timer() {
         project_name: project?.name || null,
         project_icon: project?.icon || null,
         project_color: project?.color || null,
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
+  });
+
+  const editTagsMutation = useMutation({
+    mutationFn: async (tags: string[]) => {
+      if (!ongoingQuery.data) {
+        return;
+      }
+      await Data.Entries.edit({
+        id: ongoingQuery.data.id,
+        tags,
+      });
+    },
+    onMutate: (tags: string[]) => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", "current"], {
+        ...ongoingQuery.data,
+        tags,
       });
     },
     onError: (err) => {
@@ -658,6 +686,27 @@ function Timer() {
                 setProjectChipModalVisible(false);
               }}
             />
+            {/* Tags */}
+            <TagModal
+              tags={ongoingQuery.data.tags}
+              visible={tagChipModalVisible}
+              backgroundColor="#f0f0f0"
+              height={300}
+              positionRelativeTo={chipBarLayout}
+              onClose={() => {
+                setTagChipModalVisible(false);
+                if (!ongoingQuery.data) {
+                  return;
+                }
+                editTagsMutation.mutate(ongoingQuery.data.tags);
+              }}
+              onChange={(tags) => {
+                qc.setQueryData(["entries", "current"], {
+                  ...ongoingQuery.data,
+                  tags,
+                });
+              }}
+            />
             <ChipBar>
               {/* Projects */}
               <ActionChip
@@ -688,7 +737,7 @@ function Timer() {
                   ongoingQuery.data?.tags.length > 0 ? "#9e8e9e" : "transparent"
                 }
                 borderColor={
-                  ongoingQuery.data?.tags.length > 0 ? "transparent" : "add"
+                  ongoingQuery.data?.tags.length > 0 ? "transparent" : undefined
                 }
                 textColor={
                   ongoingQuery.data?.tags.length > 0 ? "#eeeeee" : undefined
@@ -699,6 +748,7 @@ function Timer() {
                 trailingIcon={
                   ongoingQuery.data?.tags.length > 0 ? "edit" : "add"
                 }
+                onPress={() => setTagChipModalVisible(true)}
               />
               {/* Stop */}
               <ActionChip
