@@ -430,6 +430,21 @@ function Timer() {
       console.error(err);
     },
     onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      ongoingQuery.refetch();
+    },
+  });
+
+  const stopMutation = useMutation({
+    mutationFn: Data.Entries.stopCurrent,
+    onMutate: () => {
+      qc.setQueryData(["entries", "current"], null);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
       ongoingQuery.refetch();
     },
   });
@@ -590,6 +605,16 @@ function Timer() {
                 trailingIcon={
                   ongoingQuery.data?.tags.length > 0 ? "edit" : "add"
                 }
+              />
+              {/* Stop */}
+              <ActionChip
+                backgroundColor="#ef4444"
+                borderColor="transparent"
+                textColor="#eeeeee"
+                trailingIconColor="#eeeeee"
+                text="Stop"
+                trailingIcon="stop-circle"
+                onPress={stopMutation.mutate}
               />
               <ActionChip
                 text="Action"
