@@ -13,7 +13,7 @@ export default function ActionChip(props: {
   onPress?: () => void;
 }) {
   return (
-    <View className="rounded- h-9 overflow-hidden">
+    <View className="h-9 overflow-hidden rounded-lg">
       <TouchableNativeFeedback onPress={props.onPress}>
         <View
           className="flex h-9 flex-row items-center rounded-lg border border-black px-2"
