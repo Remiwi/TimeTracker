@@ -54,7 +54,7 @@ export default function ListModal<T>(props: {
             style={{
               top: above ? layout.y - 210 : layout.y,
               backgroundColor: props.backgroundColor || "#dddddd",
-              height: height,
+              maxHeight: height,
             }}
           >
             <FlatList data={props.options} renderItem={renderPressableOption} />
