@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -14,7 +14,7 @@ import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Data } from "@/apis/data";
-import { Project, Template } from "@/apis/types";
+import { EntryWithProject, Project, Template } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import ChipBar from "@/components/ChipBar";
 import ActionChip from "@/components/ActionChip";
@@ -25,6 +25,20 @@ import TagModal from "@/components/TagModal";
 import TopSheet from "@/components/TopSheet";
 import DateTimeEditor from "@/components/DatetimeEditor";
 import StatefulTextInput from "@/components/StatefulTextInput";
+import { useAddTemplate } from "@/hooks/templateHooks";
+import { useProjects } from "@/hooks/projectHooks";
+import {
+  useBinnedEntry,
+  useDeleteOngoing,
+  useEditEntry,
+  useFillStartToStop,
+  useOngoingEntry,
+  usePreviousEntry,
+  useRestoreEntry,
+  useStartEntry,
+  useStopEntry,
+  useSetStartToNow,
+} from "@/hooks/entryHooks";
 
 const VIBRATION_DURATION = 80;
 
@@ -416,6 +430,10 @@ function TemplateEditModal(props: {
 }
 
 function Timer() {
+  const renders = useRef(0);
+  renders.current += 1;
+  console.log("Rerender", renders.current);
+
   const chipBarRef = useRef<View>(null);
   const [chipBarLayout, setChipBarLayout] = useState({
     x: 0,
@@ -430,258 +448,34 @@ function Timer() {
 
   const [templateMade, setTemplateMade] = useAtom(templateMadeAtom);
 
-  const qc = useQueryClient();
+  // Queries
+  const ongoing = useOngoingEntry();
+  const previous = usePreviousEntry();
+  const binned = useBinnedEntry();
+  const projects = useProjects();
 
-  const ongoingQuery = useQuery({
-    queryKey: ["entries", "current"],
-    queryFn: Data.Entries.getCurrentWithProject,
-  });
+  // Mutations
+  const startEntry = useStartEntry();
+  const restoreEntry = useRestoreEntry();
+  const editEntry = useEditEntry();
+  const stopOngoing = useStopEntry();
+  const fillStartToStop = useFillStartToStop();
+  const addTemplate = useAddTemplate();
+  const deleteOngoing = useDeleteOngoing();
+  const setStartToNow = useSetStartToNow();
 
-  const previousQuery = useQuery({
-    queryKey: ["entries", "previous"],
-    queryFn: Data.Entries.getLastStopped,
-  });
+  const [displayEntry, setDisplayEntry] = useState<EntryWithProject | null>(
+    null,
+  );
+  useEffect(() => {
+    setDisplayEntry(ongoing.data || null);
+  }, [ongoing.data]);
 
-  const binQuery = useQuery({
-    queryKey: ["entries", "bin"],
-    queryFn: Data.Entries.getBin,
-  });
-
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
-
-  const startEntryMutation = useMutation({
-    mutationFn: async (project: Project | null) => {
-      await Data.Entries.start({
-        project_id: project?.id || null,
-      });
-    },
-    onMutate: (project: Project | null) => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "current"], {
-        id: 0,
-        description: "",
-        project_id: project?.id || null,
-        start: Dates.toISOExtended(new Date()),
-        stop: null,
-        duration: -1,
-        tags: [],
-        project_name: project?.name || null,
-        project_icon: project?.icon || null,
-        project_color: project?.color || null,
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const restoreEntryMutation = useMutation({
-    mutationFn: Data.Entries.restore,
-    onMutate: () => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "current"], {
-        ...binQuery.data,
-        start: Dates.toISOExtended(new Date()),
-        stop: null,
-      });
-      qc.setQueryData(["entries", "bin"], null);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-      previousQuery.refetch();
-      binQuery.refetch();
-    },
-  });
-
-  const editDescriptionMutation = useMutation({
-    mutationFn: async (description: string | null) => {
-      console.log(description);
-      if (!ongoingQuery.data) {
-        return;
-      }
-      await Data.Entries.edit({
-        id: ongoingQuery.data.id,
-        description,
-      });
-    },
-    onMutate: (description: string | null) => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "current"], {
-        ...ongoingQuery.data,
-        description,
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const editProjectMutation = useMutation({
-    mutationFn: async (project: Project | null) => {
-      if (!ongoingQuery.data) {
-        return;
-      }
-      await Data.Entries.edit({
-        id: ongoingQuery.data.id,
-        project_id: project?.id || null,
-      });
-    },
-    onMutate: (project: Project | null) => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "current"], {
-        ...ongoingQuery.data,
-        project_id: project?.id || null,
-        project_name: project?.name || null,
-        project_icon: project?.icon || null,
-        project_color: project?.color || null,
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const editTagsMutation = useMutation({
-    mutationFn: async (tags: string[]) => {
-      if (!ongoingQuery.data) {
-        return;
-      }
-      await Data.Entries.edit({
-        id: ongoingQuery.data.id,
-        tags,
-      });
-    },
-    onMutate: (tags: string[]) => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "current"], {
-        ...ongoingQuery.data,
-        tags,
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const stopMutation = useMutation({
-    mutationFn: Data.Entries.stopCurrent,
-    onMutate: () => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "previous"], ongoingQuery.data);
-      qc.setQueryData(["entries", "current"], null);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      previousQuery.refetch();
-      ongoingQuery.refetch();
-    },
-  });
-
-  const fillToLastStopMutation = useMutation({
-    mutationFn: Data.Entries.setCurrentStartToPrevStop,
-    onMutate: () => {
-      qc.setQueryData(["entries", "current"], {
-        ...ongoingQuery.data,
-        start: previousQuery.data?.stop,
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const setStartToNowMutation = useMutation({
-    mutationFn: async () => {
-      if (!ongoingQuery.data) {
-        return;
-      }
-      await Data.Entries.edit({
-        id: ongoingQuery.data?.id,
-        start: Dates.toISOExtended(new Date()),
-      });
-    },
-    onMutate: () => {
-      qc.setQueryData(["entries", "current"], {
-        ...ongoingQuery.data,
-        start: Dates.toISOExtended(new Date()),
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-    },
-  });
-
-  const addTemplateMutation = useMutation({
-    mutationFn: Data.Templates.create,
-    onMutate: () => {
-      setTemplateMade(true);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: Data.Entries.deleteCurrent,
-    onMutate: () => {
-      setTemplateMade(false);
-      qc.setQueryData(["entries", "bin"], ongoingQuery.data);
-      qc.setQueryData(["entries", "current"], null);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      ongoingQuery.refetch();
-      binQuery.refetch();
-    },
-  });
-
-  const start = ongoingQuery.data
-    ? new Date(ongoingQuery.data.start)
-    : undefined;
+  const start = displayEntry ? new Date(displayEntry.start) : undefined;
 
   return (
     <View className="pt-4">
-      {!ongoingQuery.data && (
+      {!displayEntry && (
         <View className="flex items-center justify-between">
           <View className="flex h-32 flex-grow items-center justify-center">
             <Text className="px-8 text-4xl color-gray-400">
@@ -701,7 +495,7 @@ function Timer() {
           >
             {/* Projects Start */}
             <ListModal
-              options={projectsQuery.data || []}
+              options={projects.data || []}
               visible={projectStartModalVisible}
               backgroundColor="#f0f0f0"
               height={300}
@@ -725,7 +519,11 @@ function Timer() {
               )}
               onClose={() => setProjectStartModalVisible(false)}
               onSelect={(selected: Project) => {
-                startEntryMutation.mutate(selected);
+                startEntry.mutate({
+                  description: "",
+                  project_id: selected.id,
+                  tags: [],
+                });
                 setProjectStartModalVisible(false);
               }}
             />
@@ -734,7 +532,7 @@ function Timer() {
               <ActionChip
                 text="Start empty"
                 leadingIcon="play-arrow"
-                onPress={() => startEntryMutation.mutate(null)}
+                onPress={() => startEntry.mutate({})}
               />
               {/* Start from project */}
               <ActionChip
@@ -746,14 +544,14 @@ function Timer() {
               <ActionChip
                 text="Restore"
                 leadingIcon="restore-from-trash"
-                onPress={() => restoreEntryMutation.mutate()}
-                hide={!binQuery.data}
+                onPress={() => restoreEntry.mutate()}
+                hide={!binned.data}
               />
             </ChipBar>
           </View>
         </View>
       )}
-      {ongoingQuery.data && (
+      {displayEntry && (
         <>
           <View className="h-32">
             <View className="flex flex-row items-end justify-between px-4">
@@ -762,19 +560,22 @@ function Timer() {
                   <MaterialIcons
                     name="edit"
                     size={16}
-                    color={ongoingQuery.data.description ? "black" : "#a8a29e"}
+                    color={displayEntry.description ? "black" : "#a8a29e"}
                     className="pb-2"
                   />
                   <StatefulTextInput
                     className="pb-2 text-2xl"
-                    value={ongoingQuery.data.description || ""}
+                    value={displayEntry.description || ""}
                     placeholder="Enter description..."
                     placeholderClassName="color-stone-400"
                     style={{ fontWeight: "bold" }}
                     placeholderStyle={{ fontWeight: "normal" }}
                     onChange={(t) => {
                       const text = t.trim();
-                      editDescriptionMutation.mutate(text || null);
+                      editEntry.mutate({
+                        id: displayEntry.id,
+                        description: text || null,
+                      });
                     }}
                   />
                 </View>
@@ -785,21 +586,21 @@ function Timer() {
                   "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
                 }
                 style={{
-                  backgroundColor: ongoingQuery.data.project_color || "#cccccc",
+                  backgroundColor: displayEntry.project_color || "#cccccc",
                 }}
               >
                 <MaterialCommunityIcons
-                  name={ongoingQuery.data.project_icon as any}
+                  name={displayEntry.project_icon as any}
                   color="white"
                   size={44}
                 />
               </View>
             </View>
-            {ongoingQuery.data?.tags.length > 0 && (
+            {displayEntry?.tags.length > 0 && (
               <View className="flex flex-row items-center gap-2 px-4">
                 <MaterialCommunityIcons name="tag" size={14} color="#a8a29e" />
                 <Text className="font-light italic text-gray-400">
-                  {ongoingQuery.data?.tags.join(", ") || ""}
+                  {displayEntry?.tags.join(", ") || ""}
                 </Text>
               </View>
             )}
@@ -817,7 +618,7 @@ function Timer() {
           >
             {/* Projects Edit */}
             <ListModal
-              options={projectsQuery.data || []}
+              options={projects.data || []}
               visible={projectEditModalVisible}
               backgroundColor="#f0f0f0"
               height={300}
@@ -841,27 +642,30 @@ function Timer() {
               )}
               onClose={() => setProjectEditModalVisible(false)}
               onSelect={(selected: Project) => {
-                editProjectMutation.mutate(selected);
+                editEntry.mutate({
+                  id: displayEntry.id,
+                  project_id: selected.id,
+                });
                 setProjectEditModalVisible(false);
               }}
             />
             {/* Tags */}
             <TagModal
-              tags={ongoingQuery.data.tags}
+              tags={displayEntry.tags}
               visible={tagModalVisible}
               backgroundColor="#f0f0f0"
               height={300}
               positionRelativeTo={chipBarLayout}
               onClose={() => {
                 setTagModalVisible(false);
-                if (!ongoingQuery.data) {
-                  return;
-                }
-                editTagsMutation.mutate(ongoingQuery.data.tags);
+                editEntry.mutate({
+                  id: displayEntry.id,
+                  tags: displayEntry.tags,
+                });
               }}
               onChange={(tags) => {
-                qc.setQueryData(["entries", "current"], {
-                  ...ongoingQuery.data,
+                setDisplayEntry({
+                  ...displayEntry,
                   tags,
                 });
               }}
@@ -869,21 +673,22 @@ function Timer() {
             <ChipBar>
               {/* Projects */}
               <ActionChip
-                backgroundColor={
-                  ongoingQuery.data.project_color || "transparent"
-                }
+                backgroundColor={displayEntry.project_color || "transparent"}
                 borderColor={
-                  ongoingQuery.data.project_id ? "transparent" : undefined
+                  displayEntry.project_id ? "transparent" : undefined
                 }
-                textColor={ongoingQuery.data.project_id ? "#eeeeee" : undefined}
+                textColor={displayEntry.project_id ? "#eeeeee" : undefined}
                 trailingIconColor={
-                  ongoingQuery.data.project_id ? "#eeeeee" : undefined
+                  displayEntry.project_id ? "#eeeeee" : undefined
                 }
-                text={ongoingQuery.data.project_name || "Project"}
-                trailingIcon={ongoingQuery.data.project_id ? "close" : "add"}
+                text={displayEntry.project_name || "Project"}
+                trailingIcon={displayEntry.project_id ? "close" : "add"}
                 onPress={() => {
-                  if (ongoingQuery.data?.project_id) {
-                    editProjectMutation.mutate(null);
+                  if (displayEntry.project_id) {
+                    editEntry.mutate({
+                      id: displayEntry.id,
+                      project_id: null,
+                    });
                   } else {
                     setProjectEditModalVisible(true);
                   }
@@ -893,20 +698,18 @@ function Timer() {
               <ActionChip
                 text="Tags"
                 backgroundColor={
-                  ongoingQuery.data?.tags.length > 0 ? "#9e8e9e" : "transparent"
+                  displayEntry?.tags.length > 0 ? "#9e8e9e" : "transparent"
                 }
                 borderColor={
-                  ongoingQuery.data?.tags.length > 0 ? "transparent" : undefined
+                  displayEntry?.tags.length > 0 ? "transparent" : undefined
                 }
                 textColor={
-                  ongoingQuery.data?.tags.length > 0 ? "#eeeeee" : undefined
+                  displayEntry?.tags.length > 0 ? "#eeeeee" : undefined
                 }
                 trailingIconColor={
-                  ongoingQuery.data?.tags.length > 0 ? "#eeeeee" : undefined
+                  displayEntry?.tags.length > 0 ? "#eeeeee" : undefined
                 }
-                trailingIcon={
-                  ongoingQuery.data?.tags.length > 0 ? "edit" : "add"
-                }
+                trailingIcon={displayEntry?.tags.length > 0 ? "edit" : "add"}
                 onPress={() => setTagModalVisible(true)}
               />
               {/* Stop */}
@@ -917,65 +720,53 @@ function Timer() {
                 trailingIconColor="#eeeeee"
                 text="Stop"
                 trailingIcon="stop-circle"
-                onPress={stopMutation.mutate}
+                onPress={stopOngoing.mutate}
               />
               {/* Fill to last stop */}
               <ActionChip
-                borderColor={
-                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
-                }
-                textColor={
-                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
-                }
+                borderColor={fillStartToStop.isPending ? "#aaaaaa" : undefined}
+                textColor={fillStartToStop.isPending ? "#aaaaaa" : undefined}
                 leadingIconColor={
-                  fillToLastStopMutation.isPending ? "#aaaaaa" : undefined
+                  fillStartToStop.isPending ? "#aaaaaa" : undefined
                 }
                 text="Fill to last stop"
                 leadingIcon="arrow-circle-left"
-                onPress={fillToLastStopMutation.mutate}
+                onPress={fillStartToStop.mutate}
                 hide={
-                  !!previousQuery.data &&
-                  previousQuery.data?.stop === ongoingQuery.data.start &&
-                  !fillToLastStopMutation.isPending
+                  !!previous.data &&
+                  !!ongoing.data &&
+                  previous.data?.stop === ongoing.data.start &&
+                  !fillStartToStop.isPending
                 }
               />
               {/* Set start to now */}
               <ActionChip
-                borderColor={
-                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
-                }
-                textColor={
-                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
-                }
+                borderColor={setStartToNow.isPending ? "#aaaaaa" : undefined}
+                textColor={setStartToNow.isPending ? "#aaaaaa" : undefined}
                 leadingIconColor={
-                  setStartToNowMutation.isPending ? "#aaaaaa" : undefined
+                  setStartToNow.isPending ? "#aaaaaa" : undefined
                 }
                 text="Set start to now"
                 leadingIcon="start"
-                onPress={setStartToNowMutation.mutate}
+                onPress={setStartToNow.mutate}
               />
               {/* Make Template */}
               <ActionChip
-                borderColor={
-                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
-                }
-                textColor={
-                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
-                }
-                leadingIconColor={
-                  addTemplateMutation.isPending ? "#aaaaaa" : undefined
-                }
+                borderColor={addTemplate.isPending ? "#aaaaaa" : undefined}
+                textColor={addTemplate.isPending ? "#aaaaaa" : undefined}
+                leadingIconColor={addTemplate.isPending ? "#aaaaaa" : undefined}
                 text="Template"
                 leadingIcon="add-circle"
                 onPress={() => {
-                  addTemplateMutation.mutate({
+                  setTemplateMade(true);
+                  addTemplate.mutate({
                     name: "",
-                    project_id: ongoingQuery.data?.project_id || null,
-                    description: ongoingQuery.data?.description || "",
-                    tags: ongoingQuery.data?.tags || [],
+                    project_id: displayEntry?.project_id || null,
+                    description: displayEntry?.description || "",
+                    tags: displayEntry?.tags || [],
                   });
                 }}
-                hide={templateMade && !addTemplateMutation.isPending}
+                hide={templateMade && !addTemplate.isPending}
               />
               {/* Delete Entry */}
               <ActionChip
@@ -985,7 +776,7 @@ function Timer() {
                 leadingIconColor="#eeeeee"
                 text="Delete"
                 leadingIcon="delete"
-                onPress={deleteMutation.mutate}
+                onPress={deleteOngoing.mutate}
               />
             </ChipBar>
           </View>
@@ -993,15 +784,13 @@ function Timer() {
       )}
       <View className="px-4 pt-4">
         <DateTimeEditor
-          date={
-            ongoingQuery.data ? new Date(ongoingQuery.data.start) : new Date()
-          }
+          date={displayEntry ? new Date(displayEntry.start) : new Date()}
           onDateChange={(date) => {
-            if (!ongoingQuery.data) {
+            if (!displayEntry) {
               return;
             }
-            qc.setQueryData(["entries", "current"], {
-              ...ongoingQuery.data,
+            setDisplayEntry({
+              ...displayEntry,
               start: Dates.toISOExtended(date),
             });
           }}
@@ -1010,9 +799,7 @@ function Timer() {
         />
         <View className="flex w-full items-end">
           <View className="overflow-hidden rounded-sm">
-            <TouchableNativeFeedback
-              onPress={() => fillToLastStopMutation.mutate()}
-            >
+            <TouchableNativeFeedback onPress={() => fillStartToStop.mutate()}>
               <View>
                 <Text className="px-2 py-0.5 text-sm font-semibold text-slate-600">
                   Fill to last stop
@@ -1022,16 +809,14 @@ function Timer() {
           </View>
         </View>
         <DateTimeEditor
-          date={
-            ongoingQuery.data ? new Date(ongoingQuery.data.start) : new Date()
-          }
+          date={displayEntry ? new Date(displayEntry.start) : new Date()}
           text="Stop"
           className="pb-1"
-          disabled={!ongoingQuery.data || !ongoingQuery.data.stop}
+          disabled={!displayEntry || !displayEntry.stop}
         />
         <View className="flex w-full items-end">
           <View className="overflow-hidden rounded-sm">
-            <TouchableNativeFeedback onPress={() => stopMutation.mutate()}>
+            <TouchableNativeFeedback onPress={() => stopOngoing.mutate()}>
               <View>
                 <Text className="px-2 py-0.5 text-sm font-semibold text-red-500">
                   Stop Timer
