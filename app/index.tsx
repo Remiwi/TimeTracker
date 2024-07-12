@@ -6,7 +6,6 @@ import {
   TouchableNativeFeedback,
   View,
   Vibration,
-  TextInput,
 } from "react-native";
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
@@ -23,9 +22,9 @@ import ListModal from "@/components/ListModal";
 import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
 import TagModal from "@/components/TagModal";
-import { processColorsInProps } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import TopSheet from "@/components/TopSheet";
 import DateTimeEditor from "@/components/DatetimeEditor";
+import StatefulTextInput from "@/components/StatefulTextInput";
 
 const VIBRATION_DURATION = 80;
 
@@ -1043,39 +1042,5 @@ function Timer() {
         </View>
       </View>
     </View>
-  );
-}
-
-function StatefulTextInput(props: {
-  value: string;
-  onChange?: (text: string) => void;
-  className?: string;
-  placeholder?: string;
-  placeholderClassName?: string;
-  style?: any;
-  placeholderStyle?: any;
-}) {
-  const [useSelfText, setUseSelfText] = useState(false);
-  const [text, setText] = useState("");
-
-  const val = useSelfText ? text : props.value;
-
-  return (
-    <TextInput
-      className={props.className}
-      placeholderClassName={props.placeholderClassName}
-      style={val.trim() === "" ? props.placeholderStyle : props.style}
-      value={val}
-      onChangeText={setText}
-      placeholder={props.placeholder}
-      onFocus={() => {
-        setText(props.value);
-        setUseSelfText(true);
-      }}
-      onBlur={() => {
-        setUseSelfText(false);
-        props.onChange?.(text);
-      }}
-    />
   );
 }
