@@ -3,6 +3,7 @@ import StyledTextInput from "@/components/TextInput";
 import { useState } from "react";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 import { TogglConfig } from "@/apis/toggl";
+import Database from "@/apis/db";
 
 export default function Page() {
   const [togglToken, setTogglToken] = useState<string>("");
@@ -57,7 +58,7 @@ export default function Page() {
           </View>
         </View>
       </View>
-      <View className="p-4">
+      <View className="p-4 pb-8">
         <StyledTextInput
           label="Toggl Workspace"
           bgColor="white"
@@ -84,6 +85,28 @@ export default function Page() {
               </View>
             </TouchableNativeFeedback>
           </View>
+        </View>
+      </View>
+      <View className="flex w-full items-center">
+        <View className="overflow-hidden rounded-full">
+          <TouchableNativeFeedback
+            onPress={() => {
+              Database.Manage.dropAllTablesSync();
+              Database.Manage.intializeDBSync();
+              SecureStore.deleteItemAsync("togglToken");
+              SecureStore.deleteItemAsync("togglWorkspace");
+              TogglConfig.token = "";
+              TogglConfig.workspace = "";
+              setTogglToken("");
+              setTogglWorkspace("");
+            }}
+          >
+            <View className="flex items-center justify-center rounded-full bg-red-600 p-2 px-6">
+              <Text className="text-lg text-white">
+                Delete Interal Databases
+              </Text>
+            </View>
+          </TouchableNativeFeedback>
         </View>
       </View>
     </View>
