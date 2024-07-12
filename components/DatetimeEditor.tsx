@@ -11,8 +11,6 @@ export default function DateTimeEditor(props: {
   className?: string;
   disabled?: boolean;
 }) {
-  if (!props.disabled) console.log(props.date);
-
   const year = props.date.getFullYear();
   const month = props.date.getMonth() + 1;
   const day = props.date.getDate();
