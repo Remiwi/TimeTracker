@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Modal,
@@ -19,6 +19,7 @@ import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
 import TopSheet from "@/components/TopSheet";
 import Timer from "@/components/Timer";
+import { useOngoingEntry } from "@/hooks/entryHooks";
 
 const VIBRATION_DURATION = 80;
 
@@ -30,7 +31,14 @@ export default function Page() {
     Template | undefined
   >();
 
-  const [templatesEnabled, setTemplatesEnabled] = useState(true);
+  const [timerPanEnabled, setTimerPanEnabled] = useState(false);
+  const [timerSheetOpen, setTimerSheetOpen] = useState(false);
+  const ongoing = useOngoingEntry();
+  useEffect(() => {
+    if (timerSheetOpen) return setTimerPanEnabled(true);
+    if (!!ongoing.data) return setTimerPanEnabled(true);
+    setTimerPanEnabled(false);
+  }, [ongoing.data, timerSheetOpen]);
 
   const templatesQuery = useQuery({
     queryKey: ["templates"],
@@ -107,8 +115,9 @@ export default function Page() {
             give={0}
             contentFixed={true}
             onStabilize={(h) => {
-              setTemplatesEnabled(h === 200);
+              setTimerSheetOpen(h === 600);
             }}
+            disablePan={!timerPanEnabled}
           >
             <Timer />
           </TopSheet>
@@ -116,7 +125,7 @@ export default function Page() {
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
-              scrollEnabled={templatesEnabled}
+              scrollEnabled={timerSheetOpen}
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
               data={
@@ -141,7 +150,7 @@ export default function Page() {
                       }
                     >
                       <TouchableNativeFeedback
-                        disabled={!templatesEnabled}
+                        disabled={!timerSheetOpen}
                         onPress={() => {
                           setSelectedTemplate(undefined);
                           setTemplateModalShown(true);
@@ -164,7 +173,7 @@ export default function Page() {
                 return (
                   <View className={small ? "w-1/3" : "w-1/2"}>
                     <Item
-                      disabled={!templatesEnabled}
+                      disabled={!timerSheetOpen}
                       isSmall={true}
                       template={data.item as Template}
                       onLongPress={() => {
