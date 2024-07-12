@@ -776,9 +776,14 @@ function Timer() {
                 />
               </View>
             </View>
-            <Text className="px-4 font-light italic text-gray-400">
-              {ongoingQuery.data?.tags || "..."}
-            </Text>
+            {ongoingQuery.data?.tags.length > 0 && (
+              <View className="flex flex-row items-center gap-2 px-4">
+                <MaterialCommunityIcons name="tag" size={14} color="#a8a29e" />
+                <Text className="font-light italic text-gray-400">
+                  {ongoingQuery.data?.tags.join(", ") || ""}
+                </Text>
+              </View>
+            )}
           </View>
           <View
             className="relative w-full"
