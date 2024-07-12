@@ -15,6 +15,7 @@ export default function TopSheet(props: {
   panBarColor?: string;
   panBarBackgroundColor?: string;
   onStabilize?: (height: number) => void;
+  disablePan?: boolean;
 }) {
   const stableHeights = [...props.stableHeights];
   stableHeights.sort((a, b) => {
@@ -99,6 +100,9 @@ export default function TopSheet(props: {
       <View
         className="flex w-full items-center justify-center py-3"
         {...panHandlers}
+        onStartShouldSetResponder={
+          props.disablePan ? () => false : panHandlers.onStartShouldSetResponder
+        }
         style={{
           backgroundColor: props.panBarBackgroundColor || "white",
         }}
