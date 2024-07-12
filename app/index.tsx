@@ -24,6 +24,7 @@ import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
 import TagModal from "@/components/TagModal";
 import { processColorsInProps } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
+import TopSheet from "@/components/TopSheet";
 
 const VIBRATION_DURATION = 80;
 
@@ -93,8 +94,26 @@ export default function Page() {
           }}
         />
       )}
-      <View className="flex h-full">
-        <Timer />
+      <View className="relative flex h-full">
+        <View className="z-50 h-56 w-full">
+          <TopSheet
+            stableHeights={[
+              {
+                stabilizeTo: 200,
+                whenAbove: null,
+              },
+              {
+                stabilizeTo: 600,
+                whenAbove: 400,
+              },
+            ]}
+            flickMultiplier={200}
+            give={0}
+            contentFixed={true}
+          >
+            <Timer />
+          </TopSheet>
+        </View>
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
@@ -661,7 +680,7 @@ function Timer() {
     : undefined;
 
   return (
-    <View className="rounded-b-3xl bg-white pt-4 shadow-md shadow-black">
+    <View className="pt-4">
       {!ongoingQuery.data && (
         <View className="flex items-center justify-between">
           <View className="flex h-32 flex-grow items-center justify-center">
@@ -972,9 +991,6 @@ function Timer() {
           </View>
         </>
       )}
-      <View className="flex w-full items-center justify-center pb-3">
-        <View className="h-1 w-32 rounded-full bg-gray-300" />
-      </View>
     </View>
   );
 }
