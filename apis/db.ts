@@ -477,6 +477,16 @@ const Database = {
       );
     },
 
+    getLastStoppedWithProject: async () => {
+      return await db.getFirstAsync<DBEntryWithProject>(
+        `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM entries
+        LEFT JOIN projects ON entries.project_id = projects.id
+        WHERE duration != -1 AND to_delete = 0 ORDER BY start DESC LIMIT 1;`,
+        [],
+      );
+    },
+
     getCurrent: async () => {
       const running = await db.getAllAsync<DBEntry>(
         `SELECT * FROM entries WHERE stop IS NULL AND to_delete = 0;`,

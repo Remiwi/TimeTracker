@@ -417,6 +417,15 @@ export const Data = {
       } as EntryWithProject;
     },
 
+    getLastStoppedWithProject: async () => {
+      const last = await Database.Entries.getLastStoppedWithProject();
+      if (last === null) return null;
+      return {
+        ...last,
+        tags: Tags.toList(last.tags),
+      } as EntryWithProject;
+    },
+
     // Note: start, stop, and duration are all ignored
     start: async (entry: Partial<Entry>) => {
       return await Data.Entries.create({

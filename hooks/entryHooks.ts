@@ -17,7 +17,7 @@ export function useOngoingEntry() {
 export function usePreviousEntry() {
   return useQuery({
     queryKey: ["entries", "previous"],
-    queryFn: Data.Entries.getLastStopped,
+    queryFn: Data.Entries.getLastStoppedWithProject,
   });
 }
 
