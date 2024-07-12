@@ -85,11 +85,14 @@ export function useRestoreEntry() {
 
 export function useEditEntry() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
+
   return useMutation({
     mutationFn: Data.Entries.edit,
     onMutate: (entry) => {
       const ongoing = qc.getQueryData<Entry | null>(["entries", "current"]);
       if (!ongoing) return;
+      setTemplateMade(false);
       const projects = qc.getQueryData<Project[]>(["projects"]);
       const project = projects?.find((p) => p.id === entry.project_id);
       qc.setQueryData(["entries", "current"], {
