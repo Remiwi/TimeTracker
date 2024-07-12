@@ -14,6 +14,7 @@ export default function TopSheet(props: {
   contentFixed?: boolean; // If content should move with sheet or be fixed to the screen
   panBarColor?: string;
   panBarBackgroundColor?: string;
+  onStabilize?: (height: number) => void;
 }) {
   const stableHeights = [...props.stableHeights];
   stableHeights.sort((a, b) => {
@@ -52,6 +53,8 @@ export default function TopSheet(props: {
       const goTo = stableHeights.find((stable) =>
         stable.whenAbove === null ? true : height + flick > stable.whenAbove,
       )!.stabilizeTo;
+
+      props.onStabilize?.(goTo);
 
       transY.flattenOffset();
       Animated.timing(transY, {
