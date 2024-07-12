@@ -1,26 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
-import {
-  Animated,
-  PanResponder,
-  PanResponderCallbacks,
-  View,
-} from "react-native";
-
-function useAnimatedValue(defaultOffset: number = 0) {
-  const ref = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    ref.setOffset(defaultOffset);
-  }, []);
-  return ref;
-}
-
-function useAnimatedXY() {
-  return useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-}
-
-function usePanHandlers(config: PanResponderCallbacks) {
-  return useRef(PanResponder.create(config)).current.panHandlers;
-}
+import { useRef } from "react";
+import { Animated, View } from "react-native";
+import { usePanHandlers, useAnimatedValue } from "@/hooks/animtedHooks";
 
 export default function TopSheet(props: {
   children?: React.ReactNode;
