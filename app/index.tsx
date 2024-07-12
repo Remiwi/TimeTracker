@@ -664,7 +664,7 @@ function Timer() {
     <View className="rounded-b-3xl bg-white pt-4 shadow-md shadow-black">
       {!ongoingQuery.data && (
         <View className="flex items-center justify-between">
-          <View className="flex h-36 flex-grow items-center justify-center">
+          <View className="flex h-32 flex-grow items-center justify-center">
             <Text className="px-8 text-4xl color-gray-400">
               No running entry
             </Text>
@@ -736,48 +736,50 @@ function Timer() {
       )}
       {ongoingQuery.data && (
         <>
-          <View className="flex flex-row items-end justify-between px-4">
-            <View>
-              <View className="flex flex-row items-center gap-2">
-                <MaterialIcons
-                  name="edit"
-                  size={16}
-                  color={ongoingQuery.data.description ? "black" : "#a8a29e"}
-                  className="pb-2"
-                />
-                <StatefulTextInput
-                  className="pb-2 text-2xl"
-                  value={ongoingQuery.data.description || ""}
-                  placeholder="Enter description..."
-                  placeholderClassName="color-stone-400"
-                  style={{ fontWeight: "bold" }}
-                  placeholderStyle={{ fontWeight: "normal" }}
-                  onChange={(t) => {
-                    const text = t.trim();
-                    editDescriptionMutation.mutate(text || null);
-                  }}
+          <View className="h-32">
+            <View className="flex flex-row items-end justify-between px-4">
+              <View>
+                <View className="flex flex-row items-center gap-2">
+                  <MaterialIcons
+                    name="edit"
+                    size={16}
+                    color={ongoingQuery.data.description ? "black" : "#a8a29e"}
+                    className="pb-2"
+                  />
+                  <StatefulTextInput
+                    className="pb-2 text-2xl"
+                    value={ongoingQuery.data.description || ""}
+                    placeholder="Enter description..."
+                    placeholderClassName="color-stone-400"
+                    style={{ fontWeight: "bold" }}
+                    placeholderStyle={{ fontWeight: "normal" }}
+                    onChange={(t) => {
+                      const text = t.trim();
+                      editDescriptionMutation.mutate(text || null);
+                    }}
+                  />
+                </View>
+                <TimerText className="text-6xl" startTime={start} />
+              </View>
+              <View
+                className={
+                  "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
+                }
+                style={{
+                  backgroundColor: ongoingQuery.data.project_color || "#cccccc",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={ongoingQuery.data.project_icon as any}
+                  color="white"
+                  size={44}
                 />
               </View>
-              <TimerText className="text-6xl" startTime={start} />
             </View>
-            <View
-              className={
-                "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
-              }
-              style={{
-                backgroundColor: ongoingQuery.data.project_color || "#cccccc",
-              }}
-            >
-              <MaterialCommunityIcons
-                name={ongoingQuery.data.project_icon as any}
-                color="white"
-                size={44}
-              />
-            </View>
+            <Text className="px-4 font-light italic text-gray-400">
+              {ongoingQuery.data?.tags || "..."}
+            </Text>
           </View>
-          <Text className="px-4 font-light italic text-gray-400">
-            {ongoingQuery.data?.tags || "..."}
-          </Text>
           <View
             className="relative w-full"
             ref={chipBarRef}
