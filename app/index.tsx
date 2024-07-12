@@ -25,6 +25,7 @@ import { templateMadeAtom } from "@/utils/atoms";
 import TagModal from "@/components/TagModal";
 import { processColorsInProps } from "react-native-reanimated/lib/typescript/reanimated2/Colors";
 import TopSheet from "@/components/TopSheet";
+import DateTimeEditor from "@/components/DatetimeEditor";
 
 const VIBRATION_DURATION = 80;
 
@@ -991,6 +992,56 @@ function Timer() {
           </View>
         </>
       )}
+      <View className="px-4 pt-4">
+        <DateTimeEditor
+          date={
+            ongoingQuery.data ? new Date(ongoingQuery.data.start) : new Date()
+          }
+          onDateChange={(date) => {
+            if (!ongoingQuery.data) {
+              return;
+            }
+            qc.setQueryData(["entries", "current"], {
+              ...ongoingQuery.data,
+              start: Dates.toISOExtended(date),
+            });
+          }}
+          text="Start"
+          className="pb-1"
+        />
+        <View className="flex w-full items-end">
+          <View className="overflow-hidden rounded-sm">
+            <TouchableNativeFeedback
+              onPress={() => fillToLastStopMutation.mutate()}
+            >
+              <View>
+                <Text className="px-2 py-0.5 text-sm font-semibold text-slate-600">
+                  Fill to last stop
+                </Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+        </View>
+        <DateTimeEditor
+          date={
+            ongoingQuery.data ? new Date(ongoingQuery.data.start) : new Date()
+          }
+          text="Stop"
+          className="pb-1"
+          disabled={!ongoingQuery.data || !ongoingQuery.data.stop}
+        />
+        <View className="flex w-full items-end">
+          <View className="overflow-hidden rounded-sm">
+            <TouchableNativeFeedback onPress={() => stopMutation.mutate()}>
+              <View>
+                <Text className="px-2 py-0.5 text-sm font-semibold text-red-500">
+                  Stop Timer
+                </Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
