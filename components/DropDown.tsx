@@ -21,6 +21,7 @@ export default function MyDropDown<T>(props: {
   labelColor?: string;
   borderColor?: string;
   textColor?: string;
+  modalColor?: string;
   placeholderColor?: string;
   className?: string;
 }) {
@@ -104,8 +105,9 @@ export default function MyDropDown<T>(props: {
             <TouchableWithoutFeedback onPress={() => setOptionsShown(false)}>
               <View className="relative h-full w-full">
                 <View
-                  className="asbolute h-60 w-full rounded-md bg-white"
+                  className="asbolute h-60 w-full rounded-md"
                   style={{
+                    backgroundColor: props.modalColor || "white",
                     width: layout.width,
                     top: above ? layout.y - 210 : layout.y + layout.height,
                     left: layout.x,

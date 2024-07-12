@@ -60,3 +60,10 @@ export type DBEntryWithProject = DBEntry & {
   project_color: string | null;
   project_icon: string | null;
 };
+
+// Workspaces
+
+export type Workspace = {
+  id: number;
+  name: string;
+};

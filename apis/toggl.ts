@@ -1,6 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import { encode } from "base-64";
-import { Entry, TogglProject } from "./types";
+import { Entry, TogglProject, Workspace } from "./types";
 import { Dates } from "@/utils/dates";
 import { Tags } from "@/utils/tags";
 
@@ -332,6 +332,35 @@ export const Toggl = {
         start: Dates.toISOExtended(new Date(edited.start)),
         stop: edited.stop ? Dates.toISOExtended(new Date(edited.stop)) : null,
       };
+    },
+  },
+
+  Me: {
+    getWorkspaces: async () => {
+      if (TogglConfig.disabled) {
+        throw new Error("Toggl API has been programatically disabled");
+      }
+      if (!TogglConfig.token) {
+        throw new Error("No token found");
+      }
+
+      const res = await fetch(
+        "https://api.track.toggl.com/api/v9/me/workspaces",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Basic ${encode(TogglConfig.token + ":api_token")}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+
+      return res.json() as Promise<Workspace[]>;
     },
   },
 };
