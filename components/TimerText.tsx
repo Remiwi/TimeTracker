@@ -3,21 +3,24 @@ import { useEffect, useState } from "react";
 
 export default function TimerText(props: {
   startTime: Date | undefined;
+  stopTime?: Date | undefined;
   className?: string;
 }) {
   const [now, setNow] = useState(new Date());
   useEffect(() => {
-    if (props.startTime === undefined) return;
+    if (props.startTime === undefined || props.stopTime) return;
     const interval = setInterval(() => {
       setNow(new Date());
     }, 1000);
     return () => clearInterval(interval);
-  }, [props.startTime]);
+  }, [props.startTime, props.stopTime]);
 
   if (props.startTime === undefined)
     return <Text className={props.className}>X:XX:XX</Text>;
 
-  const differenceInMilliseconds = now.getTime() - props.startTime.getTime();
+  const differenceInMilliseconds = props.stopTime
+    ? props.stopTime.getTime() - props.startTime.getTime()
+    : now.getTime() - props.startTime.getTime();
   const seconds = (Math.floor(differenceInMilliseconds / 1000) % 60)
     .toFixed(0)
     .padStart(2, "0");
