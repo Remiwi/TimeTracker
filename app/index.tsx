@@ -105,7 +105,7 @@ export default function Page() {
             give={0}
             contentFixed={true}
           >
-            <Timer />
+            <Timer useLatestEntryIfNoOngoing={true} />
           </TopSheet>
         </View>
         <View className="h-full flex-shrink pt-6">

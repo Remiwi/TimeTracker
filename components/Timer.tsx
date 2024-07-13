@@ -15,7 +15,7 @@ import TagModal from "@/components/TagModal";
 import DateTimeEditor from "@/components/DatetimeEditor";
 import StatefulTextInput from "@/components/StatefulTextInput";
 
-export default function Timer() {
+export default function Timer(props: { useLatestEntryIfNoOngoing?: boolean }) {
   const qc = useQueryClient();
   const [templateMade, setTemplateMade] = useAtom(templateMadeAtom);
 
@@ -24,24 +24,35 @@ export default function Timer() {
     queryFn: Data.Entries.getCurrent,
   });
 
+  const lastStoppedQuery = useQuery({
+    queryKey: ["entries", "previous"],
+    queryFn: Data.Entries.getLastStopped,
+  });
+
+  const usedEntry = ongoingQuery.data
+    ? ongoingQuery.data
+    : props.useLatestEntryIfNoOngoing
+      ? lastStoppedQuery.data
+      : null;
+
   const entryQuery = useQuery({
-    queryKey: ["entries", ongoingQuery.data?.id],
+    queryKey: ["entries", usedEntry?.id],
     queryFn: async () => {
-      if (!ongoingQuery.data) {
+      if (!usedEntry) {
         return null;
       }
-      return await Data.Entries.get(ongoingQuery.data.id);
+      return await Data.Entries.get(usedEntry.id);
     },
-    placeholderData: ongoingQuery.data,
+    placeholderData: usedEntry,
   });
 
   const prevQuery = useQuery({
-    queryKey: ["entries", entryQuery.data?.id, "previous"],
+    queryKey: ["entries", usedEntry?.id, "previous"],
     queryFn: async () => {
-      if (!entryQuery.data) {
+      if (!usedEntry) {
         return null;
       }
-      const prev = await Data.Entries.getPreviousTo(entryQuery.data);
+      const prev = await Data.Entries.getPreviousTo(usedEntry);
       if (prev === null) {
         return null;
       }
@@ -116,6 +127,9 @@ export default function Timer() {
   });
 
   const start = entryQuery.data ? new Date(entryQuery.data.start) : undefined;
+  const stop = entryQuery.data?.stop
+    ? new Date(entryQuery.data.stop)
+    : undefined;
 
   return (
     <View className="pt-4">
@@ -152,7 +166,11 @@ export default function Timer() {
                   }}
                 />
               </View>
-              <TimerText className="text-6xl" startTime={start} />
+              <TimerText
+                className="text-6xl"
+                startTime={start}
+                stopTime={stop}
+              />
             </View>
             <View
               className={
@@ -577,7 +595,9 @@ function Chips(props: { entry: EntryWithProject | null }) {
           });
         }}
       />
-      <ChipBar>
+      <ChipBar
+        key={entryQuery.data?.id} // TODO: Key is just here to make bar not be shared. change this when adding animations
+      >
         {/* Entry doesn't exist */}
         {!props.entry && (
           <>
