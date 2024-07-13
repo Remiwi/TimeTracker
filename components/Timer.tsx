@@ -538,7 +538,7 @@ function Chips() {
         }}
       />
       <ChipBar>
-        {/* Project exists */}
+        {/* Entry doesn't exist */}
         {!ongoingQuery.data && (
           <>
             {/* Start from empty */}
@@ -562,7 +562,7 @@ function Chips() {
             />
           </>
         )}
-        {/* Project doesn't exist */}
+        {/* Entry exists */}
         {ongoingQuery.data && (
           <>
             {/* Projects */}
