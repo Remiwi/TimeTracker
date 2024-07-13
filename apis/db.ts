@@ -5,6 +5,7 @@ import {
   DBProject,
   DBTemplate,
   Entry,
+  EntryWithProject,
   Project,
   Template,
   TogglProject,
@@ -510,6 +511,25 @@ const Database = {
         throw new Error("More than one entry is running!");
       }
       return running.length === 1 ? running[0] : null;
+    },
+
+    getPreviousTo: async (entry: Entry) => {
+      const prev = await db.getFirstAsync<DBEntry>(
+        `SELECT * FROM entries WHERE to_delete = 0 AND stop IS NOT NULL AND stop < ? ORDER BY stop DESC LIMIT 1;`,
+        [entry.start],
+      );
+      return prev;
+    },
+
+    getPreviousToWithProject: async (entry: Entry) => {
+      const prev = await db.getFirstAsync<DBEntryWithProject>(
+        `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM entries
+        LEFT JOIN projects ON entries.project_id = projects.id
+        WHERE entries.to_delete = 0 AND entries.stop IS NOT NULL AND entries.stop < ? ORDER BY entries.stop DESC LIMIT 1;`,
+        [entry.start],
+      );
+      return prev;
     },
 
     // Note: we don't have to care about ongoing entries here. The given toggl entry will only be ongoing if this function is called

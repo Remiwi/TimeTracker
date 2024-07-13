@@ -421,6 +421,24 @@ export const Data = {
       } as EntryWithProject;
     },
 
+    getPreviousTo: async (Entry: Entry) => {
+      const previous = await Database.Entries.getPreviousTo(Entry);
+      if (previous === null) return null;
+      return {
+        ...previous,
+        tags: Tags.toList(previous.tags),
+      } as Entry;
+    },
+
+    getPreviousToWithProject: async (Entry: Entry) => {
+      const previous = await Database.Entries.getPreviousToWithProject(Entry);
+      if (previous === null) return null;
+      return {
+        ...previous,
+        tags: Tags.toList(previous.tags),
+      } as EntryWithProject;
+    },
+
     // Note: start, stop, and duration are all ignored
     start: async (entry: Partial<Entry>) => {
       return await Data.Entries.create({
