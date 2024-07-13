@@ -50,8 +50,6 @@ export default function Page() {
     Template | undefined
   >();
 
-  const [templatesEnabled, setTemplatesEnabled] = useState(true);
-
   const templatesQuery = useQuery({
     queryKey: ["templates"],
     queryFn: Data.Templates.getAll,
@@ -126,9 +124,6 @@ export default function Page() {
             flickMultiplier={200}
             give={0}
             contentFixed={true}
-            onStabilize={(h) => {
-              setTemplatesEnabled(h === 200);
-            }}
           >
             <Timer />
           </TopSheet>
@@ -136,7 +131,6 @@ export default function Page() {
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
-              scrollEnabled={templatesEnabled}
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
               data={
@@ -161,7 +155,6 @@ export default function Page() {
                       }
                     >
                       <TouchableNativeFeedback
-                        disabled={!templatesEnabled}
                         onPress={() => {
                           setSelectedTemplate(undefined);
                           setTemplateModalShown(true);
@@ -184,7 +177,6 @@ export default function Page() {
                 return (
                   <View className={small ? "w-1/3" : "w-1/2"}>
                     <Item
-                      disabled={!templatesEnabled}
                       isSmall={true}
                       template={data.item as Template}
                       onLongPress={() => {
@@ -209,7 +201,6 @@ function Item(props: {
   template: Template;
   onLongPress?: () => void;
   isSmall: boolean;
-  disabled?: boolean;
 }) {
   const qc = useQueryClient();
   const projectsQuery = useQuery({
@@ -286,7 +277,6 @@ function Item(props: {
         }
       >
         <TouchableNativeFeedback
-          disabled={props.disabled}
           onLongPress={props.onLongPress}
           onPress={() => {
             startEntryMutation.mutate({
