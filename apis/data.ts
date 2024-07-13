@@ -320,14 +320,16 @@ export const Data = {
     },
 
     get: async (id: number) => {
-      const entry = await Database.Entries.get(id);
+      const entry = await Database.Entries.getWithProject(id);
       return {
         ...entry,
         tags: Tags.toList(entry.tags),
-      } as Entry;
+      } as EntryWithProject;
     },
 
+    // Deprecated
     getWithProject: async (id: number) => {
+      console.warn("Deprecated: Use Data.Entries.get instead");
       const entry = await Database.Entries.getWithProject(id);
       return {
         ...entry,
@@ -394,15 +396,17 @@ export const Data = {
     // Convenience
 
     getLastStopped: async () => {
-      const last = await Database.Entries.getLastStopped();
+      const last = await Database.Entries.getLastStoppedWithProject();
       if (last === null) return null;
       return {
         ...last,
         tags: Tags.toList(last.tags),
-      } as Entry;
+      } as EntryWithProject;
     },
 
+    // Deprecated
     getLastStoppedWithProject: async () => {
+      console.warn("Deprecated: Use Data.Entries.getLastStopped instead");
       const last = await Database.Entries.getLastStoppedWithProject();
       if (last === null) return null;
       return {
@@ -412,15 +416,17 @@ export const Data = {
     },
 
     getCurrent: async () => {
-      const current = await Database.Entries.getCurrent();
+      const current = await Database.Entries.getCurrentWithProject();
       if (current === null) return null;
       return {
         ...current,
         tags: Tags.toList(current.tags),
-      } as Entry;
+      } as EntryWithProject;
     },
 
+    // Deprecated
     getCurrentWithProject: async () => {
+      console.warn("Deprecated: Use Data.Entries.getCurrent instead");
       const current = await Database.Entries.getCurrentWithProject();
       if (current === null) return null;
       return {
@@ -430,15 +436,17 @@ export const Data = {
     },
 
     getPreviousTo: async (Entry: Entry) => {
-      const previous = await Database.Entries.getPreviousTo(Entry);
+      const previous = await Database.Entries.getPreviousToWithProject(Entry);
       if (previous === null) return null;
       return {
         ...previous,
         tags: Tags.toList(previous.tags),
-      } as Entry;
+      } as EntryWithProject;
     },
 
+    // Deprecated
     getPreviousToWithProject: async (Entry: Entry) => {
+      console.warn("Deprecated: Use Data.Entries.getPreviousTo instead");
       const previous = await Database.Entries.getPreviousToWithProject(Entry);
       if (previous === null) return null;
       return {
