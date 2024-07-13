@@ -457,6 +457,20 @@ const Database = {
       return found;
     },
 
+    getWithProject: async (id: number) => {
+      const found = await db.getFirstAsync<DBEntryWithProject>(
+        `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM entries
+        LEFT JOIN projects ON entries.project_id = projects.id
+        WHERE entries.id = ?;`,
+        [id],
+      );
+      if (found === null) {
+        throw Error("Entry not found");
+      }
+      return found;
+    },
+
     getSince: async (startingAtOrAfter: string) => {
       return await db.getAllAsync<DBEntry>(
         `SELECT * FROM entries WHERE start >= ? ORDER BY start DESC;`,

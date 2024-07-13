@@ -327,6 +327,14 @@ export const Data = {
       } as Entry;
     },
 
+    getWithProject: async (id: number) => {
+      const entry = await Database.Entries.getWithProject(id);
+      return {
+        ...entry,
+        tags: Tags.toList(entry.tags),
+      } as EntryWithProject;
+    },
+
     create: async (entry: Partial<Entry> & { start: string }) => {
       const { created: local, stopped } =
         await Database.Entries.createLocal(entry);
