@@ -355,26 +355,34 @@ export const Data = {
       return await Database.Entries.editWithRemoteData(newRemoteData);
     },
 
-    delete: async (id: number) => {
-      const toDelete = await Database.Entries.get(id);
+    delete: async (id: number, bin = false) => {
+      const toDelete = await Database.Entries.getWithProject(id);
       if (toDelete.linked) {
-        await Database.Entries.markDeleted(id);
+        await Database.Entries.markDeleted(id).then(() => {
+          if (bin)
+            actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+        });
         await Toggl.Entries.delete(id);
       }
-      await Database.Entries.delete(id);
+      await Database.Entries.delete(id).then(() => {
+        if (bin)
+          actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+      });
     },
 
-    deleteCurrent: async () => {
+    deleteCurrent: async (bin = false) => {
       const toDelete = await Database.Entries.getCurrentWithProject();
       if (toDelete === null) return;
       if (toDelete.linked) {
         await Database.Entries.markDeleted(toDelete.id).then(() => {
-          actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+          if (bin)
+            actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
         });
         await Toggl.Entries.delete(toDelete.id);
       }
       await Database.Entries.delete(toDelete.id).then(() => {
-        actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
+        if (bin)
+          actions.bin = { ...toDelete, tags: Tags.toList(toDelete.tags) };
       });
     },
 

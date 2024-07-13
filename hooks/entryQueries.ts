@@ -90,16 +90,16 @@ export function useEditEntryMutation() {
   });
 }
 
-export function useDeleteEntryMutation() {
+export function useDeleteEntryMutation(withBin = false) {
   const qc = useQueryClient();
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: async (entry: Entry) => {
-      await Data.Entries.delete(entry.id);
+      await Data.Entries.delete(entry.id, withBin);
     },
     onMutate: (entry: EntryWithProject) => {
-      qc.setQueryData(["entries", "bin"], entry);
+      if (withBin) qc.setQueryData(["entries", "bin"], entry);
       qc.setQueryData(["entries", entry.id], null);
     },
     onError: (err) => {
