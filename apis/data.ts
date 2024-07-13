@@ -315,11 +315,6 @@ export const Data = {
     },
 
     getSince: async (since: string) => {
-      const entries = await Database.Entries.getSince(since);
-      return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
-    },
-
-    getSinceVisible: async (since: string) => {
       const entries = await Database.Entries.getSinceVisible(since);
       return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
     },
