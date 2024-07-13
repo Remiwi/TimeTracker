@@ -385,15 +385,6 @@ export const Data = {
 
     // Convenience
 
-    getCurrent: async () => {
-      const current = await Database.Entries.getCurrent();
-      if (current === null) return null;
-      return {
-        ...current,
-        tags: Tags.toList(current.tags),
-      } as Entry;
-    },
-
     getLastStopped: async () => {
       const last = await Database.Entries.getLastStopped();
       if (last === null) return null;
@@ -403,21 +394,30 @@ export const Data = {
       } as Entry;
     },
 
-    getCurrentWithProject: async () => {
-      const current = await Database.Entries.getCurrentWithProject();
-      if (current === null) return null;
-      return {
-        ...current,
-        tags: Tags.toList(current.tags),
-      } as EntryWithProject;
-    },
-
     getLastStoppedWithProject: async () => {
       const last = await Database.Entries.getLastStoppedWithProject();
       if (last === null) return null;
       return {
         ...last,
         tags: Tags.toList(last.tags),
+      } as EntryWithProject;
+    },
+
+    getCurrent: async () => {
+      const current = await Database.Entries.getCurrent();
+      if (current === null) return null;
+      return {
+        ...current,
+        tags: Tags.toList(current.tags),
+      } as Entry;
+    },
+
+    getCurrentWithProject: async () => {
+      const current = await Database.Entries.getCurrentWithProject();
+      if (current === null) return null;
+      return {
+        ...current,
+        tags: Tags.toList(current.tags),
       } as EntryWithProject;
     },
 
