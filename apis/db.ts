@@ -4,10 +4,12 @@ import {
   DBEntryWithProject,
   DBProject,
   DBTemplate,
+  DBTemplateWithProject,
   Entry,
   EntryWithProject,
   Project,
   Template,
+  TemplateWithProject,
   TogglProject,
 } from "./types";
 import { Dates } from "@/utils/dates";
@@ -350,22 +352,26 @@ const Database = {
 
   Templates: {
     getAll: async () => {
-      const data = await db.getAllAsync<DBTemplate>(
-        `SELECT * FROM templates;`,
-        [],
+      const data = await db.getAllAsync<DBTemplateWithProject>(
+        `SELECT templates.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM templates
+        LEFT JOIN projects ON templates.project_id = projects.id;`,
       );
       return data.map(
         (row) =>
           ({
             ...row,
             tags: Tags.toList(row.tags),
-          }) as Template,
+          }) as TemplateWithProject,
       );
     },
 
     get: async (id: number) => {
-      const found = await db.getFirstAsync<DBTemplate>(
-        `SELECT * FROM templates WHERE id = ?;`,
+      const found = await db.getFirstAsync<DBTemplateWithProject>(
+        `SELECT templates.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM templates
+        LEFT JOIN projects ON templates.project_id = projects.id
+        WHERE templates.id = ?;`,
         [id],
       );
       if (found === null) {
@@ -374,7 +380,7 @@ const Database = {
       return {
         ...found,
         tags: Tags.toList(found.tags),
-      } as Template;
+      } as TemplateWithProject;
     },
 
     create: async (template: Omit<Template, "id">) => {

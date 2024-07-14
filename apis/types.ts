@@ -27,7 +27,19 @@ export type Template = {
   tags: string[];
 };
 
+export type TemplateWithProject = Template & {
+  project_name: string | null;
+  project_color: string | null;
+  project_icon: string | null;
+};
+
 export type DBTemplate = Omit<Template, "tags"> & { tags: string };
+
+export type DBTemplateWithProject = DBTemplate & {
+  project_name: string | null;
+  project_color: string | null;
+  project_icon: string | null;
+};
 
 // Entries
 
