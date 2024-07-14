@@ -250,7 +250,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
 
   const startProjectMutation = useStartProjectMutation();
   const stopMutation = useStopCurrentMutation();
-  const deleteMutation = useDeleteEntryMutation();
+  const deleteMutation = useDeleteEntryMutation(true);
   const restoreEntryMutation = useRestoreEntryMutation();
   const editMutation = useEditEntryMutation();
   const addTemplateMutation = useAddTemplateMutation();
