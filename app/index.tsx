@@ -13,55 +13,34 @@ import MyTagInput from "@/components/TagInput";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Data } from "@/apis/data";
-import { Template } from "@/apis/types";
+import { Template, TemplateWithProject } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import { useAtom } from "jotai";
 import { templateMadeAtom } from "@/utils/atoms";
 import TopSheet from "@/components/TopSheet";
 import Timer from "@/components/Timer";
+import {
+  useAddTemplateMutation,
+  useDeleteTemplateMutation,
+  useEditTemplateMutation,
+  useTemplates,
+} from "@/hooks/templateQueries";
+import { useProjects } from "@/hooks/projectQueries";
+import { useStartTemplateMutation } from "@/hooks/entryQueries";
 
 const VIBRATION_DURATION = 80;
 
 export default function Page() {
-  const qc = useQueryClient();
-
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<
     Template | undefined
   >();
 
-  const templatesQuery = useQuery({
-    queryKey: ["templates"],
-    queryFn: Data.Templates.getAll,
-  });
+  const templatesQuery = useTemplates();
 
-  const createTemplateMutation = useMutation({
-    mutationFn: Data.Templates.create,
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-  const editTemplateMutation = useMutation({
-    mutationFn: Data.Templates.edit,
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
-  const deleteTemplateMutation = useMutation({
-    mutationFn: Data.Templates.delete,
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["templates"] });
-    },
-  });
+  const createTemplateMutation = useAddTemplateMutation();
+  const editTemplateMutation = useEditTemplateMutation();
+  const deleteTemplateMutation = useDeleteTemplateMutation();
 
   const templates = templatesQuery.data || [];
 
@@ -120,7 +99,7 @@ export default function Page() {
                   "empty",
                   "empty",
                   small ? "empty" : undefined,
-                ] as (Template | "add" | "empty" | undefined)[]
+                ] as (TemplateWithProject | "add" | "empty" | undefined)[]
               }
               renderItem={(data) => {
                 if (data.item === undefined) {
@@ -158,7 +137,7 @@ export default function Page() {
                   <View className={small ? "w-1/3" : "w-1/2"}>
                     <Item
                       isSmall={true}
-                      template={data.item as Template}
+                      template={data.item as TemplateWithProject}
                       onLongPress={() => {
                         setSelectedTemplate(data.item as Template);
                         setTemplateModalShown(true);
@@ -178,50 +157,16 @@ export default function Page() {
 }
 
 function Item(props: {
-  template: Template;
+  template: TemplateWithProject;
   onLongPress?: () => void;
   isSmall: boolean;
 }) {
-  const qc = useQueryClient();
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
+  const projectsQuery = useProjects();
   const thisProj = projectsQuery.data?.find(
     (p) => p.id === props.template.project_id,
   );
 
-  const [_, setTemplateMade] = useAtom(templateMadeAtom);
-
-  const startEntryMutation = useMutation({
-    mutationFn: Data.Entries.start,
-    onMutate: () => {
-      setTemplateMade(true);
-      const oldEntry = qc.getQueryData(["entries", "current"]);
-      qc.setQueryData(["entries", "current"], {
-        id: 0,
-        description: props.template.description,
-        project_id: props.template.project_id,
-        start: Dates.toISOExtended(new Date()),
-        stop: null,
-        duration: -1,
-        tags: props.template.tags,
-        project_name: thisProj?.name || null,
-        project_icon: thisProj?.icon || null,
-        project_color: thisProj?.color || null,
-      });
-      return oldEntry;
-    },
-    onError: (err) => {
-      console.error(err);
-      qc.setQueryData(["entries", "current"], null);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({
-        queryKey: ["entries"],
-      });
-    },
-  });
+  const startEntryMutation = useStartTemplateMutation();
 
   return (
     <View className={"flex px-1 " + (props.isSmall ? "h-22" : "h:29")}>
@@ -259,11 +204,7 @@ function Item(props: {
         <TouchableNativeFeedback
           onLongPress={props.onLongPress}
           onPress={() => {
-            startEntryMutation.mutate({
-              description: props.template.description,
-              project_id: props.template.project_id,
-              tags: props.template.tags,
-            });
+            startEntryMutation.mutate(props.template);
             Vibration.vibrate(VIBRATION_DURATION);
           }}
         >
@@ -294,10 +235,7 @@ function TemplateEditModal(props: {
   onDelete: (id: number) => void;
   defaultTemplate?: Template;
 }) {
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
+  const projectsQuery = useProjects();
 
   const [name, setName] = useState(props.defaultTemplate?.name || "");
   const [project_id, setProjectID] = useState(

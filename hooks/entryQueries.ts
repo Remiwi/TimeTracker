@@ -1,5 +1,11 @@
 import { Data } from "@/apis/data";
-import { Entry, EntryWithProject, Project } from "@/apis/types";
+import {
+  Entry,
+  EntryWithProject,
+  Project,
+  Template,
+  TemplateWithProject,
+} from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -46,6 +52,40 @@ export function useStartProjectMutation() {
         project_name: project?.name || null,
         project_icon: project?.icon || null,
         project_color: project?.color || null,
+      };
+      qc.setQueryData(["entries", "current"], newEntry);
+      qc.setQueryData(["entries", 0], newEntry);
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+  });
+}
+
+export function useStartTemplateMutation() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationKey: ["entries"],
+    mutationFn: async (template: TemplateWithProject) => {
+      return await Data.Entries.start({
+        project_id: template.project_id,
+        description: template.description,
+        tags: template.tags,
+      });
+    },
+    onMutate: (template: TemplateWithProject) => {
+      const newEntry = {
+        id: 0,
+        description: template.description,
+        project_id: template.project_id,
+        start: Dates.toISOExtended(new Date()),
+        stop: null,
+        duration: -1,
+        tags: template.tags,
+        project_name: template.project_name,
+        project_icon: template.project_icon,
+        project_color: template.project_color,
       };
       qc.setQueryData(["entries", "current"], newEntry);
       qc.setQueryData(["entries", 0], newEntry);
