@@ -68,25 +68,7 @@ export default function Page() {
         />
       )}
       <View className="relative flex h-full">
-        <View className="z-50 h-56 w-full">
-          <TopSheet
-            stableHeights={[
-              {
-                stabilizeTo: 200,
-                whenAbove: null,
-              },
-              {
-                stabilizeTo: 600,
-                whenAbove: 400,
-              },
-            ]}
-            flickMultiplier={200}
-            give={0}
-            contentFixed={true}
-          >
-            <Timer useLatestEntryIfNoOngoing={true} />
-          </TopSheet>
-        </View>
+        <Timer />
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList

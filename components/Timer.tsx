@@ -26,8 +26,40 @@ import {
 } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
+import TopSheet from "./TopSheet";
 
-export default function Timer(props: { useLatestEntryIfNoOngoing?: boolean }) {
+export default function Timer() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const ongoingQuery = useOngoing();
+
+  return (
+    <View className="z-50 h-56 w-full">
+      <TopSheet
+        stableHeights={[
+          {
+            stabilizeTo: 200,
+            whenAbove: null,
+          },
+          {
+            stabilizeTo: 600,
+            whenAbove: 400,
+          },
+        ]}
+        flickMultiplier={200}
+        give={0}
+        contentFixed={true}
+        onStabilize={(h) => {
+          setModalOpen(h > 200);
+        }}
+        disablePan={!modalOpen && !ongoingQuery.data}
+      >
+        <TimerContent useLatestEntryIfNoOngoing={modalOpen} />
+      </TopSheet>
+    </View>
+  );
+}
+
+function TimerContent(props: { useLatestEntryIfNoOngoing: boolean }) {
   const qc = useQueryClient();
 
   const ongoingQuery = useOngoing();
