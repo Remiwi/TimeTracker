@@ -8,6 +8,8 @@ import {
 } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { templateMadeAtom } from "@/utils/atoms";
+import { useAtom } from "jotai";
 
 export function useOngoing() {
   return useQuery({
@@ -32,10 +34,12 @@ export function useBin() {
 
 export function useStartProjectMutation() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: async (project: Project | null) => {
+      setTemplateMade(false);
       await Data.Entries.start({
         project_id: project?.id || null,
       });
@@ -64,10 +68,12 @@ export function useStartProjectMutation() {
 
 export function useStartTemplateMutation() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: async (template: TemplateWithProject) => {
+      setTemplateMade(true);
       return await Data.Entries.start({
         project_id: template.project_id,
         description: template.description,
@@ -98,11 +104,13 @@ export function useStartTemplateMutation() {
 
 export function useStopCurrentMutation() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: Data.Entries.stopCurrent,
     onMutate: () => {
+      setTemplateMade(false);
       const ongoing = qc.getQueryData<EntryWithProject>(["entries", "current"]);
       qc.setQueryData(["entries", "previous"], ongoing);
       qc.setQueryData(["entries", "current"], null);
@@ -115,11 +123,13 @@ export function useStopCurrentMutation() {
 
 export function useEditEntryMutation() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: Data.Entries.edit,
     onMutate: (entry: EntryWithProject) => {
+      setTemplateMade(false);
       qc.setQueryData(["entries", entry.id], {
         ...entry,
       });
@@ -132,6 +142,7 @@ export function useEditEntryMutation() {
 
 export function useDeleteEntryMutation(withBin = false) {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
@@ -139,6 +150,7 @@ export function useDeleteEntryMutation(withBin = false) {
       await Data.Entries.delete(entry.id, withBin);
     },
     onMutate: (entry: EntryWithProject) => {
+      setTemplateMade(false);
       if (withBin) qc.setQueryData(["entries", "bin"], entry);
       qc.setQueryData(["entries", entry.id], null);
     },
@@ -150,11 +162,13 @@ export function useDeleteEntryMutation(withBin = false) {
 
 export function useRestoreEntryMutation() {
   const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
 
   return useMutation({
     mutationKey: ["entries"],
     mutationFn: Data.Entries.restore,
     onMutate: () => {
+      setTemplateMade(false);
       const bin = qc.getQueryData<EntryWithProject>(["entries", "bin"]);
       qc.setQueryData(["entries", "current"], {
         ...bin,
