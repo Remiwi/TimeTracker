@@ -3,7 +3,8 @@ import { Text, TouchableNativeFeedback, View } from "react-native";
 
 const defaultColor = "#555555";
 
-export default function ActionChip(props: {
+export type ActionChipProps = {
+  key: string;
   text: string;
   textColor?: string;
   leadingIcon?: string;
@@ -14,12 +15,18 @@ export default function ActionChip(props: {
   backgroundColor?: string;
   onPress?: () => void;
   hide?: boolean;
-}) {
+  disabled?: boolean;
+};
+
+export default function ActionChip(props: ActionChipProps) {
   if (props.hide) return <></>;
 
   return (
     <View className="h-9 overflow-hidden rounded-lg">
-      <TouchableNativeFeedback onPress={props.onPress}>
+      <TouchableNativeFeedback
+        disabled={props.disabled}
+        onPress={props.onPress}
+      >
         <View
           className="flex h-9 flex-row items-center rounded-lg border px-2"
           style={{
@@ -28,11 +35,18 @@ export default function ActionChip(props: {
           }}
         >
           {props.leadingIcon && (
-            <MaterialIcons
-              name={props.leadingIcon as any}
-              size={18}
-              color={props.leadingIconColor || defaultColor}
-            />
+            <View
+              style={{
+                width: 18,
+                height: 18,
+              }}
+            >
+              <MaterialIcons
+                name={props.leadingIcon as any}
+                size={18}
+                color={props.leadingIconColor || defaultColor}
+              />
+            </View>
           )}
           <Text
             className="px-2 font-bold"
@@ -43,11 +57,18 @@ export default function ActionChip(props: {
             {props.text}
           </Text>
           {props.trailingIcon && (
-            <MaterialIcons
-              name={props.trailingIcon as any}
-              size={18}
-              color={props.trailingIconColor || defaultColor}
-            />
+            <View
+              style={{
+                width: 18,
+                height: 18,
+              }}
+            >
+              <MaterialIcons
+                name={props.trailingIcon as any}
+                size={18}
+                color={props.trailingIconColor || defaultColor}
+              />
+            </View>
           )}
         </View>
       </TouchableNativeFeedback>
