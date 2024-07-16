@@ -424,18 +424,21 @@ function Chips(props: { entry: EntryWithProject | null }) {
           <>
             {/* Start from empty */}
             <ActionChip
+              key="start-empty"
               text="Start empty"
               leadingIcon="play-arrow"
               onPress={() => startProjectMutation.mutate(null)}
             />
             {/* Start from project */}
             <ActionChip
+              key="start-project"
               text="Start from project"
               leadingIcon="play-arrow"
               onPress={() => setProjectStartModalVisible(true)}
             />
             {/* Restore from trash */}
             <ActionChip
+              key="restore"
               text="Restore"
               leadingIcon="restore-from-trash"
               onPress={() => restoreEntryMutation.mutate()}
@@ -448,6 +451,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
           <>
             {/* Projects */}
             <ActionChip
+              key="project-edit"
               backgroundColor={entryQuery.data.project_color || "transparent"}
               borderColor={
                 entryQuery.data.project_id ? "transparent" : undefined
@@ -468,6 +472,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Tags */}
             <ActionChip
+              key="tags-edit"
               text="Tags"
               backgroundColor={
                 entryQuery.data?.tags.length > 0 ? "#9e8e9e" : "transparent"
@@ -486,6 +491,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Stop */}
             <ActionChip
+              key="stop"
               backgroundColor="#ef4444"
               borderColor="transparent"
               textColor="#eeeeee"
@@ -496,6 +502,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Fill to last stop */}
             <ActionChip
+              key="fill"
               borderColor={editMutation.isPending ? "#aaaaaa" : undefined}
               textColor={editMutation.isPending ? "#aaaaaa" : undefined}
               leadingIconColor={editMutation.isPending ? "#aaaaaa" : undefined}
@@ -510,6 +517,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Set start to now */}
             <ActionChip
+              key="set-start-to-now"
               borderColor={editMutation.isPending ? "#aaaaaa" : undefined}
               textColor={editMutation.isPending ? "#aaaaaa" : undefined}
               leadingIconColor={editMutation.isPending ? "#aaaaaa" : undefined}
@@ -519,6 +527,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Make Template */}
             <ActionChip
+              key="make-template"
               borderColor={
                 addTemplateMutation.isPending ? "#aaaaaa" : undefined
               }
@@ -540,6 +549,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
             />
             {/* Delete Entry */}
             <ActionChip
+              key="delete"
               borderColor="transparent"
               backgroundColor="#444444"
               textColor="#eeeeee"
