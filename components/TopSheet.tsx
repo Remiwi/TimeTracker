@@ -109,7 +109,11 @@ export default function TopSheet(props: {
       >
         <View
           className="h-2 w-16 rounded-full"
-          style={{ backgroundColor: props.panBarColor || "#d1d5db" }}
+          style={{
+            backgroundColor: props.disablePan
+              ? "transparent"
+              : props.panBarColor || "#d1d5db",
+          }}
         />
       </View>
     </Animated.View>
