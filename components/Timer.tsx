@@ -197,7 +197,7 @@ function TimerContent(props: { useLatestEntryIfNoOngoing: boolean }) {
             if (!entryQuery.data) {
               return;
             }
-            qc.setQueryData(["entries", entryQuery.data], {
+            qc.setQueryData(["entries", entryQuery.data.id], {
               ...entryQuery.data,
               start: Dates.toISOExtended(date),
             });
