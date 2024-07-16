@@ -31,6 +31,7 @@ import { useStartTemplateMutation } from "@/hooks/entryQueries";
 const VIBRATION_DURATION = 80;
 
 export default function Page() {
+  const [templatesEnabled, setTemplatesEnabled] = useState(true);
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<
     Template | undefined
@@ -68,12 +69,16 @@ export default function Page() {
         />
       )}
       <View className="relative flex h-full">
-        <Timer />
+        <Timer
+          onOpen={() => setTemplatesEnabled(false)}
+          onClose={() => setTemplatesEnabled(true)}
+        />
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
+              scrollEnabled={templatesEnabled}
               data={
                 [
                   ...templates,
@@ -96,6 +101,7 @@ export default function Page() {
                       }
                     >
                       <TouchableNativeFeedback
+                        disabled={!templatesEnabled}
                         onPress={() => {
                           setSelectedTemplate(undefined);
                           setTemplateModalShown(true);
@@ -118,6 +124,7 @@ export default function Page() {
                 return (
                   <View className={small ? "w-1/3" : "w-1/2"}>
                     <Item
+                      disabled={!templatesEnabled}
                       isSmall={true}
                       template={data.item as TemplateWithProject}
                       onLongPress={() => {
@@ -142,6 +149,7 @@ function Item(props: {
   template: TemplateWithProject;
   onLongPress?: () => void;
   isSmall: boolean;
+  disabled?: boolean;
 }) {
   const projectsQuery = useProjects();
   const thisProj = projectsQuery.data?.find(
@@ -184,6 +192,7 @@ function Item(props: {
         }
       >
         <TouchableNativeFeedback
+          disabled={props.disabled}
           onLongPress={props.onLongPress}
           onPress={() => {
             startEntryMutation.mutate(props.template);

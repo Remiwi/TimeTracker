@@ -28,7 +28,10 @@ import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
 import TopSheet from "./TopSheet";
 
-export default function Timer() {
+export default function Timer(props: {
+  onOpen: () => void;
+  onClose: () => void;
+}) {
   const [modalOpen, setModalOpen] = useState(false);
   const ongoingQuery = useOngoing();
 
@@ -50,6 +53,11 @@ export default function Timer() {
         contentFixed={true}
         onStabilize={(h) => {
           setModalOpen(h > 200);
+          if (h > 200) {
+            props.onOpen();
+          } else {
+            props.onClose();
+          }
         }}
         disablePan={!modalOpen && !ongoingQuery.data}
       >
