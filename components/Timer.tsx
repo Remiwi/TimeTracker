@@ -217,7 +217,9 @@ function TimerContent(props: { useLatestEntryIfNoOngoing: boolean }) {
           </View>
         </View>
         <DateTimeEditor
-          date={entryQuery.data ? new Date(entryQuery.data.start) : new Date()}
+          date={
+            entryQuery.data?.stop ? new Date(entryQuery.data.stop) : new Date()
+          }
           text="Stop"
           className="pb-1"
           disabled={!entryQuery.data || !entryQuery.data.stop}
