@@ -10,6 +10,7 @@ export default function DateTimeEditor(props: {
   onDateChange?: (date: Date) => void;
   className?: string;
   disabled?: boolean;
+  mustBeAfter?: Date;
 }) {
   const year = props.date.getFullYear();
   const month = props.date.getMonth() + 1;
@@ -23,6 +24,13 @@ export default function DateTimeEditor(props: {
   const changeDay = (days: number) => {
     const newDate = new Date(props.date);
     newDate.setDate(newDate.getDate() + days);
+    if (props.mustBeAfter && newDate < props.mustBeAfter) {
+      newDate.setHours(props.mustBeAfter.getHours());
+      newDate.setMinutes(props.mustBeAfter.getMinutes());
+      newDate.setSeconds(0);
+      newDate.setMilliseconds(0);
+    }
+    if (props.mustBeAfter && newDate < props.mustBeAfter) return;
     if (newDate > new Date()) {
       newDate.setHours(new Date().getHours());
       newDate.setMinutes(new Date().getMinutes());
@@ -37,6 +45,7 @@ export default function DateTimeEditor(props: {
     const newDate = new Date(props.date);
     newDate.setMinutes(newDate.getMinutes() + minutes);
     if (newDate > new Date()) return;
+    if (props.mustBeAfter && newDate < props.mustBeAfter) return;
     props.onDateChange?.(newDate);
   };
 

@@ -220,9 +220,21 @@ function TimerContent(props: { useLatestEntryIfNoOngoing: boolean }) {
           date={
             entryQuery.data?.stop ? new Date(entryQuery.data.stop) : new Date()
           }
+          onDateChange={(date) => {
+            if (!entryQuery.data) {
+              return;
+            }
+            qc.setQueryData(["entries", entryQuery.data.id], {
+              ...entryQuery.data,
+              stop: Dates.toISOExtended(date),
+            });
+          }}
           text="Stop"
           className="pb-1"
           disabled={!entryQuery.data || !entryQuery.data.stop}
+          mustBeAfter={
+            entryQuery.data ? new Date(entryQuery.data.start) : undefined
+          }
         />
         <View className="flex w-full items-end">
           <View className="overflow-hidden rounded-sm">
