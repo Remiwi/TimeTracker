@@ -507,6 +507,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
               text="Stop"
               trailingIcon="stop-circle"
               onPress={stopMutation.mutate}
+              hide={entryQuery.data.stop !== null}
             />
             {/* Fill to last stop */}
             <ActionChip
