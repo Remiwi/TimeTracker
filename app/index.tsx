@@ -69,74 +69,36 @@ export default function Page() {
         />
       )}
       <View className="relative flex h-full">
-        <Timer
-          onOpen={() => setTemplatesEnabled(false)}
-          onClose={() => setTemplatesEnabled(true)}
-        />
+        <View className="z-50 h-48 w-full">
+          <Timer
+            onOpen={() => setTemplatesEnabled(false)}
+            onClose={() => setTemplatesEnabled(true)}
+          />
+        </View>
         <View className="h-full flex-shrink pt-6">
           {templatesQuery.isSuccess && (
             <FlatList
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
               scrollEnabled={templatesEnabled}
-              data={
-                [
-                  ...templates,
-                  "add",
-                  "empty",
-                  "empty",
-                  small ? "empty" : undefined,
-                ] as (TemplateWithProject | "add" | "empty" | undefined)[]
-              }
-              renderItem={(data) => {
-                if (data.item === undefined) {
-                  return <View></View>;
-                }
-                if (data.item === "add") {
-                  return (
-                    <View
-                      className={
-                        "overflow-hidden rounded-lg bg-gray-50 " +
-                        (small ? "h-22 w-1/3" : "h-29 w-1/2")
-                      }
-                    >
-                      <TouchableNativeFeedback
-                        disabled={!templatesEnabled}
-                        onPress={() => {
-                          setSelectedTemplate(undefined);
-                          setTemplateModalShown(true);
-                        }}
-                      >
-                        <View className="flex h-full w-full justify-center rounded-lg border-2 border-dashed border-gray-200">
-                          <Text className="text-center text-sm text-gray-400">
-                            New Template
-                          </Text>
-                        </View>
-                      </TouchableNativeFeedback>
-                    </View>
-                  );
-                }
-                if (data.item === "empty") {
-                  return (
-                    <View className={small ? "h-14 w-1/3" : "h-18 w-1/2"} />
-                  );
-                }
-                return (
-                  <View className={small ? "w-1/3" : "w-1/2"}>
-                    <Item
-                      disabled={!templatesEnabled}
-                      isSmall={true}
-                      template={data.item as TemplateWithProject}
-                      onLongPress={() => {
-                        setSelectedTemplate(data.item as Template);
-                        setTemplateModalShown(true);
-                      }}
-                    />
-                  </View>
-                );
+              data={templates}
+              renderItem={(data) => (
+                <View style={{ width: small ? "33.3333%" : "50%" }}>
+                  <Item
+                    disabled={!templatesEnabled}
+                    isSmall={true}
+                    template={data.item as TemplateWithProject}
+                    onLongPress={() => {
+                      setSelectedTemplate(data.item as Template);
+                      setTemplateModalShown(true);
+                    }}
+                  />
+                </View>
+              )}
+              contentContainerClassName="p-4"
+              contentContainerStyle={{
+                gap: small ? 64 : 48,
               }}
-              contentContainerClassName={small ? "gap-16" : "gap-12"}
-              className="px-4"
             />
           )}
         </View>
@@ -146,6 +108,57 @@ export default function Page() {
 }
 
 function Item(props: {
+  template: TemplateWithProject;
+  onLongPress?: () => void;
+  isSmall: boolean;
+  disabled?: boolean;
+}) {
+  const displayName =
+    props.template.name ||
+    props.template.description ||
+    props.template.project_name ||
+    "Unnamed";
+
+  const startEntryMutation = useStartTemplateMutation();
+
+  return (
+    <View className="overflow-hidden rounded-lg">
+      <TouchableNativeFeedback
+        onPress={() => {
+          startEntryMutation.mutate(props.template);
+        }}
+        onLongPress={props.onLongPress}
+        disabled={props.disabled}
+      >
+        <View className="items-center justify-center pb-1 pt-2">
+          <View className="flex-row justify-center gap-1">
+            <View className="w-4" />
+            <View
+              className="aspect-square w-5/12 items-center justify-center rounded-full"
+              style={{
+                backgroundColor: props.template?.project_color || "#cccccc",
+              }}
+            >
+              <MaterialCommunityIcons
+                name={(props.template.project_icon as any) || undefined}
+                size={props.isSmall ? 26 : 32}
+                color="white"
+              />
+            </View>
+            <View className="w-4 gap-1">
+              {props.template.tags.length > 0 && (
+                <MaterialCommunityIcons name="tag" size={12} color="#bbbbbb" />
+              )}
+            </View>
+          </View>
+          <Text className="pt-1">{displayName}</Text>
+        </View>
+      </TouchableNativeFeedback>
+    </View>
+  );
+}
+
+function OldItem(props: {
   template: TemplateWithProject;
   onLongPress?: () => void;
   isSmall: boolean;

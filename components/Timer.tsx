@@ -36,34 +36,32 @@ export default function Timer(props: {
   const ongoingQuery = useOngoing();
 
   return (
-    <View className="z-50 h-56 w-full">
-      <TopSheet
-        stableHeights={[
-          {
-            stabilizeTo: 200,
-            whenAbove: null,
-          },
-          {
-            stabilizeTo: 600,
-            whenAbove: 400,
-          },
-        ]}
-        flickMultiplier={200}
-        give={0}
-        contentFixed={true}
-        onStabilize={(h) => {
-          setModalOpen(h > 200);
-          if (h > 200) {
-            props.onOpen();
-          } else {
-            props.onClose();
-          }
-        }}
-        disablePan={!modalOpen && !ongoingQuery.data}
-      >
-        <TimerContent useLatestEntryIfNoOngoing={modalOpen} />
-      </TopSheet>
-    </View>
+    <TopSheet
+      stableHeights={[
+        {
+          stabilizeTo: 200,
+          whenAbove: null,
+        },
+        {
+          stabilizeTo: 600,
+          whenAbove: 400,
+        },
+      ]}
+      flickMultiplier={200}
+      give={0}
+      contentFixed={true}
+      onStabilize={(h) => {
+        setModalOpen(h > 200);
+        if (h > 200) {
+          props.onOpen();
+        } else {
+          props.onClose();
+        }
+      }}
+      disablePan={!modalOpen && !ongoingQuery.data}
+    >
+      <TimerContent useLatestEntryIfNoOngoing={modalOpen} />
+    </TopSheet>
   );
 }
 
