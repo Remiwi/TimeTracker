@@ -560,10 +560,14 @@ function Chips(props: { entry: EntryWithProject | null }) {
               leadingIcon="add-circle"
               onPress={() => {
                 addTemplateMutation.mutate({
-                  name: "",
-                  project_id: entryQuery.data?.project_id || null,
-                  description: entryQuery.data?.description || "",
-                  tags: entryQuery.data?.tags || [],
+                  template: {
+                    name: "",
+                    project_id: entryQuery.data?.project_id || null,
+                    description: entryQuery.data?.description || "",
+                    tags: entryQuery.data?.tags || [],
+                    page: 0,
+                  },
+                  num_cols: 3,
                 });
               }}
               hide={templateMade && !addTemplateMutation.isPending}

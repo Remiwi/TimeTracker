@@ -27,6 +27,7 @@ import {
 } from "@/hooks/templateQueries";
 import { useProjects } from "@/hooks/projectQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
+import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 
 const VIBRATION_DURATION = 80;
 
@@ -36,6 +37,10 @@ export default function Page() {
   const [selectedTemplate, setSelectedTemplate] = useState<
     Template | undefined
   >();
+  const [selectedPosition, setSelectedPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
 
   const templatesQuery = useTemplates();
 
@@ -55,7 +60,14 @@ export default function Page() {
             setTemplateModalShown(false);
           }}
           onCreate={(template) => {
-            createTemplateMutation.mutate(template);
+            createTemplateMutation.mutate({
+              template: {
+                ...template,
+                posx: selectedPosition.x,
+                posy: selectedPosition.y,
+              },
+              num_cols: small ? 3 : 2,
+            });
             setTemplateModalShown(false);
           }}
           onEdit={(template) => {
@@ -81,23 +93,48 @@ export default function Page() {
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
               scrollEnabled={templatesEnabled}
-              data={templates}
-              renderItem={(data) => (
-                <View style={{ width: small ? "33.3333%" : "50%" }}>
-                  <Item
-                    disabled={!templatesEnabled}
-                    isSmall={true}
-                    template={data.item as TemplateWithProject}
-                    onLongPress={() => {
-                      setSelectedTemplate(data.item as Template);
-                      setTemplateModalShown(true);
-                    }}
-                  />
-                </View>
-              )}
+              data={Array(12)}
+              extraData={templates}
               contentContainerClassName="p-4"
-              contentContainerStyle={{
-                gap: small ? 64 : 48,
+              renderItem={(data) => {
+                const itemsPerRow = small ? 3 : 2;
+                const posx = data.index % itemsPerRow;
+                const posy = Math.floor(data.index / itemsPerRow);
+                const template = templates.find(
+                  (t) => t.posx === posx && t.posy === posy,
+                );
+
+                return (
+                  <View
+                    className="h-36"
+                    style={{ width: small ? "33.3333%" : "50%" }}
+                  >
+                    {template && (
+                      <Item
+                        disabled={!templatesEnabled}
+                        isSmall={true}
+                        template={template}
+                        onLongPress={() => {
+                          setSelectedTemplate(data.item as Template);
+                          setTemplateModalShown(true);
+                        }}
+                      />
+                    )}
+                    {!template && (
+                      <TouchableWithoutFeedback
+                        onLongPress={() => {
+                          setSelectedTemplate(undefined);
+                          setSelectedPosition({ x: posx, y: posy });
+                          setTemplateModalShown(true);
+                        }}
+                      >
+                        <View className="h-full items-center justify-center bg-gray-500">
+                          <Text className="text-gray-300">Empty</Text>
+                        </View>
+                      </TouchableWithoutFeedback>
+                    )}
+                  </View>
+                );
               }}
             />
           )}
