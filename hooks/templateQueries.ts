@@ -9,6 +9,13 @@ export function useTemplates() {
   });
 }
 
+export function useDeepest() {
+  return useQuery({
+    queryKey: ["templates", "deepest"],
+    queryFn: Data.Templates.getDeepestPos,
+  });
+}
+
 export function useAddTemplateMutation() {
   return useMutation({
     mutationKey: ["templates"],

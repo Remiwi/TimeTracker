@@ -21,6 +21,7 @@ import TopSheet from "@/components/TopSheet";
 import Timer from "@/components/Timer";
 import {
   useAddTemplateMutation,
+  useDeepest,
   useDeleteTemplateMutation,
   useEditTemplateMutation,
   useTemplates,
@@ -43,6 +44,7 @@ export default function Page() {
   }>({ x: 0, y: 0 });
 
   const templatesQuery = useTemplates();
+  const deepestPos = useDeepest();
 
   const createTemplateMutation = useAddTemplateMutation();
   const editTemplateMutation = useEditTemplateMutation();
@@ -93,9 +95,15 @@ export default function Page() {
               numColumns={small ? 3 : 2}
               key={small ? 3 : 2}
               scrollEnabled={templatesEnabled}
-              data={Array(12)}
+              data={Array(
+                (deepestPos.data && deepestPos.data.posy > 1
+                  ? deepestPos.data.posy + 1
+                  : 4) *
+                  3 +
+                  3,
+              )}
               extraData={templates}
-              contentContainerClassName="p-4"
+              contentContainerClassName="p-4 pb-0"
               renderItem={(data) => {
                 const itemsPerRow = small ? 3 : 2;
                 const posx = data.index % itemsPerRow;

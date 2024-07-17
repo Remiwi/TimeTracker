@@ -157,6 +157,10 @@ export const Data = {
       return await Database.Templates.get(id);
     },
 
+    getDeepestPos: async () => {
+      return await Database.Templates.getDeepestPos();
+    },
+
     create: async (
       template: Omit<Template, "id" | "posx" | "posy"> & {
         posx?: number;

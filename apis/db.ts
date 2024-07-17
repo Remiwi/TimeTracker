@@ -333,6 +333,13 @@ const Database = {
       } as TemplateWithProject;
     },
 
+    getDeepestPos: async () => {
+      return await db.getFirstAsync<{ posx: number; posy: number }>(
+        `SELECT * FROM templates ORDER BY posy DESC, posx DESC LIMIT 1;`,
+        [],
+      );
+    },
+
     create: async (
       template: Omit<Template, "id" | "posx" | "posy"> & {
         posx?: number;
