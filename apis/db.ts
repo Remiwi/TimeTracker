@@ -34,7 +34,10 @@ const Database = {
           name TEXT,
           project_id INTEGER,
           description TEXT,
-          tags TEXT
+          tags TEXT,
+          page INTEGER,
+          posx INTEGER,
+          posy INTEGER
         );`);
 
       db.runSync(`CREATE TABLE IF NOT EXISTS projects (
@@ -333,9 +336,17 @@ const Database = {
     create: async (template: Omit<Template, "id">) => {
       const tags = Tags.toString(template.tags);
       const res = await db.runAsync(
-        `INSERT INTO templates (name, project_id, description, tags)
-        VALUES (?, ?, ?, ?);`,
-        [template.name, template.project_id, template.description, tags],
+        `INSERT INTO templates (name, project_id, description, tags, page, posx, posy)
+        VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        [
+          template.name,
+          template.project_id,
+          template.description,
+          tags,
+          template.page,
+          template.posx,
+          template.posy,
+        ],
       );
       return { ...template, id: res.lastInsertRowId } as Template;
     },
@@ -358,7 +369,10 @@ const Database = {
           name = ?,
           project_id = ?,
           description = ?,
-          tags = ?
+          tags = ?,
+          page = ?,
+          posx = ?,
+          posy = ?
         WHERE id = ?;`,
         [
           template.name || oldTemplate.name,
@@ -367,6 +381,9 @@ const Database = {
             : oldTemplate.project_id,
           template.description || oldTemplate.description,
           template.tags ? Tags.toString(template.tags) : oldTemplate.tags,
+          template.page || oldTemplate.page,
+          template.posx || oldTemplate.posx,
+          template.posy || oldTemplate.posy,
           template.id,
         ],
       );
