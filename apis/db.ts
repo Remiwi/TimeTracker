@@ -349,19 +349,7 @@ const Database = {
     ) => {
       const tags = Tags.toString(template.tags);
 
-      const deepestTemplate = await db.getFirstAsync<{
-        posx: number;
-        posy: number;
-      }>(
-        `SELECT
-          posx,
-          posy,
-          (posx + (? * posy)) AS combined 
-        FROM templates
-        ORDER BY combined DESC
-        LIMIT 1;`,
-        [num_cols],
-      );
+      const deepestTemplate = await Database.Templates.getDeepestPos();
       const posx = deepestTemplate ? (deepestTemplate.posx + 1) % num_cols : 0;
       const posy = deepestTemplate
         ? deepestTemplate.posy + (deepestTemplate.posx === num_cols - 1 ? 1 : 0)
