@@ -335,8 +335,8 @@ const Database = {
 
     create: async (
       template: Omit<Template, "id" | "posx" | "posy"> & {
-        posx: number | undefined;
-        posy: number | undefined;
+        posx?: number;
+        posy?: number;
       },
       num_cols: number,
     ) => {

@@ -14,8 +14,8 @@ export function useAddTemplateMutation() {
     mutationKey: ["templates"],
     mutationFn: async (data: {
       template: Omit<Template, "id" | "posx" | "posy"> & {
-        posx: number | undefined;
-        posy: number | undefined;
+        posx?: number;
+        posy?: number;
       };
       num_cols: number;
     }) => {
