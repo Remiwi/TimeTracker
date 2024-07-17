@@ -123,7 +123,7 @@ export default function Page() {
                         isSmall={true}
                         template={template}
                         onLongPress={() => {
-                          setSelectedTemplate(data.item as Template);
+                          setSelectedTemplate(template as Template);
                           setTemplateModalShown(true);
                         }}
                       />
