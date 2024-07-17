@@ -128,9 +128,7 @@ export default function Page() {
                           setTemplateModalShown(true);
                         }}
                       >
-                        <View className="h-full items-center justify-center bg-gray-500">
-                          <Text className="text-gray-300">Empty</Text>
-                        </View>
+                        <View className="h-full items-center justify-center" />
                       </TouchableWithoutFeedback>
                     )}
                   </View>
