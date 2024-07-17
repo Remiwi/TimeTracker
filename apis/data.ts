@@ -157,8 +157,14 @@ export const Data = {
       return await Database.Templates.get(id);
     },
 
-    create: async (template: Omit<Template, "id">) => {
-      return await Database.Templates.create(template);
+    create: async (
+      template: Omit<Template, "id" | "posx" | "posy"> & {
+        posx: number | undefined;
+        posy: number | undefined;
+      },
+      num_cols: number,
+    ) => {
+      return await Database.Templates.create(template, num_cols);
     },
 
     edit: async (template: Partial<Template> & { id: number }) => {

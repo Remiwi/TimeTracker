@@ -333,8 +333,33 @@ const Database = {
       } as TemplateWithProject;
     },
 
-    create: async (template: Omit<Template, "id">) => {
+    create: async (
+      template: Omit<Template, "id" | "posx" | "posy"> & {
+        posx: number | undefined;
+        posy: number | undefined;
+      },
+      num_cols: number,
+    ) => {
       const tags = Tags.toString(template.tags);
+
+      const deepestTemplate = await db.getFirstAsync<{
+        posx: number;
+        posy: number;
+      }>(
+        `SELECT
+          posx,
+          posy,
+          (posx + (? * posy)) AS combined 
+        FROM templates
+        ORDER BY combined DESC
+        LIMIT 1;`,
+        [num_cols],
+      );
+      const posx = deepestTemplate ? (deepestTemplate.posx + 1) % num_cols : 0;
+      const posy = deepestTemplate
+        ? deepestTemplate.posy + (deepestTemplate.posx === num_cols - 1 ? 1 : 0)
+        : 0;
+
       const res = await db.runAsync(
         `INSERT INTO templates (name, project_id, description, tags, page, posx, posy)
         VALUES (?, ?, ?, ?, ?, ?, ?);`,
@@ -344,8 +369,8 @@ const Database = {
           template.description,
           tags,
           template.page,
-          template.posx,
-          template.posy,
+          posx,
+          posy,
         ],
       );
       return { ...template, id: res.lastInsertRowId } as Template;
