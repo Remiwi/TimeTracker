@@ -1,4 +1,5 @@
 import { Data } from "@/apis/data";
+import { Template } from "@/apis/types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 export function useTemplates() {
@@ -11,7 +12,15 @@ export function useTemplates() {
 export function useAddTemplateMutation() {
   return useMutation({
     mutationKey: ["templates"],
-    mutationFn: Data.Templates.create,
+    mutationFn: async (data: {
+      template: Omit<Template, "id" | "posx" | "posy"> & {
+        posx: number | undefined;
+        posy: number | undefined;
+      };
+      num_cols: number;
+    }) => {
+      return await Data.Templates.create(data.template, data.num_cols);
+    },
     onError: (err) => {
       console.error(err);
     },
