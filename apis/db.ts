@@ -369,8 +369,8 @@ const Database = {
           template.description,
           tags,
           template.page,
-          posx,
-          posy,
+          template.posx === undefined ? posx : template.posx,
+          template.posy === undefined ? posy : template.posy,
         ],
       );
       return { ...template, id: res.lastInsertRowId } as Template;
