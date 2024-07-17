@@ -399,13 +399,6 @@ const Database = {
       const tags = Tags.toList(edited.tags);
       return { ...edited, tags } as Template;
     },
-
-    insertOrUpdate: async (template: Partial<Template>) => {
-      if (template.id !== undefined) {
-        return await Database.Templates.edit(template as Template);
-      }
-      return await Database.Templates.create(template as Omit<Template, "id">);
-    },
   },
 
   Entries: {
