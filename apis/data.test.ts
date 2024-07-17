@@ -21,8 +21,8 @@ beforeAll(async () => {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
-  await Database.Manage.dropAllTablesAsync();
-  await Database.Manage.initializeDBAsync();
+  Database.Manage.dropAllTablesSync();
+  Database.Manage.intializeDBSync();
   await Data.Entries.sync();
 });
 

@@ -80,59 +80,6 @@ const Database = {
       db.runSync(`DROP TABLE IF EXISTS entries;`);
       db.runSync(`DROP TABLE IF EXISTS local_ids;`);
     },
-
-    initializeDBAsync: async () => {
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS templates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        project_id INTEGER,
-        description TEXT,
-        tags TEXT
-      );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        color TEXT,
-        at TEXT,
-        active INTEGER,
-        icon TEXT,
-        linked INTEGER,
-        to_delete INTEGER
-      );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS entries (
-        id INTEGER PRIMARY KEY,
-        description TEXT,
-        project_id INTEGER,
-        start TEXT,
-        stop TEXT,
-        duration INTEGER,
-        at TEXT,
-        tags TEXT,
-        linked INTEGER,
-        to_delete INTEGER,
-        needs_push INTEGER
-    );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
-        type TEXT PRIMARY KEY,
-        id INTEGER
-      );`);
-      await db.runAsync(
-        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
-      );
-      await db.runAsync(
-        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('entries', -1);`,
-      );
-    },
-
-    dropAllTablesAsync: async () => {
-      await db.runAsync(`DROP TABLE IF EXISTS templates;`);
-      await db.runAsync(`DROP TABLE IF EXISTS projects;`);
-      await db.runAsync(`DROP TABLE IF EXISTS entries;`);
-      await db.runAsync(`DROP TABLE IF EXISTS local_ids;`);
-    },
   },
 
   Projects: {
