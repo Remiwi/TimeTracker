@@ -96,11 +96,9 @@ export default function Page() {
               key={small ? 3 : 2}
               scrollEnabled={templatesEnabled}
               data={Array(
-                (deepestPos.data && deepestPos.data.posy > 1
-                  ? deepestPos.data.posy + 1
-                  : 4) *
-                  3 +
-                  3,
+                (deepestPos.data && deepestPos.data.posy > 2
+                  ? deepestPos.data.posy + 2
+                  : 4) * 3,
               )}
               extraData={templates}
               contentContainerClassName="p-4 pb-0"
