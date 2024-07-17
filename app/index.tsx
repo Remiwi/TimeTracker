@@ -158,84 +158,10 @@ function Item(props: {
   );
 }
 
-function OldItem(props: {
-  template: TemplateWithProject;
-  onLongPress?: () => void;
-  isSmall: boolean;
-  disabled?: boolean;
-}) {
-  const projectsQuery = useProjects();
-  const thisProj = projectsQuery.data?.find(
-    (p) => p.id === props.template.project_id,
-  );
-
-  const startEntryMutation = useStartTemplateMutation();
-
-  return (
-    <View className={"flex px-1 " + (props.isSmall ? "h-22" : "h:29")}>
-      <View
-        className={
-          "rounded-full bg-white p-1 shadow-sm shadow-slate-900 " +
-          (props.isSmall ? "h-14 w-14" : "h-18 w-18")
-        }
-      />
-      <View
-        className={
-          "z-50 rounded-full bg-white p-1 " +
-          (props.isSmall ? "-top-14 h-14 w-14" : "-top-18 h-18 w-18")
-        }
-      >
-        <View
-          className={
-            "flex h-full w-full items-center justify-center rounded-full"
-          }
-          style={{ backgroundColor: thisProj?.color || "#cccccc" }}
-        >
-          <MaterialCommunityIcons
-            name={(thisProj?.icon as any) || "map-marker-question"}
-            size={props.isSmall ? 24 : 32}
-            color="white"
-          />
-        </View>
-      </View>
-      <View
-        className={
-          "w-full overflow-hidden rounded-lg bg-white shadow-sm shadow-slate-950 " +
-          (props.isSmall ? "-top-21 h-14" : "-top-29 h-20")
-        }
-      >
-        <TouchableNativeFeedback
-          disabled={props.disabled}
-          onLongPress={props.onLongPress}
-          onPress={() => {
-            startEntryMutation.mutate(props.template);
-            Vibration.vibrate(VIBRATION_DURATION);
-          }}
-        >
-          <View className="flex p-2 pt-1">
-            <Text
-              className={
-                "self-end " + (props.isSmall ? "pb-1 text-sm" : "text-md pb-6")
-              }
-            >
-              XX:XX:XX
-            </Text>
-            <Text className={props.isSmall ? "text-sm" : ""}>
-              {props.template.name ||
-                props.template.description ||
-                thisProj?.name}
-            </Text>
-          </View>
-        </TouchableNativeFeedback>
-      </View>
-    </View>
-  );
-}
-
 function TemplateEditModal(props: {
   onCancel: () => void;
-  onCreate: (t: Template) => void;
-  onEdit: (t: Template) => void;
+  onCreate: (t: Omit<Template, "id">) => void;
+  onEdit: (t: Partial<Template> & { id: number }) => void;
   onDelete: (id: number) => void;
   defaultTemplate?: Template;
 }) {
@@ -253,11 +179,13 @@ function TemplateEditModal(props: {
   const onDone = () => {
     if (props.defaultTemplate === undefined) {
       props.onCreate({
-        id: 0, // Id should be ignored for creation anyways
         name,
         project_id,
         description,
         tags,
+        page: 0,
+        posx: 0,
+        posy: 0,
       });
     } else {
       props.onEdit({
