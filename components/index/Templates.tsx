@@ -1,5 +1,6 @@
 import {
   Animated,
+  Easing,
   FlatList,
   PanResponder,
   Text,
@@ -202,13 +203,17 @@ function Item(props: {
           page: pageRef.current,
         },
       });
-      Animated.spring(animPos, {
+      Animated.timing(animPos, {
+        duration: 200,
+        easing: Easing.exp,
         toValue: {
           x: horizUnits * viewDimensions.width,
           y: vertUnits * viewDimensions.height,
         },
         useNativeDriver: true,
       }).start(() => {
+        console.log("Movement finished");
+
         // If the moving item isn't null, that means the cell we're moving to is empty!
         // We have to use the reference though because the real `movingItem` is going to be null no matter what
         //    because it is set to the value it was when item rendered
@@ -270,7 +275,9 @@ function Item(props: {
         page: movingItem.from.page,
       });
 
-      Animated.spring(animPos, {
+      Animated.timing(animPos, {
+        duration: 200,
+        easing: Easing.exp,
         toValue: { x: dx, y: dy },
         useNativeDriver: true,
       }).start(() => {
@@ -290,7 +297,9 @@ function Item(props: {
         page: props.page,
       });
 
-      Animated.spring(animPos, {
+      Animated.timing(animPos, {
+        duration: 200,
+        easing: Easing.exp,
         toValue: { x: dx, y: dy },
         useNativeDriver: true,
       }).start(() => {
