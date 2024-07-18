@@ -31,8 +31,6 @@ import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import Paginated from "@/components/Paginated";
 
-const VIBRATION_DURATION = 80;
-
 export default function Screen() {
   const [templatesEnabled, setTemplatesEnabled] = useState(true);
   const [templateModalShown, setTemplateModalShown] = useState(false);
@@ -55,6 +53,23 @@ export default function Screen() {
   const templates = templatesQuery.data || [];
 
   const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
+  const pages: PageProps[] = Array(num_pages)
+    .fill(1)
+    .map((_, i) => ({
+      page: i,
+      templates: templates.filter((t) => t.page === i),
+      small: true,
+      interactionsEnabled: templatesEnabled,
+      onTemplateCreate: (pos) => {
+        setSelectedTemplate(undefined);
+        setSelectedPosition(pos);
+        setTemplateModalShown(true);
+      },
+      onTemplateEdit: (t) => {
+        setSelectedTemplate(t as Template);
+        setTemplateModalShown(true);
+      },
+    }));
 
   const small = true;
   return (
@@ -115,28 +130,9 @@ export default function Screen() {
               minPage={0}
               maxPage={num_pages - 1}
               dependencies={[templates, templatesEnabled]}
-            >
-              {Array(num_pages)
-                .fill(0)
-                .map((_, i) => (
-                  <Page
-                    key={i}
-                    page={i}
-                    templates={templates.filter((t) => t.page === i)}
-                    small={small}
-                    interactionsEnabled={templatesEnabled}
-                    onTemplateCreate={(pos) => {
-                      setSelectedTemplate(undefined);
-                      setSelectedPosition(pos);
-                      setTemplateModalShown(true);
-                    }}
-                    onTemplateEdit={(t) => {
-                      setSelectedTemplate(t as Template);
-                      setTemplateModalShown(true);
-                    }}
-                  />
-                ))}
-            </Paginated>
+              pages={pages}
+              renderPage={(page) => <Page {...page} />}
+            />
           )}
         </View>
       </View>
@@ -144,14 +140,18 @@ export default function Screen() {
   );
 }
 
-function Page(props: {
+type PageProps = {
   page: number;
   small: boolean;
   templates: TemplateWithProject[];
   interactionsEnabled?: boolean;
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: Partial<Template> & { id: number }) => void;
-}) {
+};
+
+function Page(props: PageProps) {
+  console.log("Rendering page", props.page);
+
   const deepestPos = useDeepest(props.page);
 
   return (
