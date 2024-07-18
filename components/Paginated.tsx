@@ -21,7 +21,6 @@ function Paginated<T>(props: {
   const scrollX = useAnimatedValue(0);
 
   const panHandlers = usePanHandlers({
-    // const panHandlers = PanResponder.create({
     onMoveShouldSetPanResponder: (_, gestureState) => {
       return (
         Math.abs(gestureState.dx) > 3 * Math.abs(gestureState.dy) &&
@@ -65,7 +64,6 @@ function Paginated<T>(props: {
       props.onPageChange?.(page.current);
     },
   });
-  // }).panHandlers;
 
   return (
     <View {...panHandlers} className="flex-row">
