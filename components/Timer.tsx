@@ -565,7 +565,6 @@ function Chips(props: { entry: EntryWithProject | null }) {
                     project_id: entryQuery.data?.project_id || null,
                     description: entryQuery.data?.description || "",
                     tags: entryQuery.data?.tags || [],
-                    page: 0,
                   },
                   num_cols: 3,
                 });
