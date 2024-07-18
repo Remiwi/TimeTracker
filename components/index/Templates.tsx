@@ -1,4 +1,12 @@
-import { FlatList, Text, TouchableNativeFeedback, View } from "react-native";
+import {
+  Animated,
+  FlatList,
+  PanResponder,
+  Text,
+  TouchableNativeFeedback,
+  Vibration,
+  View,
+} from "react-native";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { TemplateWithProject } from "@/apis/types";
 import { useAtom } from "jotai";
@@ -7,18 +15,19 @@ import { useDeepest, useTemplates } from "@/hooks/templateQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import Paginated from "@/components/Paginated";
+import { useEffect, useRef } from "react";
+import { useAnimatedXY } from "@/hooks/animtedHooks";
 
 export default function Templates(props: {
   interactionsEnabled?: boolean;
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: TemplateWithProject) => void;
 }) {
-  const [page, setPage] = useAtom(templatePageAtom);
-
   const templatesQuery = useTemplates();
-
   const templates = templatesQuery.data || [];
 
+  const [page, setPage] = useAtom(templatePageAtom);
+  const pageScrollMap = useRef(new Map<number, number>()).current;
   const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
   const pages: PageProps[] = Array(num_pages)
     .fill(1)
@@ -29,6 +38,7 @@ export default function Templates(props: {
       interactionsEnabled: props.interactionsEnabled,
       onTemplateCreate: props.onTemplateCreate,
       onTemplateEdit: props.onTemplateEdit,
+      setScrollAmount: (amount) => pageScrollMap.set(i, amount),
     }));
 
   return (
@@ -69,14 +79,20 @@ type PageProps = {
   interactionsEnabled?: boolean;
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: TemplateWithProject) => void;
+  setScrollAmount?: (amount: number) => void;
 };
 
 function Page(props: PageProps) {
   const deepestPos = useDeepest(props.page);
 
+  useEffect(() => {
+    props.setScrollAmount?.(0);
+  }, []);
+
   return (
     <View className="flex-row">
       <FlatList
+        onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
         numColumns={props.small ? 3 : 2}
         key={props.small ? 3 : 2}
         scrollEnabled={props.interactionsEnabled}
@@ -139,6 +155,16 @@ function Item(props: {
   isSmall: boolean;
   disabled?: boolean;
 }) {
+  const shouldPanRef = useRef(false);
+  const animPos = useAnimatedXY();
+  const panHandlers = PanResponder.create({
+    onMoveShouldSetPanResponder: () => shouldPanRef.current,
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderMove: Animated.event([{}, { dx: animPos.x, dy: animPos.y }], {
+      useNativeDriver: false,
+    }),
+  }).panHandlers;
+
   const displayName =
     props.template.name ||
     props.template.description ||
@@ -148,13 +174,26 @@ function Item(props: {
   const startEntryMutation = useStartTemplateMutation();
 
   return (
-    <View className="h-full justify-center">
+    <Animated.View
+      className="h-full justify-center"
+      {...panHandlers}
+      style={{
+        transform: [{ translateX: animPos.x }, { translateY: animPos.y }],
+      }}
+    >
       <View className="overflow-hidden rounded-lg">
         <TouchableNativeFeedback
           onPress={() => {
             startEntryMutation.mutate(props.template);
           }}
-          onLongPress={props.onLongPress}
+          onLongPress={() => {
+            //props.onLongPress
+            Vibration.vibrate(80);
+            shouldPanRef.current = true;
+          }}
+          onPressOut={() => {
+            shouldPanRef.current = false;
+          }}
           disabled={props.disabled}
         >
           <View className="items-center justify-center pb-1 pt-2">
@@ -186,6 +225,6 @@ function Item(props: {
           </View>
         </TouchableNativeFeedback>
       </View>
-    </View>
+    </Animated.View>
   );
 }
