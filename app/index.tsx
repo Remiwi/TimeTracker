@@ -54,7 +54,7 @@ export default function Screen() {
 
   const templates = templatesQuery.data || [];
 
-  const num_pages = 3;
+  const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
 
   const small = true;
   return (
@@ -112,6 +112,8 @@ export default function Screen() {
           {templatesQuery.isSuccess && (
             <Paginated
               onPageChange={(p) => setPage(p)}
+              minPage={0}
+              maxPage={num_pages - 1}
               dependencies={[templates]}
             >
               {Array(num_pages)

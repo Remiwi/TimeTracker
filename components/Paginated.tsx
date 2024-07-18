@@ -12,6 +12,8 @@ const Paginated = React.memo(
   function Paginated(props: {
     children: React.ReactNode;
     onPageChange?: (page: number) => void;
+    minPage?: number;
+    maxPage?: number;
     dependencies?: any[];
   }) {
     const screen = useWindowDimensions();
@@ -34,7 +36,10 @@ const Paginated = React.memo(
       },
       onPanResponderRelease: (_, gestureState) => {
         const threshold = screen.width / 4;
-        if (gestureState.dx > threshold) {
+        if (
+          gestureState.dx > threshold &&
+          page.current > (props.minPage ?? 0)
+        ) {
           page.current -= 1;
           Animated.spring(scrollX, {
             toValue: screen.width,
@@ -43,7 +48,10 @@ const Paginated = React.memo(
             scrollX.setValue(0);
             scrollX.setOffset(screen.width * -page.current);
           });
-        } else if (gestureState.dx < -threshold) {
+        } else if (
+          gestureState.dx < -threshold &&
+          (props.maxPage ? page.current < props.maxPage : true)
+        ) {
           page.current += 1;
           Animated.spring(scrollX, {
             toValue: -screen.width,
