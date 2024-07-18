@@ -11,11 +11,16 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { TemplateWithProject } from "@/apis/types";
 import { atom, useAtom } from "jotai";
 import { templatePageAtom } from "@/utils/atoms";
-import { useDeepest, useTemplates } from "@/hooks/templateQueries";
+import {
+  useDeepest,
+  useEditTemplateMutation,
+  useMoveManyTemplates,
+  useTemplates,
+} from "@/hooks/templateQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import Paginated from "@/components/Paginated";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { useAnimatedXY } from "@/hooks/animtedHooks";
 
 export default function Templates(props: {
@@ -132,11 +137,6 @@ function Page(props: PageProps) {
                   isSmall={true}
                   template={template}
                   onLongPress={() => props.onTemplateEdit(template)}
-                  onUpdatePos={(x, y, p) => {
-                    console.log(
-                      `Moving item from ${posx}, ${posy}, ${props.page} to ${x}, ${y}, ${p}`,
-                    );
-                  }}
                 />
               )}
               {!template && (
@@ -157,6 +157,7 @@ function Page(props: PageProps) {
 }
 
 const movingItemAtom = atom<null | {
+  id: number;
   from: { x: number; y: number; page: number };
   to: { x: number; y: number; page: number };
 }>(null);
@@ -168,7 +169,6 @@ function Item(props: {
   onLongPress?: () => void;
   isSmall: boolean;
   disabled?: boolean;
-  onUpdatePos?: (x: number, y: number, page: number) => void;
 }) {
   const viewDimensions = useRef({ width: 0, height: 0 }).current;
 
@@ -177,6 +177,10 @@ function Item(props: {
   pageRef.current = page; // We have to do this because this is a value, not a reference
 
   const [movingItem, setMovingItem] = useAtom(movingItemAtom);
+  const movingItemRef = useRef(movingItem);
+  movingItemRef.current = movingItem;
+
+  const moveManyTemplatesMutation = useMoveManyTemplates();
 
   const shouldPanRef = useRef(false);
   const animPos = useAnimatedXY();
@@ -190,6 +194,7 @@ function Item(props: {
       const horizUnits = Math.round(gestureState.dx / viewDimensions.width);
       const vertUnits = Math.round(gestureState.dy / viewDimensions.height);
       setMovingItem({
+        id: props.template.id,
         from: { ...props.pos, page: props.page },
         to: {
           x: props.pos.x + horizUnits,
@@ -204,11 +209,20 @@ function Item(props: {
         },
         useNativeDriver: true,
       }).start(() => {
-        props.onUpdatePos?.(
-          props.pos.x + horizUnits,
-          props.pos.y + vertUnits,
-          pageRef.current,
-        );
+        // If the moving item isn't null, that means the cell we're moving to is empty!
+        // We have to use the reference though because the real `movingItem` is going to be null no matter what
+        //    because it is set to the value it was when item rendered
+        if (movingItemRef.current === null) return;
+
+        moveManyTemplatesMutation.mutate([
+          {
+            id: props.template.id,
+            posx: movingItemRef.current.to.x,
+            posy: movingItemRef.current.to.y,
+            page: movingItemRef.current.to.page,
+          },
+        ]);
+        setMovingItem(null);
       });
     },
   }).panHandlers;
@@ -222,48 +236,75 @@ function Item(props: {
   };
 
   useEffect(() => {
+    // No moving item
     if (movingItem === null) return;
+    // The moving item is myself
+    if (movingItem.id === props.template.id) return;
+    // I am not the item being targeted
     if (
-      movingItem.from.x === movingItem.to.x &&
-      movingItem.from.y === movingItem.to.y &&
-      movingItem.from.page === movingItem.to.page
-    ) {
+      movingItem.to.x !== props.pos.x ||
+      movingItem.to.y !== props.pos.y ||
+      movingItem.to.page !== props.page
+    )
       return;
-    }
+
+    // Because moving the templates causes a rerender, we only want to do it once, so update both moving templates here
+    const moves = [
+      {
+        id: movingItem.id,
+        posx: movingItem.to.x,
+        posy: movingItem.to.y,
+        page: movingItem.to.page,
+      },
+    ];
 
     // If the item being placed here is from this page, swap to its position
     if (movingItem.from.page === props.page) {
       const dx = (movingItem.from.x - movingItem.to.x) * viewDimensions.width;
       const dy = (movingItem.from.y - movingItem.to.y) * viewDimensions.height;
 
+      moves.push({
+        id: props.template.id,
+        posx: movingItem.from.x,
+        posy: movingItem.from.y,
+        page: movingItem.from.page,
+      });
+
       Animated.spring(animPos, {
         toValue: { x: dx, y: dy },
         useNativeDriver: true,
       }).start(() => {
-        props.onUpdatePos?.(
-          movingItem.from.x,
-          movingItem.from.y,
-          movingItem.from.page,
-        );
+        moveManyTemplatesMutation.mutate(moves);
       });
+      setMovingItem(null);
     }
     // Otherwise move to the last position of this page
     else {
       const dx = nextPos.x * viewDimensions.width;
       const dy = nextPos.y * viewDimensions.height;
 
+      moves.push({
+        id: props.template.id,
+        posx: nextPos.x,
+        posy: nextPos.y,
+        page: props.page,
+      });
+
       Animated.spring(animPos, {
         toValue: { x: dx, y: dy },
         useNativeDriver: true,
       }).start(() => {
-        props.onUpdatePos?.(nextPos.x, nextPos.y, props.page);
+        moveManyTemplatesMutation.mutate(moves);
       });
+      setMovingItem(null);
     }
-  }, [
-    movingItem?.to.x === props.pos.x &&
-      movingItem?.to.y === props.pos.y &&
-      movingItem?.to.page === props.page,
-  ]);
+  }, [movingItem]);
+
+  // omg my first time using useLayoutEffect so cool. loving zero flashing
+  useLayoutEffect(() => {
+    // If my ID has changed, then I've been swapped! Reset my animated postion
+    animPos.setValue({ x: 0, y: 0 });
+  }, [props.template.id]);
 
   const displayName =
     props.template.name ||
