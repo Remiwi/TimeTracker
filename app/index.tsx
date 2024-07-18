@@ -150,8 +150,6 @@ type PageProps = {
 };
 
 function Page(props: PageProps) {
-  console.log("Rendering page", props.page);
-
   const deepestPos = useDeepest(props.page);
 
   return (
@@ -165,9 +163,6 @@ function Page(props: PageProps) {
             ? deepestPos.data.posy + 2
             : 4) * 3,
         )}
-        onResponderStart={() => console.log("Responder start", props.page)}
-        onResponderGrant={() => console.log("Responder grant", props.page)}
-        onResponderReject={() => console.log("Responder reject", props.page)}
         extraData={props.templates}
         contentContainerClassName="p-4 pb-0"
         renderItem={(data) => {

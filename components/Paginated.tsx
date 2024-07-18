@@ -28,7 +28,6 @@ function Paginated<T>(props: {
         Math.abs(gestureState.dx) > 20
       );
     },
-    onPanResponderGrant: () => console.log("Paginated stole panresponder"),
     onPanResponderMove: (_, gestureState) => {
       Animated.event([{ dx: scrollX }], {
         useNativeDriver: false,
