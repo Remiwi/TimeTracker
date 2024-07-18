@@ -421,6 +421,25 @@ const Database = {
       const tags = Tags.toList(edited.tags);
       return { ...edited, tags } as Template;
     },
+
+    // Needed because swapping templates has to be done in the same transaction
+    moveMultiple: async (
+      moves: {
+        id: number;
+        posx: number;
+        posy: number;
+        page: number;
+      }[],
+    ) => {
+      await db.withExclusiveTransactionAsync(async (tx) => {
+        for (const move of moves) {
+          await tx.runAsync(
+            `UPDATE templates SET posx = ?, posy = ?, page = ? WHERE id = ?;`,
+            [move.posx, move.posy, move.page, move.id],
+          );
+        }
+      });
+    },
   },
 
   Entries: {

@@ -60,3 +60,13 @@ export function useDeleteTemplateMutation() {
     },
   });
 }
+
+export function useMoveManyTemplates() {
+  return useMutation({
+    mutationKey: ["templates"],
+    mutationFn: Data.Templates.moveMultiple,
+    onError: (err) => {
+      console.error(err);
+    },
+  });
+}

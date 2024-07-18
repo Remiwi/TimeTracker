@@ -178,6 +178,17 @@ export const Data = {
     delete: async (id: number) => {
       await Database.Templates.delete(id);
     },
+
+    moveMultiple: async (
+      moves: {
+        id: number;
+        posx: number;
+        posy: number;
+        page: number;
+      }[],
+    ) => {
+      await Database.Templates.moveMultiple(moves);
+    },
   },
 
   Entries: {
