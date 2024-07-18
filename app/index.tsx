@@ -153,7 +153,7 @@ function Page(props: PageProps) {
   const deepestPos = useDeepest(props.page);
 
   return (
-    <View>
+    <View className="flex-row">
       <FlatList
         numColumns={props.small ? 3 : 2}
         key={props.small ? 3 : 2}
@@ -175,9 +175,17 @@ function Page(props: PageProps) {
 
           return (
             <View
-              className="h-36"
+              className="relative h-36"
               style={{ width: props.small ? "33.3333%" : "50%" }}
             >
+              {posx !== 0 && posy !== 0 && (
+                <MaterialIcons
+                  name="add"
+                  size={12}
+                  color="#cccccc"
+                  className="absolute -left-1.5 -top-1.5"
+                ></MaterialIcons>
+              )}
               {template && (
                 <Item
                   disabled={!props.interactionsEnabled}
@@ -192,7 +200,7 @@ function Page(props: PageProps) {
                     props.onTemplateCreate({ x: posx, y: posy });
                   }}
                 >
-                  <View className="h-full items-center justify-center" />
+                  <View className="h-full" />
                 </TouchableWithoutFeedback>
               )}
             </View>
@@ -218,38 +226,44 @@ function Item(props: {
   const startEntryMutation = useStartTemplateMutation();
 
   return (
-    <View className="overflow-hidden rounded-lg">
-      <TouchableNativeFeedback
-        onPress={() => {
-          startEntryMutation.mutate(props.template);
-        }}
-        onLongPress={props.onLongPress}
-        disabled={props.disabled}
-      >
-        <View className="items-center justify-center pb-1 pt-2">
-          <View className="flex-row justify-center gap-1">
-            <View className="w-4" />
-            <View
-              className="aspect-square w-5/12 items-center justify-center rounded-full"
-              style={{
-                backgroundColor: props.template?.project_color || "#cccccc",
-              }}
-            >
-              <MaterialCommunityIcons
-                name={(props.template.project_icon as any) || undefined}
-                size={props.isSmall ? 26 : 32}
-                color="white"
-              />
+    <View className="h-full justify-center">
+      <View className="overflow-hidden rounded-lg">
+        <TouchableNativeFeedback
+          onPress={() => {
+            startEntryMutation.mutate(props.template);
+          }}
+          onLongPress={props.onLongPress}
+          disabled={props.disabled}
+        >
+          <View className="items-center justify-center pb-1 pt-2">
+            <View className="flex-row justify-center gap-1">
+              <View className="w-4" />
+              <View
+                className="aspect-square w-5/12 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: props.template?.project_color || "#cccccc",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={(props.template.project_icon as any) || undefined}
+                  size={props.isSmall ? 26 : 32}
+                  color="white"
+                />
+              </View>
+              <View className="w-4 gap-1">
+                {props.template.tags.length > 0 && (
+                  <MaterialCommunityIcons
+                    name="tag"
+                    size={12}
+                    color="#bbbbbb"
+                  />
+                )}
+              </View>
             </View>
-            <View className="w-4 gap-1">
-              {props.template.tags.length > 0 && (
-                <MaterialCommunityIcons name="tag" size={12} color="#bbbbbb" />
-              )}
-            </View>
+            <Text className="pt-1">{displayName}</Text>
           </View>
-          <Text className="pt-1">{displayName}</Text>
-        </View>
-      </TouchableNativeFeedback>
+        </TouchableNativeFeedback>
+      </View>
     </View>
   );
 }
