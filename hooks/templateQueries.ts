@@ -43,6 +43,7 @@ export function useAddTemplateMutation() {
 
 export function useEditTemplateMutation() {
   return useMutation({
+    mutationKey: ["templates"],
     mutationFn: Data.Templates.edit,
     onError: (err) => {
       console.error(err);
@@ -52,6 +53,7 @@ export function useEditTemplateMutation() {
 
 export function useDeleteTemplateMutation() {
   return useMutation({
+    mutationKey: ["templates"],
     mutationFn: Data.Templates.delete,
     onError: (err) => {
       console.error(err);
