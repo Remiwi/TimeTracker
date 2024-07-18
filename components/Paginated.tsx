@@ -4,6 +4,7 @@ import {
   Animated,
   PanResponder,
   View,
+  useAnimatedValue,
   useWindowDimensions,
 } from "react-native";
 
@@ -15,7 +16,7 @@ const Paginated = React.memo(
   }) {
     const screen = useWindowDimensions();
     const page = useRef(0);
-    const scrollX = new Animated.Value(0);
+    const scrollX = useAnimatedValue(0);
 
     const panHandlers = usePanHandlers({
       // const panHandlers = PanResponder.create({
