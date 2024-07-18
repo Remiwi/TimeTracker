@@ -26,7 +26,7 @@ import {
 } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
-import TopSheet from "./TopSheet";
+import TopSheet from "../TopSheet";
 
 export default function Timer(props: {
   onOpen: () => void;

@@ -18,7 +18,7 @@ import { Dates } from "@/utils/dates";
 import { useAtom } from "jotai";
 import { templateMadeAtom, templatePageAtom } from "@/utils/atoms";
 import TopSheet from "@/components/TopSheet";
-import Timer from "@/components/Timer";
+import Timer from "@/components/index/Timer";
 import {
   useAddTemplateMutation,
   useDeepest,
