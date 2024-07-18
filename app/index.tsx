@@ -114,7 +114,7 @@ export default function Screen() {
               onPageChange={(p) => setPage(p)}
               minPage={0}
               maxPage={num_pages - 1}
-              dependencies={[templates]}
+              dependencies={[templates, templatesEnabled]}
             >
               {Array(num_pages)
                 .fill(0)
