@@ -333,10 +333,10 @@ const Database = {
       } as TemplateWithProject;
     },
 
-    getDeepestPos: async () => {
+    getDeepestPos: async (page: number) => {
       return await db.getFirstAsync<{ posx: number; posy: number }>(
-        `SELECT * FROM templates ORDER BY posy DESC, posx DESC LIMIT 1;`,
-        [],
+        `SELECT * FROM templates WHERE page = ? ORDER BY posy DESC, posx DESC LIMIT 1;`,
+        [page],
       );
     },
 
@@ -349,7 +349,9 @@ const Database = {
     ) => {
       const tags = Tags.toString(template.tags);
 
-      const deepestTemplate = await Database.Templates.getDeepestPos();
+      const deepestTemplate = await Database.Templates.getDeepestPos(
+        template.page,
+      );
       const posx = deepestTemplate ? (deepestTemplate.posx + 1) % num_cols : 0;
       const posy = deepestTemplate
         ? deepestTemplate.posy + (deepestTemplate.posx === num_cols - 1 ? 1 : 0)

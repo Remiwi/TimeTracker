@@ -16,7 +16,7 @@ import { Data } from "@/apis/data";
 import { Template, TemplateWithProject } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import { useAtom } from "jotai";
-import { templateMadeAtom } from "@/utils/atoms";
+import { templateMadeAtom, templatePageAtom } from "@/utils/atoms";
 import TopSheet from "@/components/TopSheet";
 import Timer from "@/components/Timer";
 import {
@@ -44,7 +44,7 @@ export default function Screen() {
     y: number;
   }>({ x: 0, y: 0 });
 
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useAtom(templatePageAtom);
 
   const templatesQuery = useTemplates();
 
@@ -120,7 +120,7 @@ export default function Screen() {
                   <Page
                     key={i}
                     page={i}
-                    templates={templates.filter((t) => t.page === page)}
+                    templates={templates.filter((t) => t.page === i)}
                     small={small}
                     interactionsEnabled={templatesEnabled}
                     onTemplateCreate={(pos) => {
@@ -150,7 +150,7 @@ function Page(props: {
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: Partial<Template> & { id: number }) => void;
 }) {
-  const deepestPos = useDeepest();
+  const deepestPos = useDeepest(props.page);
 
   return (
     <View>

@@ -157,8 +157,8 @@ export const Data = {
       return await Database.Templates.get(id);
     },
 
-    getDeepestPos: async () => {
-      return await Database.Templates.getDeepestPos();
+    getDeepestPos: async (page: number) => {
+      return await Database.Templates.getDeepestPos(page);
     },
 
     create: async (
