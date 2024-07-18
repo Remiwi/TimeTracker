@@ -29,10 +29,11 @@ import {
 import { useProjects } from "@/hooks/projectQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import Paginated from "@/components/Paginated";
 
 const VIBRATION_DURATION = 80;
 
-export default function Page() {
+export default function Screen() {
   const [templatesEnabled, setTemplatesEnabled] = useState(true);
   const [templateModalShown, setTemplateModalShown] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<
@@ -43,14 +44,17 @@ export default function Page() {
     y: number;
   }>({ x: 0, y: 0 });
 
+  const [page, setPage] = useState(0);
+
   const templatesQuery = useTemplates();
-  const deepestPos = useDeepest();
 
   const createTemplateMutation = useAddTemplateMutation();
   const editTemplateMutation = useEditTemplateMutation();
   const deleteTemplateMutation = useDeleteTemplateMutation();
 
   const templates = templatesQuery.data || [];
+
+  const num_pages = 3;
 
   const small = true;
   return (
@@ -83,67 +87,121 @@ export default function Page() {
         />
       )}
       <View className="relative flex h-full">
-        <View className="z-50 h-48 w-full">
+        <View className="z-50 h-52 w-full">
           <Timer
             onOpen={() => setTemplatesEnabled(false)}
             onClose={() => setTemplatesEnabled(true)}
           />
         </View>
         <View className="h-full flex-shrink pt-6">
-          {templatesQuery.isSuccess && (
-            <FlatList
-              numColumns={small ? 3 : 2}
-              key={small ? 3 : 2}
-              scrollEnabled={templatesEnabled}
-              data={Array(
-                (deepestPos.data && deepestPos.data.posy > 2
-                  ? deepestPos.data.posy + 2
-                  : 4) * 3,
-              )}
-              extraData={templates}
-              contentContainerClassName="p-4 pb-0"
-              renderItem={(data) => {
-                const itemsPerRow = small ? 3 : 2;
-                const posx = data.index % itemsPerRow;
-                const posy = Math.floor(data.index / itemsPerRow);
-                const template = templates.find(
-                  (t) => t.posx === posx && t.posy === posy,
-                );
-
-                return (
+          <View className="h-8 flex-row items-center justify-center">
+            <View className="flex-row justify-center gap-2">
+              {Array(num_pages)
+                .fill(0)
+                .map((_, i) => (
                   <View
-                    className="h-36"
-                    style={{ width: small ? "33.3333%" : "50%" }}
-                  >
-                    {template && (
-                      <Item
-                        disabled={!templatesEnabled}
-                        isSmall={true}
-                        template={template}
-                        onLongPress={() => {
-                          setSelectedTemplate(template as Template);
-                          setTemplateModalShown(true);
-                        }}
-                      />
-                    )}
-                    {!template && (
-                      <TouchableWithoutFeedback
-                        onLongPress={() => {
-                          setSelectedTemplate(undefined);
-                          setSelectedPosition({ x: posx, y: posy });
-                          setTemplateModalShown(true);
-                        }}
-                      >
-                        <View className="h-full items-center justify-center" />
-                      </TouchableWithoutFeedback>
-                    )}
-                  </View>
-                );
-              }}
-            />
+                    key={i}
+                    className="h-2 w-2 rounded-full bg-gray-400"
+                    style={{
+                      backgroundColor: i === page ? "#9ca3af" : "#d1d5db",
+                    }}
+                  />
+                ))}
+            </View>
+          </View>
+          {templatesQuery.isSuccess && (
+            <Paginated
+              onPageChange={(p) => setPage(p)}
+              dependencies={[templates]}
+            >
+              {Array(num_pages)
+                .fill(0)
+                .map((_, i) => (
+                  <Page
+                    key={i}
+                    page={i}
+                    templates={templates.filter((t) => t.page === page)}
+                    small={small}
+                    interactionsEnabled={templatesEnabled}
+                    onTemplateCreate={(pos) => {
+                      setSelectedTemplate(undefined);
+                      setSelectedPosition(pos);
+                      setTemplateModalShown(true);
+                    }}
+                    onTemplateEdit={(t) => {
+                      setSelectedTemplate(t as Template);
+                      setTemplateModalShown(true);
+                    }}
+                  />
+                ))}
+            </Paginated>
           )}
         </View>
       </View>
+    </View>
+  );
+}
+
+function Page(props: {
+  page: number;
+  small: boolean;
+  templates: TemplateWithProject[];
+  interactionsEnabled?: boolean;
+  onTemplateCreate: (pos: { x: number; y: number }) => void;
+  onTemplateEdit: (t: Partial<Template> & { id: number }) => void;
+}) {
+  const deepestPos = useDeepest();
+
+  return (
+    <View>
+      <FlatList
+        numColumns={props.small ? 3 : 2}
+        key={props.small ? 3 : 2}
+        scrollEnabled={props.interactionsEnabled}
+        data={Array(
+          (deepestPos.data && deepestPos.data.posy > 2
+            ? deepestPos.data.posy + 2
+            : 4) * 3,
+        )}
+        onResponderStart={() => console.log("Responder start", props.page)}
+        onResponderGrant={() => console.log("Responder grant", props.page)}
+        onResponderReject={() => console.log("Responder reject", props.page)}
+        extraData={props.templates}
+        contentContainerClassName="p-4 pb-0"
+        renderItem={(data) => {
+          const itemsPerRow = props.small ? 3 : 2;
+          const posx = data.index % itemsPerRow;
+          const posy = Math.floor(data.index / itemsPerRow);
+          const template = props.templates.find(
+            (t) => t.posx === posx && t.posy === posy,
+          );
+
+          return (
+            <View
+              className="h-36"
+              style={{ width: props.small ? "33.3333%" : "50%" }}
+            >
+              {template && (
+                <Item
+                  disabled={!props.interactionsEnabled}
+                  isSmall={true}
+                  template={template}
+                  onLongPress={() => props.onTemplateEdit(template)}
+                />
+              )}
+              {!template && (
+                <TouchableWithoutFeedback
+                  onLongPress={() => {
+                    props.onTemplateCreate({ x: posx, y: posy });
+                  }}
+                >
+                  <View className="h-full items-center justify-center" />
+                </TouchableWithoutFeedback>
+              )}
+            </View>
+          );
+        }}
+      />
     </View>
   );
 }
