@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { TemplateWithProject } from "@/apis/types";
-import { useAtom } from "jotai";
+import { atom, useAtom } from "jotai";
 import { templatePageAtom } from "@/utils/atoms";
 import { useDeepest, useTemplates } from "@/hooks/templateQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
@@ -127,9 +127,16 @@ function Page(props: PageProps) {
               {template && (
                 <Item
                   disabled={!props.interactionsEnabled}
+                  pos={{ x: posx, y: posy }}
+                  page={props.page}
                   isSmall={true}
                   template={template}
                   onLongPress={() => props.onTemplateEdit(template)}
+                  onUpdatePos={(x, y, p) => {
+                    console.log(
+                      `Moving item from ${posx}, ${posy}, ${props.page} to ${x}, ${y}, ${p}`,
+                    );
+                  }}
                 />
               )}
               {!template && (
@@ -149,12 +156,28 @@ function Page(props: PageProps) {
   );
 }
 
+const movingItemAtom = atom<null | {
+  from: { x: number; y: number; page: number };
+  to: { x: number; y: number; page: number };
+}>(null);
+
 function Item(props: {
   template: TemplateWithProject;
+  pos: { x: number; y: number };
+  page: number;
   onLongPress?: () => void;
   isSmall: boolean;
   disabled?: boolean;
+  onUpdatePos?: (x: number, y: number, page: number) => void;
 }) {
+  const viewDimensions = useRef({ width: 0, height: 0 }).current;
+
+  const [page, _] = useAtom(templatePageAtom);
+  const pageRef = useRef(page);
+  pageRef.current = page; // We have to do this because this is a value, not a reference
+
+  const [movingItem, setMovingItem] = useAtom(movingItemAtom);
+
   const shouldPanRef = useRef(false);
   const animPos = useAnimatedXY();
   const panHandlers = PanResponder.create({
@@ -163,7 +186,84 @@ function Item(props: {
     onPanResponderMove: Animated.event([{}, { dx: animPos.x, dy: animPos.y }], {
       useNativeDriver: false,
     }),
+    onPanResponderRelease: (_, gestureState) => {
+      const horizUnits = Math.round(gestureState.dx / viewDimensions.width);
+      const vertUnits = Math.round(gestureState.dy / viewDimensions.height);
+      setMovingItem({
+        from: { ...props.pos, page: props.page },
+        to: {
+          x: props.pos.x + horizUnits,
+          y: props.pos.y + vertUnits,
+          page: pageRef.current,
+        },
+      });
+      Animated.spring(animPos, {
+        toValue: {
+          x: horizUnits * viewDimensions.width,
+          y: vertUnits * viewDimensions.height,
+        },
+        useNativeDriver: true,
+      }).start(() => {
+        props.onUpdatePos?.(
+          props.pos.x + horizUnits,
+          props.pos.y + vertUnits,
+          pageRef.current,
+        );
+      });
+    },
   }).panHandlers;
+
+  const deepestPos = useDeepest(props.page);
+  const nextPos = {
+    x: deepestPos.data ? (deepestPos.data.posx + 1) % 3 : 0,
+    y: deepestPos.data
+      ? deepestPos.data.posy + (deepestPos.data.posx === 2 ? 1 : 0)
+      : 0,
+  };
+
+  useEffect(() => {
+    if (movingItem === null) return;
+    if (
+      movingItem.from.x === movingItem.to.x &&
+      movingItem.from.y === movingItem.to.y &&
+      movingItem.from.page === movingItem.to.page
+    ) {
+      return;
+    }
+
+    // If the item being placed here is from this page, swap to its position
+    if (movingItem.from.page === props.page) {
+      const dx = (movingItem.from.x - movingItem.to.x) * viewDimensions.width;
+      const dy = (movingItem.from.y - movingItem.to.y) * viewDimensions.height;
+
+      Animated.spring(animPos, {
+        toValue: { x: dx, y: dy },
+        useNativeDriver: true,
+      }).start(() => {
+        props.onUpdatePos?.(
+          movingItem.from.x,
+          movingItem.from.y,
+          movingItem.from.page,
+        );
+      });
+    }
+    // Otherwise move to the last position of this page
+    else {
+      const dx = nextPos.x * viewDimensions.width;
+      const dy = nextPos.y * viewDimensions.height;
+
+      Animated.spring(animPos, {
+        toValue: { x: dx, y: dy },
+        useNativeDriver: true,
+      }).start(() => {
+        props.onUpdatePos?.(nextPos.x, nextPos.y, props.page);
+      });
+    }
+  }, [
+    movingItem?.to.x === props.pos.x &&
+      movingItem?.to.y === props.pos.y &&
+      movingItem?.to.page === props.page,
+  ]);
 
   const displayName =
     props.template.name ||
@@ -179,6 +279,10 @@ function Item(props: {
       {...panHandlers}
       style={{
         transform: [{ translateX: animPos.x }, { translateY: animPos.y }],
+      }}
+      onLayout={(e) => {
+        viewDimensions.width = e.nativeEvent.layout.width;
+        viewDimensions.height = e.nativeEvent.layout.height;
       }}
     >
       <View className="overflow-hidden rounded-lg">
