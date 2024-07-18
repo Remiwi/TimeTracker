@@ -403,9 +403,9 @@ const Database = {
             : oldTemplate.project_id,
           template.description || oldTemplate.description,
           template.tags ? Tags.toString(template.tags) : oldTemplate.tags,
-          template.page || oldTemplate.page,
-          template.posx || oldTemplate.posx,
-          template.posy || oldTemplate.posy,
+          template.page ?? oldTemplate.page,
+          template.posx ?? oldTemplate.posx,
+          template.posy ?? oldTemplate.posy,
           template.id,
         ],
       );
