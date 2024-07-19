@@ -14,6 +14,7 @@ function Paginated<T>(props: {
   onPageChange?: (page: number) => void;
   minPage?: number;
   maxPage?: number;
+  setPageToRef?: React.MutableRefObject<((page: number) => void) | null>;
   dependencies?: any[];
 }) {
   const screen = useWindowDimensions();
@@ -64,6 +65,23 @@ function Paginated<T>(props: {
       props.onPageChange?.(page.current);
     },
   });
+
+  if (props.setPageToRef !== undefined) {
+    props.setPageToRef.current = (newPage: number) => {
+      const pageDelta = newPage - page.current;
+      if (pageDelta === 0) return;
+      console.log(pageDelta);
+      page.current = newPage;
+      Animated.spring(scrollX, {
+        toValue: -screen.width * pageDelta,
+        useNativeDriver: true,
+      }).start(() => {
+        scrollX.setValue(0);
+        scrollX.setOffset(screen.width * -page.current);
+      });
+      props.onPageChange?.(page.current);
+    };
+  }
 
   return (
     <View {...panHandlers} className="flex-row">
