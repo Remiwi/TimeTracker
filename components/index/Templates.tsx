@@ -86,7 +86,6 @@ export default function Templates(props: {
           onPageChange={(p) => setPage(p)}
           minPage={0}
           maxPage={num_pages - 1}
-          dependencies={[templates, props.interactionsEnabled]}
           pages={pages}
           renderPage={(page) => (
             <Page
