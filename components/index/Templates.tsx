@@ -7,6 +7,7 @@ import {
   TouchableNativeFeedback,
   Vibration,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { TemplateWithProject } from "@/apis/types";
@@ -21,8 +22,9 @@ import {
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import Paginated from "@/components/Paginated";
-import { useEffect, useLayoutEffect, useRef } from "react";
-import { useAnimatedXY } from "@/hooks/animtedHooks";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useAnimatedXY, usePanHandlers } from "@/hooks/animtedHooks";
+import { useStateAsRef } from "@/hooks/misc";
 
 export default function Templates(props: {
   interactionsEnabled?: boolean;
@@ -46,6 +48,17 @@ export default function Templates(props: {
       onTemplateEdit: props.onTemplateEdit,
       setScrollAmount: (amount) => pageScrollMap.set(i, amount),
     }));
+
+  const flatlists = useRef(new Map<number, FlatList | null>()).current;
+  const registerPage = (page: number, ref: FlatList | null) => {
+    flatlists.set(page, ref);
+  };
+  const scrollPage = (page: number, amount: number) => {
+    const current = pageScrollMap.get(page) ?? 0;
+    flatlists
+      .get(page)
+      ?.scrollToOffset({ offset: current + amount, animated: false });
+  };
 
   return (
     <View className="h-full flex-shrink pt-6">
@@ -71,7 +84,14 @@ export default function Templates(props: {
           maxPage={num_pages - 1}
           dependencies={[templates, props.interactionsEnabled]}
           pages={pages}
-          renderPage={(page) => <Page {...page} />}
+          renderPage={(page) => (
+            <Page
+              {...page}
+              registerPage={registerPage}
+              scrollPage={scrollPage}
+              getPageScroll={(page) => pageScrollMap.get(page) ?? 0}
+            />
+          )}
         />
       )}
     </View>
@@ -86,9 +106,15 @@ type PageProps = {
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: TemplateWithProject) => void;
   setScrollAmount?: (amount: number) => void;
+  registerPage?: (page: number, ref: FlatList | null) => void;
+  scrollPage?: (page: number, amount: number) => void;
+  getPageScroll?: (page: number) => number;
 };
 
 function Page(props: PageProps) {
+  const [pageTop, setPageTop] = useState(0);
+  const [pageBottom, setPageBottom] = useState(9999999);
+
   const deepestPos = useDeepest(props.page);
 
   useEffect(() => {
@@ -97,7 +123,15 @@ function Page(props: PageProps) {
 
   return (
     <View className="flex-row">
+      {/* TODO: Change this to scrollview to prevent items unrendering when offscreen */}
       <FlatList
+        onLayout={(e) => {
+          e.target.measure((x, y, width, height, pageX, pageY) => {
+            setPageTop(pageY);
+            setPageBottom(pageY + height);
+          });
+        }}
+        ref={(ref) => props.registerPage?.(props.page, ref)}
         onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
         numColumns={props.small ? 3 : 2}
         key={props.small ? 3 : 2}
@@ -138,6 +172,9 @@ function Page(props: PageProps) {
                   isSmall={true}
                   template={template}
                   onLongPress={() => props.onTemplateEdit(template)}
+                  scrollPage={props.scrollPage}
+                  scrollBounds={{ top: pageTop + 50, bottom: pageBottom - 50 }}
+                  getPageScroll={props.getPageScroll}
                 />
               )}
               {!template && (
@@ -170,30 +207,62 @@ function Item(props: {
   onLongPress?: () => void;
   isSmall: boolean;
   disabled?: boolean;
+  scrollPage?: (page: number, amount: number) => void;
+  scrollBounds?: { top: number; bottom: number };
+  getPageScroll?: (page: number) => number;
 }) {
   const viewDimensions = useRef({ width: 0, height: 0 }).current;
 
   const [page, _] = useAtom(templatePageAtom);
-  const pageRef = useRef(page);
-  pageRef.current = page; // We have to do this because this is a value, not a reference
+  const pageRef = useStateAsRef(page); // We have to do this because this is a value, not a reference
 
   const [movingItem, setMovingItem] = useAtom(movingItemAtom);
-  const movingItemRef = useRef(movingItem);
-  movingItemRef.current = movingItem;
+  const movingItemRef = useStateAsRef(movingItem);
 
   const moveManyTemplatesMutation = useMoveManyTemplates();
 
   const shouldPanRef = useRef(false);
   const animPos = useAnimatedXY();
-  const panHandlers = PanResponder.create({
+  const [shouldScroll, setShouldScroll] = useState(0);
+  const boundsRef = useStateAsRef(props.scrollBounds);
+  const panStartScroll = useRef(0);
+  const panHandlers = usePanHandlers({
     onMoveShouldSetPanResponder: () => shouldPanRef.current,
     onPanResponderTerminationRequest: () => false,
-    onPanResponderMove: Animated.event([{}, { dx: animPos.x, dy: animPos.y }], {
-      useNativeDriver: false,
-    }),
+    onPanResponderGrant: () => {
+      const scrollHeight = props.getPageScroll?.(pageRef.current) ?? 0;
+      animPos.setOffset({ x: 0, y: -scrollHeight });
+      panStartScroll.current = scrollHeight;
+    },
+    onPanResponderMove: (_, gestureState) => {
+      if (!!boundsRef.current) {
+        if (gestureState.moveY < boundsRef.current.top) {
+          setShouldScroll(-10);
+        } else if (gestureState.moveY > boundsRef.current.bottom) {
+          setShouldScroll(10);
+        } else {
+          setShouldScroll(0);
+        }
+      }
+
+      const scrollHeight = props.getPageScroll?.(pageRef.current) ?? 0;
+
+      Animated.event([{ dx: animPos.x, dy: animPos.y }], {
+        useNativeDriver: false,
+      })({ dx: gestureState.dx, dy: gestureState.dy + scrollHeight });
+    },
+    onPanResponderEnd: () => {
+      setShouldScroll(0);
+    },
     onPanResponderRelease: (_, gestureState) => {
-      const horizUnits = Math.round(gestureState.dx / viewDimensions.width);
-      const vertUnits = Math.round(gestureState.dy / viewDimensions.height);
+      const scrollDelta =
+        (props.getPageScroll?.(pageRef.current) ?? 0) - panStartScroll.current;
+      const dx = gestureState.dx;
+      const dy = gestureState.dy + scrollDelta;
+      // TODO: Make sure this can't be out of bounds!
+      const horizUnits = Math.round(dx / viewDimensions.width);
+      const vertUnits = Math.round(dy / viewDimensions.height);
+      console.log(dx, dy);
       setMovingItem({
         id: props.template.id,
         from: { ...props.pos, page: props.page },
@@ -203,6 +272,7 @@ function Item(props: {
           page: pageRef.current,
         },
       });
+      animPos.flattenOffset();
       Animated.timing(animPos, {
         duration: 200,
         easing: Easing.exp,
@@ -212,8 +282,6 @@ function Item(props: {
         },
         useNativeDriver: true,
       }).start(() => {
-        console.log("Movement finished");
-
         // If the moving item isn't null, that means the cell we're moving to is empty!
         // We have to use the reference though because the real `movingItem` is going to be null no matter what
         //    because it is set to the value it was when item rendered
@@ -230,7 +298,7 @@ function Item(props: {
         setMovingItem(null);
       });
     },
-  }).panHandlers;
+  });
 
   const deepestPos = useDeepest(props.page);
   const nextPos = {
@@ -314,6 +382,15 @@ function Item(props: {
     // If my ID has changed, then I've been swapped! Reset my animated postion
     animPos.setValue({ x: 0, y: 0 });
   }, [props.template.id]);
+
+  // Handles scrolling the current page based on the panning of this item
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (shouldScroll === 0) return;
+      props.scrollPage?.(props.page, shouldScroll);
+    }, 10);
+    return () => clearInterval(interval);
+  }, [shouldScroll]);
 
   const displayName =
     props.template.name ||
