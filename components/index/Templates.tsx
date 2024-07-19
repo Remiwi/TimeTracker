@@ -119,6 +119,8 @@ type PageProps = {
 };
 
 function Page(props: PageProps) {
+  const screenDimensions = useWindowDimensions();
+
   const [pageTop, setPageTop] = useState(0);
   const [pageBottom, setPageBottom] = useState(9999999);
   const [pageLeft, setPageLeft] = useState(0);
@@ -187,8 +189,8 @@ function Page(props: PageProps) {
                   scrollBounds={{
                     top: pageTop + 50,
                     bottom: pageBottom - 50,
-                    left: pageLeft + 50,
-                    right: pageRight - 50,
+                    left: pageLeft + 50 - props.page * screenDimensions.width,
+                    right: pageRight - 50 - props.page * screenDimensions.width,
                   }}
                   getPageScroll={props.getPageScroll}
                   changePage={props.changePage}
@@ -305,7 +307,6 @@ function Item(props: {
       // TODO: Make sure this can't be out of bounds!
       const horizUnits = Math.round(dx / viewDimensions.width);
       const vertUnits = Math.round(dy / viewDimensions.height);
-      console.log(dx, dy);
       setMovingItem({
         id: props.template.id,
         from: { ...props.pos, page: props.page },
