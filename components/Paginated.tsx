@@ -70,7 +70,6 @@ function Paginated<T>(props: {
     props.setPageToRef.current = (newPage: number) => {
       const pageDelta = newPage - page.current;
       if (pageDelta === 0) return;
-      console.log(pageDelta);
       page.current = newPage;
       Animated.spring(scrollX, {
         toValue: -screen.width * pageDelta,
