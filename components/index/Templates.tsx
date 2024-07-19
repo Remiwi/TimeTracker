@@ -59,6 +59,10 @@ export default function Templates(props: {
       .get(page)
       ?.scrollToOffset({ offset: current + amount, animated: false });
   };
+  const setPageToRef = useRef<((newPage: number) => void) | null>(null);
+  const changePage = (newPage: number) => {
+    setPageToRef.current?.(newPage);
+  };
 
   return (
     <View className="h-full flex-shrink pt-6">
@@ -79,6 +83,7 @@ export default function Templates(props: {
       </View>
       {templatesQuery.isSuccess && (
         <Paginated
+          setPageToRef={setPageToRef}
           onPageChange={(p) => setPage(p)}
           minPage={0}
           maxPage={num_pages - 1}
@@ -90,6 +95,7 @@ export default function Templates(props: {
               registerPage={registerPage}
               scrollPage={scrollPage}
               getPageScroll={(page) => pageScrollMap.get(page) ?? 0}
+              changePage={changePage}
             />
           )}
         />
@@ -109,11 +115,14 @@ type PageProps = {
   registerPage?: (page: number, ref: FlatList | null) => void;
   scrollPage?: (page: number, amount: number) => void;
   getPageScroll?: (page: number) => number;
+  changePage?: (newPage: number) => void;
 };
 
 function Page(props: PageProps) {
   const [pageTop, setPageTop] = useState(0);
   const [pageBottom, setPageBottom] = useState(9999999);
+  const [pageLeft, setPageLeft] = useState(0);
+  const [pageRight, setPageRight] = useState(9999999);
 
   const deepestPos = useDeepest(props.page);
 
@@ -126,9 +135,11 @@ function Page(props: PageProps) {
       {/* TODO: Change this to scrollview to prevent items unrendering when offscreen */}
       <FlatList
         onLayout={(e) => {
-          e.target.measure((x, y, width, height, pageX, pageY) => {
+          e.target.measure((_x, _y, width, height, pageX, pageY) => {
             setPageTop(pageY);
             setPageBottom(pageY + height);
+            setPageLeft(pageX);
+            setPageRight(pageX + width);
           });
         }}
         ref={(ref) => props.registerPage?.(props.page, ref)}
@@ -173,8 +184,14 @@ function Page(props: PageProps) {
                   template={template}
                   onLongPress={() => props.onTemplateEdit(template)}
                   scrollPage={props.scrollPage}
-                  scrollBounds={{ top: pageTop + 50, bottom: pageBottom - 50 }}
+                  scrollBounds={{
+                    top: pageTop + 50,
+                    bottom: pageBottom - 50,
+                    left: pageLeft + 50,
+                    right: pageRight - 50,
+                  }}
                   getPageScroll={props.getPageScroll}
+                  changePage={props.changePage}
                 />
               )}
               {!template && (
@@ -208,8 +225,9 @@ function Item(props: {
   isSmall: boolean;
   disabled?: boolean;
   scrollPage?: (page: number, amount: number) => void;
-  scrollBounds?: { top: number; bottom: number };
+  scrollBounds?: { top: number; bottom: number; left: number; right: number };
   getPageScroll?: (page: number) => number;
+  changePage?: (newPage: number) => void;
 }) {
   const viewDimensions = useRef({ width: 0, height: 0 }).current;
 
@@ -226,6 +244,7 @@ function Item(props: {
   const [shouldScroll, setShouldScroll] = useState(0);
   const boundsRef = useStateAsRef(props.scrollBounds);
   const panStartScroll = useRef(0);
+  const requestPageTurn = useRef<NodeJS.Timeout | null>(null);
   const panHandlers = usePanHandlers({
     onMoveShouldSetPanResponder: () => shouldPanRef.current,
     onPanResponderTerminationRequest: () => false,
@@ -242,6 +261,30 @@ function Item(props: {
           setShouldScroll(10);
         } else {
           setShouldScroll(0);
+          if (gestureState.moveX < boundsRef.current.left) {
+            if (requestPageTurn.current === null) {
+              requestPageTurn.current = setTimeout(() => {
+                if (pageRef.current <= 0) return;
+                props.changePage?.(pageRef.current - 1);
+                setTimeout(() => {
+                  requestPageTurn.current = null;
+                }, 1000);
+              }, 1000);
+            }
+          } else if (gestureState.moveX > boundsRef.current.right) {
+            if (requestPageTurn.current === null) {
+              if (pageRef.current >= 2) return;
+              props.changePage?.(pageRef.current + 1);
+              requestPageTurn.current = setTimeout(() => {
+                setTimeout(() => {
+                  requestPageTurn.current = null;
+                }, 1000);
+              }, 1000);
+            }
+          } else if (requestPageTurn.current) {
+            clearTimeout(requestPageTurn.current);
+            requestPageTurn.current = null;
+          }
         }
       }
 
