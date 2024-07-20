@@ -80,7 +80,7 @@ export default function Templates(props: {
             .fill(1)
             .map((_, i) => (
               <Page key={i}>
-                <PageContents
+                <Grid
                   page={i}
                   templates={templates.filter((t) => t.page === i)}
                   small={true}
@@ -101,7 +101,7 @@ export default function Templates(props: {
   );
 }
 
-function PageContents(props: {
+function Grid(props: {
   page: number;
   small: boolean;
   templates: TemplateWithProject[];
@@ -128,94 +128,89 @@ function PageContents(props: {
   }, []);
 
   return (
-    <View className="flex-row">
-      {/* TODO: Change this to scrollview to prevent items unrendering when offscreen */}
-      <ScrollView
-        onLayout={(e) => {
-          e.target.measure((_x, _y, width, height, pageX, pageY) => {
-            setPageTop(pageY);
-            setPageBottom(pageY + height);
-            setPageLeft(pageX);
-            setPageRight(pageX + width);
-          });
-        }}
-        ref={(ref) => props.registerPage?.(props.page, ref)}
-        onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
-        // numColumns={props.small ? 3 : 2}
-        key={props.small ? 3 : 2}
-        scrollEnabled={props.interactionsEnabled}
-        contentContainerClassName="p-4 pb-0"
-      >
-        {Array(
-          deepestPos.data && deepestPos.data.posy > 2
-            ? deepestPos.data.posy + 2
-            : 4,
-        )
-          .fill(Array(3).fill(1))
-          .map((row: 1[], posy: number) => {
-            return (
-              <View className="flex-row" key={posy}>
-                {row.map((_, posx: number) => {
-                  const template = props.templates.find(
-                    (t) => t.posx === posx && t.posy === posy,
-                  );
+    <ScrollView
+      onLayout={(e) => {
+        e.target.measure((_x, _y, width, height, pageX, pageY) => {
+          setPageTop(pageY);
+          setPageBottom(pageY + height);
+          setPageLeft(pageX);
+          setPageRight(pageX + width);
+        });
+      }}
+      ref={(ref) => props.registerPage?.(props.page, ref)}
+      onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
+      // numColumns={props.small ? 3 : 2}
+      key={props.small ? 3 : 2}
+      scrollEnabled={props.interactionsEnabled}
+      contentContainerClassName="p-4 pb-0"
+    >
+      {Array(
+        deepestPos.data && deepestPos.data.posy > 2
+          ? deepestPos.data.posy + 2
+          : 4,
+      )
+        .fill(Array(3).fill(1))
+        .map((row: 1[], posy: number) => {
+          return (
+            <View className="flex-row" key={posy}>
+              {row.map((_, posx: number) => {
+                const template = props.templates.find(
+                  (t) => t.posx === posx && t.posy === posy,
+                );
 
-                  return (
-                    <View
-                      className="relative h-36"
-                      style={{ width: props.small ? "33.3333%" : "50%" }}
-                      key={posx}
-                    >
-                      {posx !== 0 && posy !== 0 && (
-                        <MaterialIcons
-                          name="add"
-                          size={12}
-                          color="#cccccc"
-                          className="absolute -left-1.5 -top-1.5"
-                        ></MaterialIcons>
-                      )}
-                      {template && (
-                        <Item
-                          disabled={!props.interactionsEnabled}
-                          pos={{ x: posx, y: posy }}
-                          page={props.page}
-                          isSmall={true}
-                          template={template}
-                          onLongPress={() => props.onTemplateEdit(template)}
-                          scrollPage={props.scrollPage}
-                          scrollBounds={{
-                            top: pageTop + 50,
-                            bottom: pageBottom - 50,
-                            left:
-                              pageLeft +
-                              50 -
-                              props.page * screenDimensions.width,
-                            right:
-                              pageRight -
-                              50 -
-                              props.page * screenDimensions.width,
-                          }}
-                          getPageScroll={props.getPageScroll}
-                          changePage={props.changePage}
-                        />
-                      )}
-                      {!template && (
-                        <TouchableWithoutFeedback
-                          onLongPress={() => {
-                            props.onTemplateCreate({ x: posx, y: posy });
-                          }}
-                        >
-                          <View className="h-full" />
-                        </TouchableWithoutFeedback>
-                      )}
-                    </View>
-                  );
-                })}
-              </View>
-            );
-          })}
-      </ScrollView>
-    </View>
+                return (
+                  <View
+                    className="relative h-36"
+                    style={{ width: props.small ? "33.3333%" : "50%" }}
+                    key={posx}
+                  >
+                    {posx !== 0 && posy !== 0 && (
+                      <MaterialIcons
+                        name="add"
+                        size={12}
+                        color="#cccccc"
+                        className="absolute -left-1.5 -top-1.5"
+                      ></MaterialIcons>
+                    )}
+                    {template && (
+                      <Item
+                        disabled={!props.interactionsEnabled}
+                        pos={{ x: posx, y: posy }}
+                        page={props.page}
+                        isSmall={true}
+                        template={template}
+                        onLongPress={() => props.onTemplateEdit(template)}
+                        scrollPage={props.scrollPage}
+                        scrollBounds={{
+                          top: pageTop + 50,
+                          bottom: pageBottom - 50,
+                          left:
+                            pageLeft + 50 - props.page * screenDimensions.width,
+                          right:
+                            pageRight -
+                            50 -
+                            props.page * screenDimensions.width,
+                        }}
+                        getPageScroll={props.getPageScroll}
+                        changePage={props.changePage}
+                      />
+                    )}
+                    {!template && (
+                      <TouchableWithoutFeedback
+                        onLongPress={() => {
+                          props.onTemplateCreate({ x: posx, y: posy });
+                        }}
+                      >
+                        <View className="h-full" />
+                      </TouchableWithoutFeedback>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          );
+        })}
+    </ScrollView>
   );
 }
 
