@@ -84,8 +84,7 @@ export default function Templates(props: {
                   page={i}
                   templates={templates.filter((t) => t.page === i)}
                   interactionsEnabled={props.interactionsEnabled}
-                  onTemplateCreate={props.onTemplateCreate}
-                  onTemplateEdit={props.onTemplateEdit}
+                  makeNewTemplate={props.onTemplateCreate}
                   setScrollAmount={(amount) => pageScrollMap.set(i, amount)}
                   registerPage={registerPage}
                   scrollPage={scrollPage}
@@ -104,8 +103,7 @@ function Grid(props: {
   page: number;
   templates: TemplateWithProject[];
   interactionsEnabled?: boolean;
-  onTemplateCreate: (pos: { x: number; y: number }) => void;
-  onTemplateEdit: (t: TemplateWithProject) => void;
+  makeNewTemplate: (pos: { x: number; y: number }) => void;
   setScrollAmount?: (amount: number) => void;
   registerPage?: (page: number, ref: ScrollView | null) => void;
   scrollPage?: (page: number, amount: number) => void;
@@ -175,7 +173,6 @@ function Grid(props: {
                         page={props.page}
                         isSmall={true}
                         template={template}
-                        onLongPress={() => props.onTemplateEdit(template)}
                         scrollPage={props.scrollPage}
                         scrollBounds={{
                           top: pageTop + 50,
@@ -194,7 +191,7 @@ function Grid(props: {
                     {!template && (
                       <TouchableWithoutFeedback
                         onLongPress={() => {
-                          props.onTemplateCreate({ x: posx, y: posy });
+                          props.makeNewTemplate({ x: posx, y: posy });
                         }}
                       >
                         <View className="h-full" />
