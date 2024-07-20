@@ -1,8 +1,6 @@
 import {
   Animated,
   Easing,
-  FlatList,
-  PanResponder,
   ScrollView,
   Text,
   TouchableNativeFeedback,
@@ -16,16 +14,37 @@ import { atom, useAtom } from "jotai";
 import { templatePageAtom } from "@/utils/atoms";
 import {
   useDeepest,
-  useEditTemplateMutation,
   useMoveManyTemplates,
   useTemplates,
 } from "@/hooks/templateQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import { Paginated, Page } from "@/components/Paginated";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, {
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useAnimatedXY, usePanHandlers } from "@/hooks/animtedHooks";
 import { useStateAsRef } from "@/hooks/misc";
+
+type GridsContextType = {
+  setScrollAmount: (page: number, amount: number) => void;
+  getScrollAmount: (page: number) => number;
+  setScrollView: (page: number, ref: ScrollView | null) => void;
+  getScrollView: (page: number) => ScrollView | null;
+  changePage: (page: number) => void;
+};
+
+const GridsContext = React.createContext<GridsContextType>({
+  setScrollAmount: (page, amount) => {},
+  getScrollAmount: (page) => 0,
+  setScrollView: (page, ref) => {},
+  getScrollView: (page) => null,
+  changePage: (page) => {},
+});
 
 export default function Templates(props: {
   interactionsEnabled?: boolean;
@@ -37,65 +56,63 @@ export default function Templates(props: {
   const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
 
   const [page, setPage] = useAtom(templatePageAtom);
-  const paginatedRef = useRef<Paginated | undefined>(undefined);
-  const pageScrollMap = useRef(new Map<number, number>()).current;
 
-  const scrollviews = useRef(new Map<number, ScrollView | null>()).current;
-  const registerPage = (page: number, ref: ScrollView | null) => {
-    scrollviews.set(page, ref);
-  };
-  const scrollPage = (page: number, amount: number) => {
-    const current = pageScrollMap.get(page) ?? 0;
-    scrollviews.get(page)?.scrollTo({ y: current + amount, animated: false });
-  };
-  const changePage = (newPage: number) => {
-    paginatedRef.current?.setPageTo(newPage);
+  const scrollAmountMap = useRef(new Map<number, number>()).current;
+  const scrollViewMap = useRef(new Map<number, ScrollView | null>()).current;
+  const paginatedRef = useRef<Paginated | undefined>(undefined);
+  const ctx: GridsContextType = {
+    setScrollAmount: (page, amount) => {
+      scrollAmountMap.set(page, amount);
+    },
+    getScrollAmount: (page) => scrollAmountMap.get(page) ?? 0,
+    setScrollView: (page, ref) => {
+      scrollViewMap.set(page, ref);
+    },
+    getScrollView: (page) => scrollViewMap.get(page) ?? null,
+    changePage: (page) => paginatedRef.current?.setPageTo(page),
   };
 
   return (
-    <View className="h-full flex-shrink pt-6">
-      <View className="h-8 flex-row items-center justify-center">
-        <View className="flex-row justify-center gap-2">
-          {Array(num_pages)
-            .fill(0)
-            .map((_, i) => (
-              <View
-                key={i}
-                className="h-2 w-2 rounded-full bg-gray-400"
-                style={{
-                  backgroundColor: i === page ? "#9ca3af" : "#d1d5db",
-                }}
-              />
-            ))}
-        </View>
-      </View>
-      {templatesQuery.isSuccess && (
-        <Paginated
-          ref={paginatedRef}
-          onPageChange={(p) => setPage(p)}
-          minPage={0}
-          maxPage={num_pages - 1}
-        >
-          {Array(num_pages)
-            .fill(1)
-            .map((_, i) => (
-              <Page key={i}>
-                <Grid
-                  page={i}
-                  templates={templates.filter((t) => t.page === i)}
-                  interactionsEnabled={props.interactionsEnabled}
-                  makeNewTemplate={props.onTemplateCreate}
-                  setScrollAmount={(amount) => pageScrollMap.set(i, amount)}
-                  registerPage={registerPage}
-                  scrollPage={scrollPage}
-                  getPageScroll={(page) => pageScrollMap.get(page) ?? 0}
-                  changePage={changePage}
+    <GridsContext.Provider value={ctx}>
+      <View className="h-full flex-shrink pt-6">
+        <View className="h-8 flex-row items-center justify-center">
+          <View className="flex-row justify-center gap-2">
+            {Array(num_pages)
+              .fill(0)
+              .map((_, i) => (
+                <View
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-gray-400"
+                  style={{
+                    backgroundColor: i === page ? "#9ca3af" : "#d1d5db",
+                  }}
                 />
-              </Page>
-            ))}
-        </Paginated>
-      )}
-    </View>
+              ))}
+          </View>
+        </View>
+        {templatesQuery.isSuccess && (
+          <Paginated
+            ref={paginatedRef}
+            onPageChange={(p) => setPage(p)}
+            minPage={0}
+            maxPage={num_pages - 1}
+          >
+            {Array(num_pages)
+              .fill(1)
+              .map((_, i) => (
+                <Page key={i}>
+                  <Grid
+                    page={i}
+                    templates={templates.filter((t) => t.page === i)}
+                    interactionsEnabled={props.interactionsEnabled}
+                    makeNewTemplate={props.onTemplateCreate}
+                  />
+                </Page>
+              ))}
+          </Paginated>
+        )}
+      </View>
+    </GridsContext.Provider>
   );
 }
 
@@ -104,11 +121,6 @@ function Grid(props: {
   templates: TemplateWithProject[];
   interactionsEnabled?: boolean;
   makeNewTemplate: (pos: { x: number; y: number }) => void;
-  setScrollAmount?: (amount: number) => void;
-  registerPage?: (page: number, ref: ScrollView | null) => void;
-  scrollPage?: (page: number, amount: number) => void;
-  getPageScroll?: (page: number) => number;
-  changePage?: (newPage: number) => void;
 }) {
   const screenDimensions = useWindowDimensions();
 
@@ -119,8 +131,10 @@ function Grid(props: {
 
   const deepestPos = useDeepest(props.page);
 
+  const ctx = useContext(GridsContext);
+
   useEffect(() => {
-    props.setScrollAmount?.(0);
+    ctx.setScrollAmount(props.page, 0);
   }, []);
 
   return (
@@ -133,8 +147,10 @@ function Grid(props: {
           setPageRight(pageX + width);
         });
       }}
-      ref={(ref) => props.registerPage?.(props.page, ref)}
-      onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
+      ref={(ref) => ctx.setScrollView(props.page, ref)}
+      onScroll={(e) => {
+        ctx.setScrollAmount(props.page, e.nativeEvent.contentOffset.y);
+      }}
       scrollEnabled={props.interactionsEnabled}
       contentContainerClassName="p-4 pb-0"
     >
@@ -173,7 +189,6 @@ function Grid(props: {
                         page={props.page}
                         isSmall={true}
                         template={template}
-                        scrollPage={props.scrollPage}
                         scrollBounds={{
                           top: pageTop + 50,
                           bottom: pageBottom - 50,
@@ -184,8 +199,6 @@ function Grid(props: {
                             50 -
                             props.page * screenDimensions.width,
                         }}
-                        getPageScroll={props.getPageScroll}
-                        changePage={props.changePage}
                       />
                     )}
                     {!template && (
@@ -220,12 +233,11 @@ function Item(props: {
   onLongPress?: () => void;
   isSmall: boolean;
   disabled?: boolean;
-  scrollPage?: (page: number, amount: number) => void;
   scrollBounds?: { top: number; bottom: number; left: number; right: number };
-  getPageScroll?: (page: number) => number;
-  changePage?: (newPage: number) => void;
 }) {
   const viewDimensions = useRef({ width: 0, height: 0 }).current;
+
+  const ctx = useContext(GridsContext);
 
   const [page, _] = useAtom(templatePageAtom);
   const pageRef = useStateAsRef(page); // We have to do this because this is a value, not a reference
@@ -245,7 +257,7 @@ function Item(props: {
     onMoveShouldSetPanResponder: () => shouldPanRef.current,
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: () => {
-      const scrollHeight = props.getPageScroll?.(pageRef.current) ?? 0;
+      const scrollHeight = ctx.getScrollAmount(pageRef.current);
       animPos.setOffset({ x: 0, y: -scrollHeight });
       panStartScroll.current = scrollHeight;
     },
@@ -261,7 +273,7 @@ function Item(props: {
             if (requestPageTurn.current === null) {
               requestPageTurn.current = setTimeout(() => {
                 if (pageRef.current <= 0) return;
-                props.changePage?.(pageRef.current - 1);
+                ctx.changePage(pageRef.current - 1);
                 setTimeout(() => {
                   requestPageTurn.current = null;
                 }, 1000);
@@ -270,7 +282,7 @@ function Item(props: {
           } else if (gestureState.moveX > boundsRef.current.right) {
             if (requestPageTurn.current === null) {
               if (pageRef.current >= 2) return;
-              props.changePage?.(pageRef.current + 1);
+              ctx.changePage(pageRef.current + 1);
               requestPageTurn.current = setTimeout(() => {
                 setTimeout(() => {
                   requestPageTurn.current = null;
@@ -284,7 +296,7 @@ function Item(props: {
         }
       }
 
-      const scrollHeight = props.getPageScroll?.(pageRef.current) ?? 0;
+      const scrollHeight = ctx.getScrollAmount(pageRef.current) ?? 0;
 
       Animated.event([{ dx: animPos.x, dy: animPos.y }], {
         useNativeDriver: false,
@@ -295,7 +307,7 @@ function Item(props: {
     },
     onPanResponderRelease: (_, gestureState) => {
       const scrollDelta =
-        (props.getPageScroll?.(pageRef.current) ?? 0) - panStartScroll.current;
+        (ctx.getScrollAmount(pageRef.current) ?? 0) - panStartScroll.current;
       const dx = gestureState.dx;
       const dy = gestureState.dy + scrollDelta;
       // TODO: Make sure this can't be out of bounds!
@@ -425,9 +437,14 @@ function Item(props: {
   useEffect(() => {
     const interval = setInterval(() => {
       if (shouldScroll === 0) return;
-      props.scrollPage?.(props.page, shouldScroll);
+      const scrollAmt = ctx.getScrollAmount(props.page) + shouldScroll;
+      ctx
+        .getScrollView(props.page)
+        ?.scrollTo({ x: 0, y: scrollAmt, animated: false });
     }, 10);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [shouldScroll]);
 
   const displayName =
