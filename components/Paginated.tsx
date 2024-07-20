@@ -1,5 +1,5 @@
 import { usePanHandlers } from "@/hooks/animtedHooks";
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useImperativeHandle } from "react";
 import {
   Animated,
   View,
@@ -7,14 +7,24 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-export default function Paginated<T>(props: {
-  pages: T[];
-  renderPage: (page: T, index: number) => React.ReactNode;
-  onPageChange?: (page: number) => void;
-  minPage?: number;
-  maxPage?: number;
-  setPageToRef?: React.MutableRefObject<((page: number) => void) | null>;
-}) {
+const PaginatedContext = React.createContext({
+  width: undefined as number | undefined,
+  scrollX: undefined as Animated.Value | undefined,
+});
+
+export type Paginated = {
+  setPageTo: (newPage: number) => void;
+};
+
+export const Paginated = React.forwardRef(function (
+  props: {
+    children?: React.ReactNode;
+    onPageChange?: (page: number) => void;
+    minPage?: number;
+    maxPage?: number;
+  },
+  ref: React.Ref<Paginated | undefined>,
+) {
   const screen = useWindowDimensions();
   const page = useRef(0);
   const scrollX = useAnimatedValue(0);
@@ -64,35 +74,45 @@ export default function Paginated<T>(props: {
     },
   });
 
-  if (props.setPageToRef !== undefined) {
-    props.setPageToRef.current = (newPage: number) => {
-      const pageDelta = newPage - page.current;
-      if (pageDelta === 0) return;
-      page.current = newPage;
-      Animated.spring(scrollX, {
-        toValue: -screen.width * pageDelta,
-        useNativeDriver: true,
-      }).start(() => {
-        scrollX.setValue(0);
-        scrollX.setOffset(screen.width * -page.current);
-      });
-      props.onPageChange?.(page.current);
-    };
-  }
+  useImperativeHandle(
+    ref,
+    () => ({
+      setPageTo: (newPage: number) => {
+        const pageDelta = newPage - page.current;
+        if (pageDelta === 0) return;
+        page.current = newPage;
+        Animated.spring(scrollX, {
+          toValue: -screen.width * pageDelta,
+          useNativeDriver: true,
+        }).start(() => {
+          scrollX.setValue(0);
+          scrollX.setOffset(screen.width * -page.current);
+        });
+        props.onPageChange?.(page.current);
+      },
+    }),
+    [],
+  );
 
   return (
-    <View {...panHandlers} className="flex-row">
-      {props.pages.map((page, index) => (
-        <Animated.View
-          key={index}
-          style={{
-            width: screen.width,
-            transform: [{ translateX: scrollX }],
-          }}
-        >
-          {props.renderPage(page, index)}
-        </Animated.View>
-      ))}
-    </View>
+    <PaginatedContext.Provider value={{ width: screen.width, scrollX }}>
+      <View {...panHandlers} className="flex-row">
+        {props.children}
+      </View>
+    </PaginatedContext.Provider>
+  );
+});
+
+export function Page(props: { children: React.ReactNode }) {
+  const { width, scrollX } = React.useContext(PaginatedContext);
+  return (
+    <Animated.View
+      style={{
+        width: width ?? 0,
+        transform: [{ translateX: scrollX ?? 0 }],
+      }}
+    >
+      {props.children}
+    </Animated.View>
   );
 }

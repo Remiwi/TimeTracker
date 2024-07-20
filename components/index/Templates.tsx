@@ -22,7 +22,7 @@ import {
 } from "@/hooks/templateQueries";
 import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-import Paginated from "@/components/Paginated";
+import { Paginated, Page } from "@/components/Paginated";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useAnimatedXY, usePanHandlers } from "@/hooks/animtedHooks";
 import { useStateAsRef } from "@/hooks/misc";
@@ -34,21 +34,11 @@ export default function Templates(props: {
 }) {
   const templatesQuery = useTemplates();
   const templates = templatesQuery.data || [];
+  const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
 
   const [page, setPage] = useAtom(templatePageAtom);
+  const paginatedRef = useRef<Paginated | undefined>(undefined);
   const pageScrollMap = useRef(new Map<number, number>()).current;
-  const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
-  const pages: PageProps[] = Array(num_pages)
-    .fill(1)
-    .map((_, i) => ({
-      page: i,
-      templates: templates.filter((t) => t.page === i),
-      small: true,
-      interactionsEnabled: props.interactionsEnabled,
-      onTemplateCreate: props.onTemplateCreate,
-      onTemplateEdit: props.onTemplateEdit,
-      setScrollAmount: (amount) => pageScrollMap.set(i, amount),
-    }));
 
   const scrollviews = useRef(new Map<number, ScrollView | null>()).current;
   const registerPage = (page: number, ref: ScrollView | null) => {
@@ -58,9 +48,8 @@ export default function Templates(props: {
     const current = pageScrollMap.get(page) ?? 0;
     scrollviews.get(page)?.scrollTo({ y: current + amount, animated: false });
   };
-  const setPageToRef = useRef<((newPage: number) => void) | null>(null);
   const changePage = (newPage: number) => {
-    setPageToRef.current?.(newPage);
+    paginatedRef.current?.setPageTo(newPage);
   };
 
   return (
@@ -82,27 +71,37 @@ export default function Templates(props: {
       </View>
       {templatesQuery.isSuccess && (
         <Paginated
-          setPageToRef={setPageToRef}
+          ref={paginatedRef}
           onPageChange={(p) => setPage(p)}
           minPage={0}
           maxPage={num_pages - 1}
-          pages={pages}
-          renderPage={(page) => (
-            <Page
-              {...page}
-              registerPage={registerPage}
-              scrollPage={scrollPage}
-              getPageScroll={(page) => pageScrollMap.get(page) ?? 0}
-              changePage={changePage}
-            />
-          )}
-        />
+        >
+          {Array(num_pages)
+            .fill(1)
+            .map((_, i) => (
+              <Page key={i}>
+                <PageContents
+                  page={i}
+                  templates={templates.filter((t) => t.page === i)}
+                  small={true}
+                  interactionsEnabled={props.interactionsEnabled}
+                  onTemplateCreate={props.onTemplateCreate}
+                  onTemplateEdit={props.onTemplateEdit}
+                  setScrollAmount={(amount) => pageScrollMap.set(i, amount)}
+                  registerPage={registerPage}
+                  scrollPage={scrollPage}
+                  getPageScroll={(page) => pageScrollMap.get(page) ?? 0}
+                  changePage={changePage}
+                />
+              </Page>
+            ))}
+        </Paginated>
       )}
     </View>
   );
 }
 
-type PageProps = {
+function PageContents(props: {
   page: number;
   small: boolean;
   templates: TemplateWithProject[];
@@ -114,9 +113,7 @@ type PageProps = {
   scrollPage?: (page: number, amount: number) => void;
   getPageScroll?: (page: number) => number;
   changePage?: (newPage: number) => void;
-};
-
-function Page(props: PageProps) {
+}) {
   const screenDimensions = useWindowDimensions();
 
   const [pageTop, setPageTop] = useState(0);
