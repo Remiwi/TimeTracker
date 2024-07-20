@@ -83,7 +83,6 @@ export default function Templates(props: {
                 <Grid
                   page={i}
                   templates={templates.filter((t) => t.page === i)}
-                  small={true}
                   interactionsEnabled={props.interactionsEnabled}
                   onTemplateCreate={props.onTemplateCreate}
                   onTemplateEdit={props.onTemplateEdit}
@@ -103,7 +102,6 @@ export default function Templates(props: {
 
 function Grid(props: {
   page: number;
-  small: boolean;
   templates: TemplateWithProject[];
   interactionsEnabled?: boolean;
   onTemplateCreate: (pos: { x: number; y: number }) => void;
@@ -139,8 +137,6 @@ function Grid(props: {
       }}
       ref={(ref) => props.registerPage?.(props.page, ref)}
       onScroll={(e) => props.setScrollAmount?.(e.nativeEvent.contentOffset.y)}
-      // numColumns={props.small ? 3 : 2}
-      key={props.small ? 3 : 2}
       scrollEnabled={props.interactionsEnabled}
       contentContainerClassName="p-4 pb-0"
     >
@@ -161,7 +157,7 @@ function Grid(props: {
                 return (
                   <View
                     className="relative h-36"
-                    style={{ width: props.small ? "33.3333%" : "50%" }}
+                    style={{ width: true ? "33.3333%" : "50%" }}
                     key={posx}
                   >
                     {posx !== 0 && posy !== 0 && (
