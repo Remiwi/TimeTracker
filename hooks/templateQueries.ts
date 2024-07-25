@@ -1,5 +1,8 @@
 import { Data } from "@/apis/data";
+import { Template } from "@/apis/types";
+import { templatePageAtom } from "@/utils/atoms";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useAtom } from "jotai";
 
 export function useTemplates() {
   return useQuery({
@@ -8,10 +11,30 @@ export function useTemplates() {
   });
 }
 
+export function useDeepest(page: number) {
+  return useQuery({
+    queryKey: ["templates", "deepest", page],
+    queryFn: async () => await Data.Templates.getDeepestPos(page),
+  });
+}
+
 export function useAddTemplateMutation() {
+  const [page] = useAtom(templatePageAtom);
+
   return useMutation({
     mutationKey: ["templates"],
-    mutationFn: Data.Templates.create,
+    mutationFn: async (data: {
+      template: Omit<Template, "id" | "posx" | "posy" | "page"> & {
+        posx?: number;
+        posy?: number;
+      };
+      num_cols: number;
+    }) => {
+      return await Data.Templates.create(
+        { ...data.template, page },
+        data.num_cols,
+      );
+    },
     onError: (err) => {
       console.error(err);
     },
@@ -20,6 +43,7 @@ export function useAddTemplateMutation() {
 
 export function useEditTemplateMutation() {
   return useMutation({
+    mutationKey: ["templates"],
     mutationFn: Data.Templates.edit,
     onError: (err) => {
       console.error(err);
@@ -29,7 +53,18 @@ export function useEditTemplateMutation() {
 
 export function useDeleteTemplateMutation() {
   return useMutation({
+    mutationKey: ["templates"],
     mutationFn: Data.Templates.delete,
+    onError: (err) => {
+      console.error(err);
+    },
+  });
+}
+
+export function useMoveManyTemplates() {
+  return useMutation({
+    mutationKey: ["templates"],
+    mutationFn: Data.Templates.moveMultiple,
     onError: (err) => {
       console.error(err);
     },

@@ -157,8 +157,18 @@ export const Data = {
       return await Database.Templates.get(id);
     },
 
-    create: async (template: Omit<Template, "id">) => {
-      return await Database.Templates.create(template);
+    getDeepestPos: async (page: number) => {
+      return await Database.Templates.getDeepestPos(page);
+    },
+
+    create: async (
+      template: Omit<Template, "id" | "posx" | "posy"> & {
+        posx?: number;
+        posy?: number;
+      },
+      num_cols: number,
+    ) => {
+      return await Database.Templates.create(template, num_cols);
     },
 
     edit: async (template: Partial<Template> & { id: number }) => {
@@ -167,6 +177,17 @@ export const Data = {
 
     delete: async (id: number) => {
       await Database.Templates.delete(id);
+    },
+
+    moveMultiple: async (
+      moves: {
+        id: number;
+        posx: number;
+        posy: number;
+        page: number;
+      }[],
+    ) => {
+      await Database.Templates.moveMultiple(moves);
     },
   },
 

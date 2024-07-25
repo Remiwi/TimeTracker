@@ -34,7 +34,10 @@ const Database = {
           name TEXT,
           project_id INTEGER,
           description TEXT,
-          tags TEXT
+          tags TEXT,
+          page INTEGER,
+          posx INTEGER,
+          posy INTEGER
         );`);
 
       db.runSync(`CREATE TABLE IF NOT EXISTS projects (
@@ -79,59 +82,6 @@ const Database = {
       db.runSync(`DROP TABLE IF EXISTS projects;`);
       db.runSync(`DROP TABLE IF EXISTS entries;`);
       db.runSync(`DROP TABLE IF EXISTS local_ids;`);
-    },
-
-    initializeDBAsync: async () => {
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS templates (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        project_id INTEGER,
-        description TEXT,
-        tags TEXT
-      );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS projects (
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        color TEXT,
-        at TEXT,
-        active INTEGER,
-        icon TEXT,
-        linked INTEGER,
-        to_delete INTEGER
-      );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS entries (
-        id INTEGER PRIMARY KEY,
-        description TEXT,
-        project_id INTEGER,
-        start TEXT,
-        stop TEXT,
-        duration INTEGER,
-        at TEXT,
-        tags TEXT,
-        linked INTEGER,
-        to_delete INTEGER,
-        needs_push INTEGER
-    );`);
-
-      await db.runAsync(`CREATE TABLE IF NOT EXISTS local_ids (
-        type TEXT PRIMARY KEY,
-        id INTEGER
-      );`);
-      await db.runAsync(
-        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('project', -1);`,
-      );
-      await db.runAsync(
-        `INSERT OR IGNORE INTO local_ids (type, id) VALUES ('entries', -1);`,
-      );
-    },
-
-    dropAllTablesAsync: async () => {
-      await db.runAsync(`DROP TABLE IF EXISTS templates;`);
-      await db.runAsync(`DROP TABLE IF EXISTS projects;`);
-      await db.runAsync(`DROP TABLE IF EXISTS entries;`);
-      await db.runAsync(`DROP TABLE IF EXISTS local_ids;`);
     },
   },
 
@@ -383,12 +333,42 @@ const Database = {
       } as TemplateWithProject;
     },
 
-    create: async (template: Omit<Template, "id">) => {
+    getDeepestPos: async (page: number) => {
+      return await db.getFirstAsync<{ posx: number; posy: number }>(
+        `SELECT * FROM templates WHERE page = ? ORDER BY posy DESC, posx DESC LIMIT 1;`,
+        [page],
+      );
+    },
+
+    create: async (
+      template: Omit<Template, "id" | "posx" | "posy"> & {
+        posx?: number;
+        posy?: number;
+      },
+      num_cols: number,
+    ) => {
       const tags = Tags.toString(template.tags);
+
+      const deepestTemplate = await Database.Templates.getDeepestPos(
+        template.page,
+      );
+      const posx = deepestTemplate ? (deepestTemplate.posx + 1) % num_cols : 0;
+      const posy = deepestTemplate
+        ? deepestTemplate.posy + (deepestTemplate.posx === num_cols - 1 ? 1 : 0)
+        : 0;
+
       const res = await db.runAsync(
-        `INSERT INTO templates (name, project_id, description, tags)
-        VALUES (?, ?, ?, ?);`,
-        [template.name, template.project_id, template.description, tags],
+        `INSERT INTO templates (name, project_id, description, tags, page, posx, posy)
+        VALUES (?, ?, ?, ?, ?, ?, ?);`,
+        [
+          template.name,
+          template.project_id,
+          template.description,
+          tags,
+          template.page,
+          template.posx === undefined ? posx : template.posx,
+          template.posy === undefined ? posy : template.posy,
+        ],
       );
       return { ...template, id: res.lastInsertRowId } as Template;
     },
@@ -411,7 +391,10 @@ const Database = {
           name = ?,
           project_id = ?,
           description = ?,
-          tags = ?
+          tags = ?,
+          page = ?,
+          posx = ?,
+          posy = ?
         WHERE id = ?;`,
         [
           template.name || oldTemplate.name,
@@ -420,6 +403,9 @@ const Database = {
             : oldTemplate.project_id,
           template.description || oldTemplate.description,
           template.tags ? Tags.toString(template.tags) : oldTemplate.tags,
+          template.page ?? oldTemplate.page,
+          template.posx ?? oldTemplate.posx,
+          template.posy ?? oldTemplate.posy,
           template.id,
         ],
       );
@@ -436,11 +422,23 @@ const Database = {
       return { ...edited, tags } as Template;
     },
 
-    insertOrUpdate: async (template: Partial<Template>) => {
-      if (template.id !== undefined) {
-        return await Database.Templates.edit(template as Template);
-      }
-      return await Database.Templates.create(template as Omit<Template, "id">);
+    // Needed because swapping templates has to be done in the same transaction
+    moveMultiple: async (
+      moves: {
+        id: number;
+        posx: number;
+        posy: number;
+        page: number;
+      }[],
+    ) => {
+      await db.withExclusiveTransactionAsync(async (tx) => {
+        for (const move of moves) {
+          await tx.runAsync(
+            `UPDATE templates SET posx = ?, posy = ?, page = ? WHERE id = ?;`,
+            [move.posx, move.posy, move.page, move.id],
+          );
+        }
+      });
     },
   },
 

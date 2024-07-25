@@ -25,6 +25,9 @@ export type Template = {
   project_id: number | null;
   description: string;
   tags: string[];
+  page: number;
+  posx: number;
+  posy: number;
 };
 
 export type TemplateWithProject = Template & {
