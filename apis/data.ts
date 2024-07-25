@@ -331,8 +331,10 @@ export const Data = {
         }),
 
     getAll: async () => {
-      const entries = await Database.Entries.getAll();
-      return entries.map((e) => ({ ...e, tags: Tags.toList(e.tags) }) as Entry);
+      const entries = await Database.Entries.getAllWithProject();
+      return entries.map(
+        (e) => ({ ...e, tags: Tags.toList(e.tags) }) as EntryWithProject,
+      );
     },
 
     getSince: async (since: string) => {

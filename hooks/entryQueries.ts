@@ -11,6 +11,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { templateMadeAtom } from "@/utils/atoms";
 import { useAtom } from "jotai";
 
+export function useEntries() {
+  return useQuery({
+    queryKey: ["entries"],
+    queryFn: Data.Entries.getAll,
+  });
+}
+
 export function useOngoing() {
   return useQuery({
     queryKey: ["entries", "current"],

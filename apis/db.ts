@@ -450,6 +450,16 @@ const Database = {
       );
     },
 
+    getAllWithProject: async () => {
+      return await db.getAllAsync<DBEntryWithProject>(
+        `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
+        FROM entries
+        LEFT JOIN projects ON entries.project_id = projects.id
+        ORDER BY start DESC;`,
+        [],
+      );
+    },
+
     get: async (id: number) => {
       const found = await db.getFirstAsync<DBEntry>(
         `SELECT * FROM entries WHERE id = ?;`,

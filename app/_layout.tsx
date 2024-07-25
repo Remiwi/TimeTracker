@@ -100,6 +100,13 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="reports"
+              options={{
+                drawerLabel: "Reports",
+                headerTitle: "Reports",
+              }}
+            />
+            <Drawer.Screen
               name="+not-found"
               options={{
                 drawerItemStyle: { display: "none" },
