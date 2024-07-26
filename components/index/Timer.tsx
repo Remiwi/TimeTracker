@@ -29,6 +29,8 @@ import { useAddTemplateMutation } from "@/hooks/templateQueries";
 import TopSheet from "../TopSheet";
 import { Icon } from "../Icon";
 import { useStateAsRef } from "@/hooks/misc";
+import ProjectChip from "../ProjectChip";
+import TagsChip from "../TagsChip";
 
 export default function Timer(props: {
   onOpen: () => void;
@@ -195,47 +197,6 @@ function TimerContent(props: {
           )}
         </View>
       )}
-      <ListModal
-        options={projectsQuery.data || []}
-        visible={projectEditModalVisible}
-        backgroundColor="#f0f0f0"
-        height={300}
-        positionRelativeTo={projectButtonLayout}
-        renderOption={(option: Project) => (
-          <View className="flex flex-row gap-4 border-b border-slate-300 px-4 py-2">
-            <View
-              className="flex h-8 w-8 items-center justify-center rounded-full"
-              style={{ backgroundColor: option.color }}
-            >
-              <Icon name={option.icon as any} color={"white"} size={16} />
-            </View>
-            <Text className="text-xl" style={{ color: option.color }}>
-              {option.name}
-            </Text>
-          </View>
-        )}
-        onClose={() => setProjectEditModalVisible(false)}
-        onSelect={(selected: Project) => {
-          props.onEditEntry({
-            project_id: selected.id,
-            project_name: selected.name,
-            project_icon: selected.icon,
-            project_color: selected.color,
-          });
-          setProjectEditModalVisible(false);
-        }}
-      />
-      <TagModal
-        tags={props.entry?.tags || []}
-        visible={tagModalVisible}
-        backgroundColor="#f0f0f0"
-        height={300}
-        positionRelativeTo={tagButtonLayout}
-        onChange={(tags) => {
-          props.onEditEntry?.({ tags });
-        }}
-        onClose={() => setTagModalVisible(false)}
-      />
       <View className="flex-row">
         <View className="flex-grow gap-2 px-6 pb-4">
           <Text className="text-2xl font-bold">Project</Text>
@@ -252,27 +213,26 @@ function TimerContent(props: {
               });
             }}
           >
-            <ActionChip
-              key="project-edit"
-              backgroundColor={props.entry?.project_color || "transparent"}
-              borderColor={props.entry?.project_id ? "transparent" : undefined}
-              textColor={props.entry?.project_id ? "#eeeeee" : undefined}
-              trailingIconColor={
-                props.entry?.project_id ? "#eeeeee" : undefined
+            <ProjectChip
+              project={
+                props.entry?.project_id
+                  ? ({
+                      id: props.entry.project_id,
+                      name: props.entry.project_name,
+                      icon: props.entry.project_icon,
+                      color: props.entry.project_color,
+                      at: "",
+                      active: true,
+                    } as Project)
+                  : null
               }
-              text={props.entry?.project_name || "Project"}
-              trailingIcon={props.entry?.project_id ? "close" : "add"}
-              onPress={() => {
-                if (props.entry?.project_id) {
-                  props.onEditEntry({
-                    project_id: null,
-                    project_name: null,
-                    project_icon: null,
-                    project_color: null,
-                  });
-                } else {
-                  setProjectEditModalVisible(true);
-                }
+              onSelect={(project) => {
+                props.onEditEntry?.({
+                  project_id: project?.id || null,
+                  project_name: project?.name || null,
+                  project_icon: project?.icon || null,
+                  project_color: project?.color || null,
+                });
               }}
             />
           </View>
@@ -292,35 +252,11 @@ function TimerContent(props: {
               });
             }}
           >
-            <ActionChip
-              key="tags-edit"
-              text="Tags"
-              backgroundColor={
-                props.entry?.tags.length && props.entry?.tags.length > 0
-                  ? "#9e8e9e"
-                  : "transparent"
-              }
-              borderColor={
-                props.entry?.tags.length && props.entry?.tags.length > 0
-                  ? "transparent"
-                  : undefined
-              }
-              textColor={
-                props.entry?.tags.length && props.entry?.tags.length > 0
-                  ? "#eeeeee"
-                  : undefined
-              }
-              trailingIconColor={
-                props.entry?.tags.length && props.entry?.tags.length > 0
-                  ? "#eeeeee"
-                  : undefined
-              }
-              trailingIcon={
-                props.entry?.tags.length && props.entry?.tags.length > 0
-                  ? "edit"
-                  : "add"
-              }
-              onPress={() => setTagModalVisible(true)}
+            <TagsChip
+              tags={props.entry?.tags || []}
+              onChange={(tags) => {
+                props.onEditEntry?.({ tags });
+              }}
             />
           </View>
         </View>
