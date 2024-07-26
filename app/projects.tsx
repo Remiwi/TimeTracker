@@ -138,8 +138,14 @@ function ProjectModal(props: {
   );
   const [icon, setIcon] = useState(props.defaultProject?.icon || "");
   const [modalScrollEnabled, setModalScrollEnabled] = useState(true);
+  const [nameEmptyError, setNameEmptyError] = useState(false);
 
   const onDone = () => {
+    if (name === "") {
+      setNameEmptyError(true);
+      return;
+    }
+
     if (props.defaultProject === undefined) {
       props.onCreate?.({
         id: 0, // Id should be ignored for creation anyways
@@ -166,24 +172,32 @@ function ProjectModal(props: {
   };
 
   return (
-    <BottomSheet onClose={props.onCancel} scrollEnabled={modalScrollEnabled}>
+    <BottomSheet
+      onClose={props.onCancel}
+      scrollEnabled={modalScrollEnabled}
+      flickMultiplier={200}
+      initialHeight={45}
+      stableHeights={[
+        {
+          stabilizeTo: 0,
+          whenAbove: null,
+        },
+        {
+          stabilizeTo: 45,
+          whenAbove: 10,
+        },
+        {
+          stabilizeTo: 700,
+          whenAbove: 560,
+        },
+      ]}
+      onStabilize={(height) => {
+        if (height >= 700) {
+          props.onCancel?.();
+        }
+      }}
+    >
       <View className="px-4">
-        <View className="flex w-full flex-row items-center justify-between px-2 pb-8">
-          <View className="overflow-hidden rounded-full shadow-sm shadow-slate-900">
-            <TouchableNativeFeedback onPress={props.onCancel}>
-              <View className="flex w-32 items-center rounded-full bg-gray-100 p-3">
-                <Text>Cancel</Text>
-              </View>
-            </TouchableNativeFeedback>
-          </View>
-          <View className="overflow-hidden rounded-full shadow-sm shadow-slate-900">
-            <TouchableNativeFeedback onPress={onDone}>
-              <View className="flex w-32 items-center rounded-full bg-slate-200 p-3">
-                <Text>Done</Text>
-              </View>
-            </TouchableNativeFeedback>
-          </View>
-        </View>
         <View className="flex flex-row items-center gap-4 pb-4">
           <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-gray-600">
             <TouchableNativeFeedback
@@ -204,16 +218,23 @@ function ProjectModal(props: {
             bgColor="white"
             className="flex-grow"
             value={name}
-            onChange={setName}
+            onChange={(text) => {
+              setName(text);
+              setNameEmptyError(false);
+            }}
+            placeholder={nameEmptyError ? "Name cannot be empty" : ""}
+            placeholderColor={nameEmptyError ? "#bb9999" : undefined}
+            borderColor={nameEmptyError ? "#bb0000" : undefined}
+            labelColor={nameEmptyError ? "#bb0000" : undefined}
           />
         </View>
         <ColorSelector
           value={color}
           onChange={setColor}
           colors={colors.map((c) => c.toggl_hex)}
-          className="pb-2"
+          className="pb-4"
         />
-        <View className="h-96">
+        <View className="h-96 pb-4">
           <IconSelector
             onSelect={(icon) => setIcon(icon)}
             onFocus={() => {
@@ -224,11 +245,27 @@ function ProjectModal(props: {
             }}
           />
         </View>
+        <View className="flex w-full flex-row items-center justify-between px-2 pb-2">
+          <View className="overflow-hidden rounded-full">
+            <TouchableNativeFeedback onPress={props.onCancel}>
+              <View className="flex w-20 items-center rounded-full py-2">
+                <Text className="text-lg font-bold color-gray-400">Cancel</Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+          <View className="overflow-hidden rounded-full">
+            <TouchableNativeFeedback onPress={onDone}>
+              <View className="flex w-20 items-center rounded-full py-2">
+                <Text className="text-lg font-bold color-slate-600">Save</Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
+        </View>
         {props.defaultProject && (
           <View className="w-full items-center justify-center pb-2">
             <View className="overflow-hidden rounded-full">
               <TouchableNativeFeedback onPress={onDelete}>
-                <View className="p-4 px-6">
+                <View className="px-6 py-2">
                   <Text className="text-lg font-bold color-red-600">
                     Delete Project
                   </Text>

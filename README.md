@@ -9,9 +9,9 @@
   - [ ] Template organization
   - [ ] Timer quick-actions
   - [ ] In-depth entry editor
-- [ ] Projects screen
+- [x] Projects screen
   - [x] Changing projects
-  - [ ] Project icons
+  - [x] Project icons
 - [ ] Time entries
   - [x] Viewing time entries
   - [ ] Editing time entries
