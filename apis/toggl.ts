@@ -311,6 +311,7 @@ export const Toggl = {
             tags: tags,
             start: start,
             stop: stop,
+            duration: undefined,
             description: entry.description || "",
           }),
           headers: {
