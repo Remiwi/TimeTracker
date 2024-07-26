@@ -16,6 +16,7 @@ export default function TopSheet(props: {
   panBarBackgroundColor?: string;
   onStabilize?: (height: number) => void;
   disablePan?: boolean;
+  renderAboveBar?: (anim: Animated.Value, stableAt: number) => React.ReactNode;
 }) {
   const stableHeights = [...props.stableHeights];
   stableHeights.sort((a, b) => {
@@ -54,6 +55,8 @@ export default function TopSheet(props: {
       const goTo = stableHeights.find((stable) =>
         stable.whenAbove === null ? true : height + flick > stable.whenAbove,
       )!.stabilizeTo;
+
+      stableAt.current = goTo;
 
       props.onStabilize?.(goTo);
 
@@ -107,6 +110,7 @@ export default function TopSheet(props: {
           backgroundColor: props.panBarBackgroundColor || "white",
         }}
       >
+        {props.renderAboveBar?.(transY, stableAt.current)}
         <View
           className="h-2 w-16 rounded-full"
           style={{
