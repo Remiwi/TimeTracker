@@ -32,7 +32,9 @@ export function IconSelector(props: {
     | { type: "icon"; icon: string; prefix: string }
   )[] = [];
   for (const section of sections) {
-    const filtered = section.data.filter((icon) => icon.startsWith(search));
+    const filtered = section.data.filter((icon) =>
+      icon.startsWith(search.toLowerCase()),
+    );
     data.push({
       type: "section",
       title: `${section.title}  (${filtered.length})`,
