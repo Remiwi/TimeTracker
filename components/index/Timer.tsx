@@ -369,11 +369,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
               className="flex h-8 w-8 items-center justify-center rounded-full"
               style={{ backgroundColor: option.color }}
             >
-              <MaterialCommunityIcons
-                name={option.icon as any}
-                color={"white"}
-                size={16}
-              />
+              <Icon name={option.icon as any} color={"white"} size={16} />
             </View>
             <Text className="text-xl" style={{ color: option.color }}>
               {option.name}
@@ -399,11 +395,7 @@ function Chips(props: { entry: EntryWithProject | null }) {
               className="flex h-8 w-8 items-center justify-center rounded-full"
               style={{ backgroundColor: option.color }}
             >
-              <MaterialCommunityIcons
-                name={option.icon as any}
-                color={"white"}
-                size={16}
-              />
+              <Icon name={option.icon as any} color={"white"} size={16} />
             </View>
             <Text className="text-xl" style={{ color: option.color }}>
               {option.name}
