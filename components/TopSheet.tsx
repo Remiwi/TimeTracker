@@ -114,7 +114,9 @@ export default function TopSheet(props: {
           backgroundColor: props.panBarBackgroundColor || "white",
         }}
       >
-        {props.renderAboveBar?.(transY, stableAt.current)}
+        <View className="w-full">
+          {props.renderAboveBar?.(transY, stableAt.current)}
+        </View>
         <View
           className="h-2 w-16 rounded-full"
           style={{
