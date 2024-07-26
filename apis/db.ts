@@ -253,9 +253,9 @@ const Database = {
           active = ?
         WHERE id = ?;`,
         [
-          project.name || oldProject.name,
-          project.color || oldProject.color,
-          project.icon || oldProject.icon,
+          project.name ?? oldProject.name,
+          project.color ?? oldProject.color,
+          project.icon ?? oldProject.icon,
           Dates.toISOExtended(new Date()),
           project.active === undefined || project.active ? 1 : 0,
           project.id,

@@ -186,7 +186,11 @@ function ProjectModal(props: {
         </View>
         <View className="flex flex-row items-center gap-4 pb-4">
           <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-gray-600">
-            <TouchableNativeFeedback>
+            <TouchableNativeFeedback
+              onPress={() => {
+                setIcon("");
+              }}
+            >
               <View
                 className="h-14 w-14 items-center justify-center rounded-full p-2"
                 style={{ backgroundColor: color }}
