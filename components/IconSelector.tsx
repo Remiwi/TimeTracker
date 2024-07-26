@@ -32,12 +32,12 @@ export function IconSelector(props: {
     | { type: "icon"; icon: string; prefix: string }
   )[] = [];
   for (const section of sections) {
+    const filtered = section.data.filter((icon) => icon.startsWith(search));
     data.push({
       type: "section",
-      title: section.title,
+      title: `${section.title}  (${filtered.length})`,
     });
     data.push(...Array(numCols - 1).fill({ type: "empty" }));
-    const filtered = section.data.filter((icon) => icon.startsWith(search));
     data.push(
       ...(filtered.map((icon) => ({
         type: "icon",
