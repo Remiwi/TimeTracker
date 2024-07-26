@@ -4,7 +4,11 @@ import { FlashList } from "@shopify/flash-list";
 import { Icon } from "./Icon";
 import { useState } from "react";
 
-export function IconSelector(props: { onSelect: (icon: string) => void }) {
+export function IconSelector(props: {
+  onSelect: (icon: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
+}) {
   const [rowWidth, setRowWidth] = useState(0);
   const [numCols, setNumCols] = useState(4);
   const [search, setSearch] = useState("");
@@ -59,6 +63,8 @@ export function IconSelector(props: { onSelect: (icon: string) => void }) {
           onChangeText={(text) => setSearch(text)}
           className="w-full text-lg"
           placeholder="Search..."
+          onFocus={props.onFocus}
+          onBlur={props.onBlur}
         ></TextInput>
       </View>
       <FlashList

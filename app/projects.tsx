@@ -2,7 +2,6 @@ import { Data } from "@/apis/data";
 import { Project } from "@/apis/types";
 import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
-import MyDropDown from "@/components/DropDown";
 import { Icon } from "@/components/Icon";
 import { IconSelector } from "@/components/IconSelector";
 import StyledTextInput from "@/components/TextInput";
@@ -138,6 +137,7 @@ function ProjectModal(props: {
     props.defaultProject?.color || Colors.random().toggl_hex,
   );
   const [icon, setIcon] = useState(props.defaultProject?.icon || "");
+  const [modalScrollEnabled, setModalScrollEnabled] = useState(true);
 
   const onDone = () => {
     if (props.defaultProject === undefined) {
@@ -166,7 +166,7 @@ function ProjectModal(props: {
   };
 
   return (
-    <BottomSheet onClose={props.onCancel}>
+    <BottomSheet onClose={props.onCancel} scrollEnabled={modalScrollEnabled}>
       <View className="px-4">
         <View className="flex w-full flex-row items-center justify-between px-2 pb-8">
           <View className="overflow-hidden rounded-full shadow-sm shadow-slate-900">
@@ -201,7 +201,15 @@ function ProjectModal(props: {
           />
         </View>
         <View className="h-96">
-          <IconSelector onSelect={(icon) => setIcon(icon)} />
+          <IconSelector
+            onSelect={(icon) => setIcon(icon)}
+            onFocus={() => {
+              setModalScrollEnabled(false);
+            }}
+            onBlur={() => {
+              setModalScrollEnabled(true);
+            }}
+          />
         </View>
         {props.defaultProject && (
           <View className="w-full items-center justify-center pb-2">

@@ -8,6 +8,7 @@ import {
 export default function BottomSheet(props: {
   children?: React.ReactNode;
   onClose?: () => void;
+  scrollEnabled?: boolean;
 }) {
   return (
     <Modal transparent={true}>
@@ -21,7 +22,9 @@ export default function BottomSheet(props: {
               <View className="w-full flex-row items-center justify-center py-4">
                 <View className="h-2 w-14 rounded-full bg-gray-400" />
               </View>
-              <ScrollView>{props.children}</ScrollView>
+              <ScrollView scrollEnabled={props.scrollEnabled ?? true}>
+                {props.children}
+              </ScrollView>
             </View>
           </TouchableWithoutFeedback>
         </View>
