@@ -184,14 +184,17 @@ function ProjectModal(props: {
             </TouchableNativeFeedback>
           </View>
         </View>
-        <View className="flex flex-row items-center gap-4 pb-2">
-          <ColorSelector
-            value={color}
-            onChange={setColor}
-            colors={colors.map((c) => c.toggl_hex)}
-          >
-            <Icon name={icon as any} size={20} color="white" />
-          </ColorSelector>
+        <View className="flex flex-row items-center gap-4 pb-4">
+          <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-gray-600">
+            <TouchableNativeFeedback>
+              <View
+                className="h-14 w-14 items-center justify-center rounded-full p-2"
+                style={{ backgroundColor: color }}
+              >
+                <Icon name={icon as any} size={32} color="white" />
+              </View>
+            </TouchableNativeFeedback>
+          </View>
           <StyledTextInput
             label="Project Name"
             bgColor="white"
@@ -200,6 +203,12 @@ function ProjectModal(props: {
             onChange={setName}
           />
         </View>
+        <ColorSelector
+          value={color}
+          onChange={setColor}
+          colors={colors.map((c) => c.toggl_hex)}
+          className="pb-2"
+        />
         <View className="h-96">
           <IconSelector
             onSelect={(icon) => setIcon(icon)}
