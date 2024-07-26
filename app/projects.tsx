@@ -3,6 +3,8 @@ import { Project } from "@/apis/types";
 import BottomSheet from "@/components/BottomSheet";
 import ColorSelector from "@/components/ColorSelector";
 import MyDropDown from "@/components/DropDown";
+import { Icon } from "@/components/Icon";
+import { IconSelector } from "@/components/IconSelector";
 import StyledTextInput from "@/components/TextInput";
 import Colors, { colors } from "@/utils/colors";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -116,11 +118,7 @@ function ProjectRow(props: { project: Project; onPress?: () => void }) {
           className="flex h-12 w-12 items-center justify-center rounded-full"
           style={{ backgroundColor: props.project.color }}
         >
-          <MaterialCommunityIcons
-            name={props.project.icon as any}
-            size={20}
-            color="white"
-          />
+          <Icon name={props.project.icon as any} size={20} color="white" />
         </View>
         <Text className="text-lg">{props.project.name}</Text>
       </View>
@@ -140,16 +138,6 @@ function ProjectModal(props: {
     props.defaultProject?.color || Colors.random().toggl_hex,
   );
   const [icon, setIcon] = useState(props.defaultProject?.icon || "");
-
-  const iconOptions = [
-    "music-note",
-    "laptop",
-    "dumbbell",
-    "filmstrip",
-    "book",
-    "shopping",
-    "wizard-hat",
-  ];
 
   const onDone = () => {
     if (props.defaultProject === undefined) {
@@ -196,33 +184,24 @@ function ProjectModal(props: {
             </TouchableNativeFeedback>
           </View>
         </View>
-        <StyledTextInput
-          label="Project Name"
-          bgColor="white"
-          className="pb-4"
-          value={name}
-          onChange={setName}
-        />
         <View className="flex flex-row items-center gap-4 pb-2">
           <ColorSelector
             value={color}
             onChange={setColor}
             colors={colors.map((c) => c.toggl_hex)}
           >
-            <MaterialCommunityIcons
-              name={icon as any}
-              size={20}
-              color="white"
-            />
+            <Icon name={icon as any} size={20} color="white" />
           </ColorSelector>
-          <MyDropDown
+          <StyledTextInput
+            label="Project Name"
+            bgColor="white"
             className="flex-grow"
-            options={iconOptions}
-            value={icon}
-            onChange={setIcon}
-            itemToString={(i) => i}
-            placeholder="Icon"
+            value={name}
+            onChange={setName}
           />
+        </View>
+        <View className="h-96">
+          <IconSelector onSelect={(icon) => setIcon(icon)} />
         </View>
         {props.defaultProject && (
           <View className="w-full items-center justify-center pb-2">

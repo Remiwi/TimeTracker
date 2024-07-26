@@ -27,6 +27,7 @@ import {
 import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
 import TopSheet from "../TopSheet";
+import { Icon } from "../Icon";
 
 export default function Timer(props: {
   onOpen: () => void;
@@ -170,7 +171,7 @@ function TimerContent(props: { useLatestEntryIfNoOngoing: boolean }) {
                 backgroundColor: entryQuery.data.project_color || "#cccccc",
               }}
             >
-              <MaterialCommunityIcons
+              <Icon
                 name={entryQuery.data.project_icon as any}
                 color="white"
                 size={44}

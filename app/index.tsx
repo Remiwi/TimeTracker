@@ -31,6 +31,7 @@ import { useStartTemplateMutation } from "@/hooks/entryQueries";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import Paginated from "@/components/Paginated";
 import Templates from "@/components/index/Templates";
+import { IconSelector } from "@/components/IconSelector";
 
 export default function Screen() {
   const [templatesEnabled, setTemplatesEnabled] = useState(true);

@@ -29,6 +29,7 @@ import React, {
 } from "react";
 import { useAnimatedXY, usePanHandlers } from "@/hooks/animtedHooks";
 import { useStateAsRef } from "@/hooks/misc";
+import { Icon } from "../Icon";
 
 type GridsContextType = {
   setScrollAmount: (page: number, amount: number) => void;
@@ -491,7 +492,7 @@ function Item(props: {
                   backgroundColor: props.template?.project_color || "#cccccc",
                 }}
               >
-                <MaterialCommunityIcons
+                <Icon
                   name={(props.template.project_icon as any) || undefined}
                   size={props.isSmall ? 26 : 32}
                   color="white"
