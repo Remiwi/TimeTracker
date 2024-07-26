@@ -1,5 +1,6 @@
 import { Dates } from "@/utils/dates";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRef, useState } from "react";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 
 const disabledColor = "#bbbbbb";
@@ -49,6 +50,32 @@ export default function DateTimeEditor(props: {
     props.onDateChange?.(newDate);
   };
 
+  const [holdInterval, setHoldInterval] = useState<NodeJS.Timeout | null>(null);
+  const changeTimeRef = useRef({
+    changeMinutes,
+    changeDay,
+  });
+  changeTimeRef.current = {
+    changeMinutes,
+    changeDay,
+  };
+  const onHold = (minutes: number, days: number) => {
+    setHoldInterval(
+      setInterval(() => {
+        if (minutes !== 0) {
+          changeTimeRef.current.changeMinutes(minutes);
+        }
+        if (days !== 0) {
+          changeTimeRef.current.changeDay(days);
+        }
+      }, 500),
+    );
+  };
+  const onHoldRelease = () => {
+    if (holdInterval) clearInterval(holdInterval);
+    setHoldInterval(null);
+  };
+
   return (
     <View className={"flex w-full " + props.className}>
       <Text className="px-2 pb-1 text-2xl font-bold">{props.text}</Text>
@@ -59,6 +86,8 @@ export default function DateTimeEditor(props: {
             <TouchableNativeFeedback
               disabled={props.disabled}
               onPress={() => changeDay(-1)}
+              onLongPress={() => onHold(0, -1)}
+              onPressOut={onHoldRelease}
             >
               <View className="flex flex-grow items-center justify-center p-1">
                 <MaterialCommunityIcons
@@ -79,6 +108,8 @@ export default function DateTimeEditor(props: {
             <TouchableNativeFeedback
               disabled={props.disabled}
               onPress={() => changeDay(1)}
+              onLongPress={() => onHold(0, 1)}
+              onPressOut={onHoldRelease}
             >
               <View className="flex flex-grow items-center justify-center p-1">
                 <MaterialCommunityIcons
@@ -96,6 +127,8 @@ export default function DateTimeEditor(props: {
             <TouchableNativeFeedback
               disabled={props.disabled}
               onPress={() => changeMinutes(-1)}
+              onLongPress={() => onHold(-10, 0)}
+              onPressOut={onHoldRelease}
             >
               <View className="flex flex-grow items-center justify-center p-1">
                 <MaterialCommunityIcons
@@ -116,6 +149,8 @@ export default function DateTimeEditor(props: {
             <TouchableNativeFeedback
               disabled={props.disabled}
               onPress={() => changeMinutes(1)}
+              onLongPress={() => onHold(10, 0)}
+              onPressOut={onHoldRelease}
             >
               <View className="flex flex-grow items-center justify-center p-1">
                 <MaterialCommunityIcons
