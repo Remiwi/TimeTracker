@@ -18,6 +18,8 @@ export default function TopSheet(props: {
   disablePan?: boolean;
   renderAboveBar?: (anim: Animated.Value, stableAt: number) => React.ReactNode;
 }) {
+  const canGrab = useRef(true);
+
   const stableHeights = [...props.stableHeights];
   stableHeights.sort((a, b) => {
     if (a.whenAbove === null) return -1;
@@ -34,7 +36,7 @@ export default function TopSheet(props: {
   const stableAt = useRef(lowestStable);
 
   const panHandlers = usePanHandlers({
-    onStartShouldSetPanResponder: () => true,
+    onStartShouldSetPanResponder: () => canGrab.current,
     onPanResponderMove: (_, gestureState) => {
       const height = gestureState.dy + stableAt.current;
       let dy = gestureState.dy;
@@ -61,12 +63,14 @@ export default function TopSheet(props: {
       props.onStabilize?.(goTo);
 
       transY.flattenOffset();
+      canGrab.current = false;
       Animated.timing(transY, {
         toValue: goTo,
         duration: 300,
         useNativeDriver: true,
       }).start(() => {
         transY.extractOffset();
+        canGrab.current = true;
         stableAt.current = goTo;
       });
     },
