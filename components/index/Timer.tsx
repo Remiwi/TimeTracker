@@ -108,23 +108,6 @@ function TimerContent(props: {
   entry: EntryWithProject | null;
   onEditEntry: (entry: Partial<EntryWithProject>) => void;
 }) {
-  const projectsQuery = useProjects();
-  const [projectEditModalVisible, setProjectEditModalVisible] = useState(false);
-  const [projectButtonLayout, setProjectButtonLayout] = useState({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
-
-  const [tagModalVisible, setTagModalVisible] = useState(false);
-  const [tagButtonLayout, setTagButtonLayout] = useState({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
-
   const stopEntry = () => {
     props.onEditEntry?.({ stop: Dates.toISOExtended(new Date()) });
   };
@@ -200,19 +183,7 @@ function TimerContent(props: {
       <View className="flex-row">
         <View className="flex-grow gap-2 px-6 pb-4">
           <Text className="text-2xl font-bold">Project</Text>
-          <View
-            className="flex-row px-2"
-            onLayout={(e) => {
-              e.target.measure((x, y, width, height, pageX, pageY) => {
-                setProjectButtonLayout({
-                  x: pageX,
-                  y: pageY,
-                  width,
-                  height,
-                });
-              });
-            }}
-          >
+          <View className="flex-row px-2">
             <ProjectChip
               project={
                 props.entry?.project_id
@@ -239,19 +210,7 @@ function TimerContent(props: {
         </View>
         <View className="flex-grow gap-2 pb-4">
           <Text className="text-2xl font-bold">Tags</Text>
-          <View
-            className="flex-row px-2"
-            onLayout={(e) => {
-              e.target.measure((x, y, width, height, pageX, pageY) => {
-                setTagButtonLayout({
-                  x: pageX,
-                  y: pageY,
-                  width,
-                  height,
-                });
-              });
-            }}
-          >
+          <View className="flex-row px-2">
             <TagsChip
               tags={props.entry?.tags || []}
               onChange={(tags) => {
