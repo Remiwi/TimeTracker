@@ -14,6 +14,7 @@ export default function TopSheet(props: {
   contentFixed?: boolean; // If content should move with sheet or be fixed to the screen
   panBarColor?: string;
   panBarBackgroundColor?: string;
+  onPanStart?: () => void;
   onStabilize?: (height: number) => void;
   disablePan?: boolean;
   animatedValue?: Animated.Value;
@@ -38,6 +39,9 @@ export default function TopSheet(props: {
 
   const panHandlers = usePanHandlers({
     onStartShouldSetPanResponder: () => canGrab.current,
+    onPanResponderGrant: () => {
+      props.onPanStart?.();
+    },
     onPanResponderMove: (_, gestureState) => {
       const height = gestureState.dy + stableAt.current;
       let dy = gestureState.dy;
