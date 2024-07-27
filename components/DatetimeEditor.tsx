@@ -37,7 +37,9 @@ export default function DateTimeEditor(props: {
   const day = props.date.getDate();
 
   const hours = props.date.getHours();
-  const displayHours = hours > 12 ? hours - 12 : hours;
+  let displayHours = hours;
+  if (hours > 12) displayHours -= 12;
+  if (hours === 0) displayHours = 12;
   const minutes = props.date.getMinutes().toFixed().padStart(2, "0");
   const ampm = hours >= 12 ? "PM" : "AM";
 
