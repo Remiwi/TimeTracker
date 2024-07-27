@@ -16,7 +16,6 @@ export default function TopSheet(props: {
   panBarBackgroundColor?: string;
   onStabilize?: (height: number) => void;
   disablePan?: boolean;
-  renderAboveBar?: (anim: Animated.Value, stableAt: number) => React.ReactNode;
   animatedValue?: Animated.Value;
 }) {
   const canGrab = useRef(true);
@@ -116,9 +115,6 @@ export default function TopSheet(props: {
           backgroundColor: props.panBarBackgroundColor || "white",
         }}
       >
-        <View className="w-full">
-          {props.renderAboveBar?.(transY, stableAt.current)}
-        </View>
         <View
           className="h-2 w-16 rounded-full"
           style={{
