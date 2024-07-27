@@ -17,6 +17,7 @@ export default function TopSheet(props: {
   onStabilize?: (height: number) => void;
   disablePan?: boolean;
   renderAboveBar?: (anim: Animated.Value, stableAt: number) => React.ReactNode;
+  animatedValue?: Animated.Value;
 }) {
   const canGrab = useRef(true);
 
@@ -32,7 +33,8 @@ export default function TopSheet(props: {
   const highestStable = stableHeights[0].stabilizeTo;
   const lowestStable = stableHeights[stableHeights.length - 1].stabilizeTo;
 
-  const transY = useAnimatedValue(lowestStable);
+  const ownedAnimatedValue = useAnimatedValue(lowestStable);
+  const transY = useRef(props.animatedValue ?? ownedAnimatedValue).current;
   const stableAt = useRef(lowestStable);
 
   const panHandlers = usePanHandlers({
