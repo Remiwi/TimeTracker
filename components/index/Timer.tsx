@@ -31,6 +31,7 @@ import { Icon } from "../Icon";
 import { useStateAsRef } from "@/hooks/misc";
 import ProjectChip from "../ProjectChip";
 import TagsChip from "../TagsChip";
+import { useAnimatedValue } from "@/hooks/animtedHooks";
 
 export default function Timer(props: {
   onOpen: () => void;
@@ -60,6 +61,14 @@ export default function Timer(props: {
     editEntryMutation.mutate(displayEntryRef.current);
   };
 
+  const topSheetAnimatedValue = useAnimatedValue(210);
+  const chipsAnimatedValue = topSheetAnimatedValue.interpolate({
+    inputRange: [210, 400],
+    outputRange: [0, 1],
+    extrapolate: "clamp",
+  });
+  const [chipsEnabled, setChipsEnabled] = useState(true);
+
   return (
     <TopSheet
       stableHeights={[
@@ -68,38 +77,35 @@ export default function Timer(props: {
           whenAbove: null,
         },
         {
-          stabilizeTo: 600,
+          stabilizeTo: 650,
           whenAbove: 400,
         },
       ]}
       flickMultiplier={200}
       give={0}
       contentFixed={true}
+      onPanStart={() => {
+        setChipsEnabled(false);
+      }}
       onStabilize={(h) => {
         setModalOpen(h > 210);
         if (h > 210) {
           props.onOpen();
         } else {
+          setChipsEnabled(true);
           saveDisplayEntry();
           props.onClose();
         }
       }}
       disablePan={!modalOpen && !ongoingQuery.data}
-      renderAboveBar={(anim, stableAt) => (
-        <Animated.View
-          style={{
-            opacity: anim.interpolate({
-              inputRange: [210, 400],
-              outputRange: [1, 0],
-              extrapolate: "clamp",
-            }),
-          }}
-        >
-          <ClosedChips enabled={stableAt === 210} />
-        </Animated.View>
-      )}
+      animatedValue={topSheetAnimatedValue}
     >
-      <TimerContent entry={displayEntry ?? null} onEditEntry={editEntry} />
+      <TimerContent
+        entry={displayEntry ?? null}
+        onEditEntry={editEntry}
+        chipsAnimatedValue={chipsAnimatedValue}
+        chipsEnabled={chipsEnabled}
+      />
     </TopSheet>
   );
 }
@@ -107,6 +113,8 @@ export default function Timer(props: {
 function TimerContent(props: {
   entry: EntryWithProject | null;
   onEditEntry: (entry: Partial<EntryWithProject>) => void;
+  chipsAnimatedValue: Animated.AnimatedInterpolation<number>;
+  chipsEnabled: boolean;
 }) {
   const stopEntry = () => {
     props.onEditEntry?.({ stop: Dates.toISOExtended(new Date()) });
@@ -114,154 +122,197 @@ function TimerContent(props: {
 
   return (
     <View className="pt-4">
-      {!props.entry && (
-        <View className="flex items-center justify-between">
-          <View className="flex h-32 flex-grow items-center justify-center">
-            <Text className="px-8 text-4xl color-gray-400">
-              No running entry
-            </Text>
-          </View>
-        </View>
-      )}
-      {props.entry && (
-        <View className="h-32">
-          <View className="flex flex-row items-end justify-between px-4">
-            <View>
-              <View className="flex flex-row items-center gap-2">
-                <MaterialIcons
-                  name="edit"
-                  size={16}
-                  color={props.entry.description ? "black" : "#a8a29e"}
-                  className="pb-2"
-                />
-                <StatefulTextInput
-                  className="pb-2 text-2xl"
-                  value={props.entry.description || ""}
-                  placeholder="Enter description..."
-                  placeholderClassName="color-stone-400"
-                  style={{ fontWeight: "bold" }}
-                  placeholderStyle={{ fontWeight: "normal" }}
-                  onChange={(t) => {
-                    const text = t.trim();
-                    props.onEditEntry?.({ description: text || null });
-                  }}
-                />
-              </View>
-              <TimerText
-                className="text-6xl"
-                startTime={new Date(props.entry.start)}
-                stopTime={
-                  props.entry.stop ? new Date(props.entry.stop) : undefined
-                }
-              />
-            </View>
-            <View
-              className={
-                "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
-              }
-              style={{
-                backgroundColor: props.entry.project_color || "#cccccc",
-              }}
-            >
-              <Icon
-                name={props.entry.project_icon as any}
-                color="white"
-                size={44}
-              />
-            </View>
-          </View>
-          {props.entry?.tags.length > 0 && (
-            <View className="flex flex-row items-center gap-2 px-4">
-              <MaterialCommunityIcons name="tag" size={14} color="#a8a29e" />
-              <Text className="font-light italic text-gray-400">
-                {props.entry?.tags.join(", ") || ""}
+      <View className="z-20 w-full bg-white">
+        {!props.entry && (
+          <View className="flex items-center justify-between">
+            <View className="flex h-32 flex-grow items-center justify-center">
+              <Text className="px-8 text-4xl color-gray-400">
+                No running entry
               </Text>
             </View>
-          )}
-        </View>
-      )}
-      <View className="flex-row">
-        <View className="flex-grow gap-2 px-6 pb-4">
-          <Text className="text-2xl font-bold">Project</Text>
-          <View className="flex-row px-2">
-            <ProjectChip
-              project={
-                props.entry?.project_id
-                  ? ({
-                      id: props.entry.project_id,
-                      name: props.entry.project_name,
-                      icon: props.entry.project_icon,
-                      color: props.entry.project_color,
-                      at: "",
-                      active: true,
-                    } as Project)
-                  : null
-              }
-              onSelect={(project) => {
-                props.onEditEntry?.({
-                  project_id: project?.id || null,
-                  project_name: project?.name || null,
-                  project_icon: project?.icon || null,
-                  project_color: project?.color || null,
-                });
-              }}
-            />
           </View>
-        </View>
-        <View className="flex-grow gap-2 pb-4">
-          <Text className="text-2xl font-bold">Tags</Text>
-          <View className="flex-row px-2">
-            <TagsChip
-              tags={props.entry?.tags || []}
-              onChange={(tags) => {
-                props.onEditEntry?.({ tags });
-              }}
-            />
+        )}
+        {props.entry && (
+          <View className="h-32">
+            <View className="flex flex-row items-end justify-between px-4">
+              <View>
+                <View className="flex flex-row items-center gap-2">
+                  <MaterialIcons
+                    name="edit"
+                    size={16}
+                    color={props.entry.description ? "black" : "#a8a29e"}
+                    className="pb-2"
+                  />
+                  <StatefulTextInput
+                    className="pb-2 text-2xl"
+                    value={props.entry.description || ""}
+                    placeholder="Enter description..."
+                    placeholderClassName="color-stone-400"
+                    style={{ fontWeight: "bold" }}
+                    placeholderStyle={{ fontWeight: "normal" }}
+                    onChange={(t) => {
+                      const text = t.trim();
+                      props.onEditEntry?.({ description: text || null });
+                    }}
+                  />
+                </View>
+                <TimerText
+                  className="text-6xl"
+                  startTime={new Date(props.entry.start)}
+                  stopTime={
+                    props.entry.stop ? new Date(props.entry.stop) : undefined
+                  }
+                />
+              </View>
+              <View
+                className={
+                  "flex aspect-square w-24 items-center justify-center rounded-full shadow-md shadow-black"
+                }
+                style={{
+                  backgroundColor: props.entry.project_color || "#cccccc",
+                }}
+              >
+                <Icon
+                  name={props.entry.project_icon as any}
+                  color="white"
+                  size={44}
+                />
+              </View>
+            </View>
+            {props.entry?.tags.length > 0 && (
+              <View className="flex flex-row items-center gap-2 px-4">
+                <MaterialCommunityIcons name="tag" size={14} color="#a8a29e" />
+                <Text className="font-light italic text-gray-400">
+                  {props.entry?.tags.join(", ") || ""}
+                </Text>
+              </View>
+            )}
           </View>
-        </View>
+        )}
       </View>
-      <View className="px-4">
-        <DateTimeEditor
-          date={props.entry ? new Date(props.entry.start) : new Date()}
-          mustBeBefore={
-            props.entry?.stop ? new Date(props.entry.stop) : undefined
-          }
-          onDateChange={(date) => {
-            props.onEditEntry?.({ start: Dates.toISOExtended(date) });
-          }}
-          text="Start"
-          className="pb-1"
-        />
-        <View className="flex w-full items-end">
-          <View className="overflow-hidden rounded-sm">
-            <TouchableNativeFeedback>
-              <View>
-                <Text className="px-2 py-0.5 text-sm font-semibold text-slate-600">
-                  Fill to last stop
-                </Text>
-              </View>
-            </TouchableNativeFeedback>
+      <Animated.View
+        className="z-10 h-16 w-full bg-white"
+        style={{
+          transform: [
+            { translateY: Animated.multiply(props.chipsAnimatedValue, -100) },
+          ],
+        }}
+      >
+        <ClosedChips enabled={props.chipsEnabled} />
+      </Animated.View>
+      <View className="absolute top-40">
+        <View className="flex-row">
+          <View className="flex-grow gap-2 px-6 pb-4">
+            <Text className="text-2xl font-bold">Project</Text>
+            <View className="flex-row px-2">
+              <ProjectChip
+                project={
+                  props.entry?.project_id
+                    ? ({
+                        id: props.entry.project_id,
+                        name: props.entry.project_name,
+                        icon: props.entry.project_icon,
+                        color: props.entry.project_color,
+                        at: "",
+                        active: true,
+                      } as Project)
+                    : null
+                }
+                onSelect={(project) => {
+                  props.onEditEntry?.({
+                    project_id: project?.id || null,
+                    project_name: project?.name || null,
+                    project_icon: project?.icon || null,
+                    project_color: project?.color || null,
+                  });
+                }}
+              />
+            </View>
+          </View>
+          <View className="flex-grow gap-2 pb-4">
+            <Text className="text-2xl font-bold">Tags</Text>
+            <View className="flex-row px-2">
+              <TagsChip
+                tags={props.entry?.tags || []}
+                onChange={(tags) => {
+                  props.onEditEntry?.({ tags });
+                }}
+              />
+            </View>
           </View>
         </View>
-        <DateTimeEditor
-          date={props.entry?.stop ? new Date(props.entry.stop) : new Date()}
-          onDateChange={(date) => {
-            props.onEditEntry?.({ stop: Dates.toISOExtended(date) });
-          }}
-          text="Stop"
-          className="pb-1"
-          disabled={!props.entry || !props.entry.stop}
-          mustBeAfter={props.entry ? new Date(props.entry.start) : undefined}
-        />
-        <View className="flex w-full items-end">
-          <View className="overflow-hidden rounded-sm">
-            <TouchableNativeFeedback onPress={stopEntry}>
-              <View>
-                <Text className="px-2 py-0.5 text-sm font-semibold text-red-500">
-                  Stop Timer
-                </Text>
-              </View>
-            </TouchableNativeFeedback>
+        <View className="px-4">
+          <DateTimeEditor
+            date={props.entry ? new Date(props.entry.start) : new Date()}
+            mustBeBefore={
+              props.entry?.stop ? new Date(props.entry.stop) : undefined
+            }
+            onDateChange={(date) => {
+              props.onEditEntry?.({ start: Dates.toISOExtended(date) });
+            }}
+            text="Start"
+            className="pb-1"
+          />
+          <View className="flex w-full items-end">
+            <View className="overflow-hidden rounded-sm">
+              <TouchableNativeFeedback>
+                <View>
+                  <Text className="px-2 py-0.5 text-sm font-semibold text-slate-600">
+                    Fill to last stop
+                  </Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+          </View>
+          <DateTimeEditor
+            date={props.entry?.stop ? new Date(props.entry.stop) : new Date()}
+            onDateChange={(date) => {
+              props.onEditEntry?.({ stop: Dates.toISOExtended(date) });
+            }}
+            text="Stop"
+            className="pb-1"
+            disabled={!props.entry || !props.entry.stop}
+            mustBeAfter={props.entry ? new Date(props.entry.start) : undefined}
+          />
+          <View className="flex w-full items-end pb-6">
+            <View className="overflow-hidden rounded-sm">
+              <TouchableNativeFeedback onPress={stopEntry}>
+                <View>
+                  <Text className="px-2 py-0.5 text-sm font-semibold text-red-500">
+                    Stop Timer
+                  </Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+          </View>
+          <View className="w-full flex-row justify-between">
+            <View className="overflow-hidden rounded-full">
+              <TouchableNativeFeedback>
+                <View className="w-24 items-center justify-center py-2">
+                  <Text className="text-lg font-semibold text-gray-700">
+                    Discard
+                  </Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+            <View className="overflow-hidden rounded-full">
+              <TouchableNativeFeedback>
+                <View className="w-24 items-center justify-center py-2">
+                  <Text className="text-lg font-bold">Save</Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+          </View>
+          <View className="w-full flex-row items-center justify-center">
+            <View className="overflow-hidden rounded-full">
+              <TouchableNativeFeedback>
+                <View className="w-36 items-center justify-center py-2">
+                  <Text className="text-lg font-bold text-red-600">
+                    Delete Entry
+                  </Text>
+                </View>
+              </TouchableNativeFeedback>
+            </View>
           </View>
         </View>
       </View>
