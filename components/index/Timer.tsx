@@ -264,6 +264,9 @@ function TimerContent(props: {
       <View className="px-4">
         <DateTimeEditor
           date={props.entry ? new Date(props.entry.start) : new Date()}
+          mustBeBefore={
+            props.entry?.stop ? new Date(props.entry.stop) : undefined
+          }
           onDateChange={(date) => {
             props.onEditEntry?.({ start: Dates.toISOExtended(date) });
           }}
