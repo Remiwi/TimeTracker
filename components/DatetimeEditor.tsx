@@ -16,6 +16,7 @@ import {
 import { Icon } from "./Icon";
 import { set } from "@dotenvx/dotenvx";
 import DatePickerModal from "./DatePickerModal";
+import TimePickerModal from "./TimePickerModal";
 
 const disabledColor = "#bbbbbb";
 
@@ -29,6 +30,7 @@ export default function DateTimeEditor(props: {
   mustBeBefore?: Date;
 }) {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
 
   const year = props.date.getFullYear();
   const month = props.date.getMonth() + 1;
@@ -124,8 +126,31 @@ export default function DateTimeEditor(props: {
           props.onDateChange?.(newDate);
           setDatePickerVisible(false);
         }}
-        onClose={() => setDatePickerVisible(false)}
-        visible={datePickerVisible}
+      />
+      <TimePickerModal
+        time={props.date}
+        title={`${props.text} Time`}
+        visible={timePickerVisible}
+        useAMPM={true}
+        limitHoursTo24={true}
+        onClose={() => setTimePickerVisible(false)}
+        onDone={(time) => {
+          const newDate = new Date(props.date);
+          newDate.setHours(time.getHours());
+          newDate.setMinutes(time.getMinutes());
+          newDate.setSeconds(0);
+          newDate.setMilliseconds(0);
+          if (newDate > mustBeBefore) {
+            newDate.setHours(mustBeBefore.getHours());
+            newDate.setMinutes(mustBeBefore.getMinutes());
+          }
+          if (props.mustBeAfter && newDate < props.mustBeAfter) {
+            newDate.setHours(props.mustBeAfter.getHours());
+            newDate.setMinutes(props.mustBeAfter.getMinutes());
+          }
+          props.onDateChange?.(newDate);
+          setTimePickerVisible(false);
+        }}
       />
       <Text className="px-2 pb-1 text-2xl font-bold">{props.text}</Text>
       <View className="flex w-full gap-1 rounded-xl bg-gray-200 p-2">
@@ -197,12 +222,23 @@ export default function DateTimeEditor(props: {
               </View>
             </TouchableNativeFeedback>
           </View>
-          <Text
-            className="w-36 rounded-md bg-white p-2 text-center text-xl font-semibold"
-            style={{ color: props.disabled ? disabledColor : "black" }}
-          >
-            {props.disabled ? "---" : `${displayHours}:${minutes} ${ampm}`}
-          </Text>
+          <View className="overflow-hidden rounded-md">
+            <TouchableNativeFeedback
+              onPress={() => setTimePickerVisible(true)}
+              disabled={props.disabled}
+            >
+              <View className="w-36 bg-white p-2">
+                <Text
+                  className="text-center text-xl font-semibold"
+                  style={{ color: props.disabled ? disabledColor : "black" }}
+                >
+                  {props.disabled
+                    ? "---"
+                    : `${displayHours}:${minutes} ${ampm}`}
+                </Text>
+              </View>
+            </TouchableNativeFeedback>
+          </View>
           <View className="flex-grow overflow-hidden rounded-md">
             <TouchableNativeFeedback
               disabled={props.disabled}
