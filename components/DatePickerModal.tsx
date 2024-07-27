@@ -4,8 +4,13 @@ import {
   toDateId,
 } from "@marceloterreiro/flash-calendar";
 import { useEffect, useState } from "react";
-import { Modal, Text, TouchableNativeFeedback, View } from "react-native";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import {
+  Modal,
+  Text,
+  TouchableNativeFeedback,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import { Icon } from "./Icon";
 
 export default function DatePickerModal(props: {
@@ -92,7 +97,7 @@ export default function DatePickerModal(props: {
     <Modal transparent>
       <TouchableWithoutFeedback onPress={props.onClose}>
         <View
-          className="h-full w-full items-center justify-center px-12"
+          className="h-full w-full items-center px-12 pt-60"
           style={{ backgroundColor: "#00000088" }}
         >
           <TouchableWithoutFeedback>

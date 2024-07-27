@@ -102,6 +102,8 @@ export default function DateTimeEditor(props: {
         title={`${props.text} Date`}
         maxDate={props.mustBeBefore}
         minDate={props.mustBeAfter}
+        onClose={() => setDatePickerVisible(false)}
+        visible={datePickerVisible}
         onDone={(date) => {
           const newDate = new Date(props.date);
           newDate.setFullYear(date.getFullYear());
