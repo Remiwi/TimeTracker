@@ -101,7 +101,7 @@ export default function DatePickerModal(props: {
           style={{ backgroundColor: "#00000088" }}
         >
           <TouchableWithoutFeedback>
-            <View className="h-min w-full rounded-2xl bg-white p-4">
+            <View className="w-full rounded-2xl bg-white p-4">
               <Text className="pb-2 text-xl font-bold">{props.title}</Text>
               <View className="flex-row items-center justify-between">
                 <View className="overflow-hidden rounded-lg">
