@@ -211,28 +211,32 @@ function Day(props: {
       }
     }
 
+    const desc = entry.description ?? "";
+    const project = entry.project_id ?? null;
+    const tags = Tags.toString(entry.tags);
+
     // Construct the groups
     if (groups.length === 0) {
       groups.push({
-        description: entry.description,
-        project_id: entry.project_id,
-        tags: Tags.toString(entry.tags),
+        description: desc,
+        project_id: project,
+        tags: tags,
         entries: [entry],
       });
       continue;
     }
     const prev_group = groups[groups.length - 1];
     if (
-      prev_group.description === entry.description &&
-      prev_group.project_id === entry.project_id &&
-      prev_group.tags === Tags.toString(entry.tags)
+      prev_group.description === desc &&
+      prev_group.project_id === project &&
+      prev_group.tags === tags
     ) {
       prev_group.entries.push(entry);
     } else {
       groups.push({
-        description: entry.description,
-        project_id: entry.project_id,
-        tags: Tags.toString(entry.tags),
+        description: desc,
+        project_id: project,
+        tags: tags,
         entries: [entry],
       });
     }
@@ -299,7 +303,10 @@ function GroupedEntry(props: {
   return (
     <View className="min-h-16 overflow-hidden rounded-xl shadow-sm shadow-black">
       <TouchableNativeFeedback
-        onPress={() => props.onEntryPress?.(props.entries[0])}
+        onPress={() => {
+          props.onEntryPress?.(props.entries[0]);
+          console.log(props.entries[0]);
+        }}
         disabled={!(props.interactionsEnabled ?? true)}
       >
         <View className="flex min-h-16 flex-row bg-white pb-2 pt-1">
