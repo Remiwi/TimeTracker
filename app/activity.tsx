@@ -26,6 +26,7 @@ export default function Page() {
     (Omit<EntryWithProject, "id"> & { id: number | null }) | undefined
   >(undefined);
   const entryEditorSheetRef = React.useRef<EntryEditorSheet.Ref | null>(null);
+  const entryCreatorSheetRef = React.useRef<EntryEditorSheet.Ref | null>(null);
 
   const entriesQuery = useEntries();
   const projectsQuery = useProjects();
@@ -99,6 +100,21 @@ export default function Page() {
           }}
           entry={selectedEntry}
           hideTimerWhenClosed
+        />
+        <EntryEditorSheet
+          ref={entryCreatorSheetRef}
+          onOpen={() => setEntryEditorOpen(true)}
+          onClose={() => {
+            setEntryEditorOpen(false);
+          }}
+          onDiscard={() => {
+            setSelectedEntry(undefined);
+          }}
+          onSave={() => {
+            setSelectedEntry(undefined);
+          }}
+          entry={selectedEntry}
+          hideTimerWhenClosed
           hideDeleteButton
         />
       </View>
@@ -124,6 +140,7 @@ export default function Page() {
         keyExtractor={(item) => item.date}
         renderItem={({ item }) => (
           <Day
+            interactionsEnabled={!entryEditorOpen}
             key={item.date}
             date={item.date}
             entries={item.entries}
@@ -152,7 +169,7 @@ export default function Page() {
                 duration: 600,
                 at: Dates.toISOExtended(new Date()),
               });
-              entryEditorSheetRef.current?.open();
+              entryCreatorSheetRef.current?.open();
             }}
           />
         )}
@@ -170,6 +187,7 @@ function Day(props: {
   projects?: TogglProject[];
   onEntryPress?: (e: EntryWithProject) => void;
   onEntryCreate?: (date: string, startDatetime: string | undefined) => void;
+  interactionsEnabled?: boolean;
 }) {
   const today = new Date().toISOString().split("T")[0];
   const yesterday = Dates.daysAgo(1).toISOString().split("T")[0];
@@ -235,6 +253,7 @@ function Day(props: {
             onPress={() => {
               props.onEntryCreate?.(props.date, latestEntryStop);
             }}
+            disabled={!(props.interactionsEnabled ?? true)}
           >
             <View className="p-0.5">
               <MaterialIcons name="add" size={24} color={"#000000"} />
@@ -247,6 +266,7 @@ function Day(props: {
         data={groups}
         renderItem={({ item }) => (
           <GroupedEntry
+            interactionsEnabled={props.interactionsEnabled}
             entries={item.entries}
             project={props.projects?.find(
               (p) => p.id === item.entries[0].project_id,
@@ -264,6 +284,7 @@ function GroupedEntry(props: {
   entries: EntryWithProject[];
   project?: TogglProject;
   onEntryPress?: (e: EntryWithProject) => void;
+  interactionsEnabled?: boolean;
 }) {
   const total_duration = props.entries.reduce(
     (acc, entry) => acc + entry.duration,
@@ -279,6 +300,7 @@ function GroupedEntry(props: {
     <View className="min-h-16 overflow-hidden rounded-xl shadow-sm shadow-black">
       <TouchableNativeFeedback
         onPress={() => props.onEntryPress?.(props.entries[0])}
+        disabled={!(props.interactionsEnabled ?? true)}
       >
         <View className="flex min-h-16 flex-row bg-white pb-2 pt-1">
           {props.entries.length > 1 && (
