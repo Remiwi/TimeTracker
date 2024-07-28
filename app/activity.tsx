@@ -8,7 +8,7 @@ import {
   Vibration,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useState } from "react";
 import { FlashList } from "@shopify/flash-list";
 import { Data } from "@/apis/data";
 import TimerText from "@/components/TimerText";
@@ -291,6 +291,11 @@ function GroupedEntry(props: {
   onEntryPress?: (e: EntryWithProject) => void;
   interactionsEnabled?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  useLayoutEffect(() => {
+    setExpanded(false);
+  }, [props.entries.length]);
+
   const total_duration = props.entries.reduce(
     (acc, entry) => acc + entry.duration,
     0,
@@ -311,8 +316,11 @@ function GroupedEntry(props: {
       <View className="min-h-16 overflow-hidden rounded-xl shadow-sm shadow-black">
         <TouchableNativeFeedback
           onPress={() => {
-            props.onEntryPress?.(props.entries[0]);
-            console.log(props.entries[0]);
+            if (props.entries.length > 1) {
+              setExpanded(!expanded);
+            } else {
+              props.onEntryPress?.(props.entries[0]);
+            }
           }}
           disabled={!(props.interactionsEnabled ?? true)}
         >
@@ -388,8 +396,64 @@ function GroupedEntry(props: {
             </View>
           </View>
         </TouchableNativeFeedback>
+        {expanded && (
+          <View className="w-full bg-gray-100">
+            {props.entries.map((entry) => {
+              const start = new Date(entry.start);
+              const stop = new Date(entry.stop!);
+              const duration = Math.floor(
+                (stop.getTime() - start.getTime()) / 1000,
+              );
+              const seconds = (duration % 60).toFixed(0).padStart(2, "0");
+              const minutes = (Math.floor(duration / 60) % 60)
+                .toFixed(0)
+                .padStart(2, "0");
+              const hours = Math.floor(duration / 3600);
+
+              return (
+                <TouchableNativeFeedback
+                  disabled={!(props.interactionsEnabled ?? true)}
+                  onPress={() => props.onEntryPress?.(entry)}
+                >
+                  <View className="flex h-18 flex-row border-t border-gray-300 py-2">
+                    <View className="flex-row items-center justify-center gap-4 px-4">
+                      <View>
+                        <Text className="text-lg italic text-gray-500">
+                          {(start.getMonth() + 1).toString().padStart(2, "0")}/
+                          {start.getDate().toString().padStart(2, "0")}
+                        </Text>
+                        <Text className="text-lg italic text-gray-500">
+                          {start.getHours().toString().padStart(2, "0")}:
+                          {start.getMinutes().toString().padStart(2, "0")}
+                        </Text>
+                      </View>
+                      <Text className="text-lg italic text-gray-500"> - </Text>
+                      <View>
+                        <Text className="text-lg italic text-gray-500">
+                          {(stop.getMonth() + 1).toString().padStart(2, "0")}/
+                          {stop.getDate().toString().padStart(2, "0")}
+                        </Text>
+                        <Text className="text-lg italic text-gray-500">
+                          {stop.getHours().toString().padStart(2, "0")}:
+                          {stop.getMinutes().toString().padStart(2, "0")}
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="flex flex-grow flex-row justify-end pr-4 pt-2">
+                      <View>
+                        <Text className="pb-2 font-bold">
+                          {hours}:{minutes}:{seconds}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableNativeFeedback>
+              );
+            })}
+          </View>
+        )}
       </View>
-      {props.entries.length > 1 && (
+      {props.entries.length > 1 && !expanded && (
         <>
           <View className="absolute -bottom-1 -z-10 w-full px-0.5">
             <View className="flex h-18 w-full flex-row rounded-xl bg-gray-100 shadow-sm shadow-black"></View>
