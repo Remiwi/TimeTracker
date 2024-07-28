@@ -17,6 +17,7 @@ import { Tags } from "@/utils/tags";
 import { EntryEditorSheet } from "@/components/EntryEditorSheet";
 import { useEntries } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
+import { Icon } from "@/components/Icon";
 
 export default function Page() {
   const qc = useQueryClient();
@@ -278,7 +279,7 @@ function Day(props: {
             onEntryPress={props.onEntryPress}
           />
         )}
-        contentContainerClassName="flex gap-4 px-2 py-1"
+        contentContainerClassName="flex gap-2 px-2 py-1"
       />
     </View>
   );
@@ -301,63 +302,103 @@ function GroupedEntry(props: {
   const hours = Math.floor(total_duration / 3600);
 
   return (
-    <View className="min-h-16 overflow-hidden rounded-xl shadow-sm shadow-black">
-      <TouchableNativeFeedback
-        onPress={() => {
-          props.onEntryPress?.(props.entries[0]);
-          console.log(props.entries[0]);
-        }}
-        disabled={!(props.interactionsEnabled ?? true)}
-      >
-        <View className="flex min-h-16 flex-row bg-white pb-2 pt-1">
-          {props.entries.length > 1 && (
-            <View className="flex aspect-square items-center justify-center pl-4">
-              <View className="flex aspect-square items-center justify-center rounded-xl border border-black p-1.5">
-                <Text>{props.entries.length}</Text>
+    <View
+      className="relative"
+      style={{
+        marginBottom: props.entries.length > 1 ? 8 : 0,
+      }}
+    >
+      <View className="min-h-16 overflow-hidden rounded-xl shadow-sm shadow-black">
+        <TouchableNativeFeedback
+          onPress={() => {
+            props.onEntryPress?.(props.entries[0]);
+            console.log(props.entries[0]);
+          }}
+          disabled={!(props.interactionsEnabled ?? true)}
+        >
+          <View className="flex h-18 flex-row bg-white pb-2 pt-1">
+            <View className="items-center justify-center pl-4">
+              <View
+                className="relative aspect-square h-10 items-center justify-center rounded-full"
+                style={{
+                  backgroundColor: props.project
+                    ? props.project.color
+                    : "#eeeeee",
+                }}
+              >
+                {props.entries.length > 1 && (
+                  <View className="absolute -right-2 -top-2 z-10 h-5 w-5 rounded-full bg-gray-300 shadow-sm shadow-black">
+                    <Text
+                      className="text-center text-sm text-gray-500"
+                      style={{ lineHeight: 17 }}
+                    >
+                      {props.entries.length < 100 ? props.entries.length : "+"}
+                    </Text>
+                  </View>
+                )}
+                <Icon
+                  name={props.entries[0].project_icon as any}
+                  color="white"
+                  size={22}
+                />
               </View>
             </View>
-          )}
-          <View className="flex justify-center px-4">
-            <Text
-              className={"text-lg"}
-              style={{
-                fontWeight: props.entries[0].description ? "bold" : "normal",
-                fontStyle: props.entries[0].description ? "normal" : "italic",
-                color: props.entries[0].description ? "black" : "gray",
-              }}
-            >
-              {props.entries[0].description || "No description"}
-            </Text>
-            {props.project && (
-              <Text className="text-lg" style={{ color: props.project.color }}>
-                {props.project.name}
+            <View className="flex justify-center px-4">
+              <Text
+                className={"text-lg"}
+                style={{
+                  fontWeight: props.entries[0].description ? "bold" : "normal",
+                  fontStyle: props.entries[0].description ? "normal" : "italic",
+                  color: props.entries[0].description ? "black" : "gray",
+                }}
+              >
+                {props.entries[0].description || "No description"}
               </Text>
-            )}
-            {props.entries[0].tags.length > 0 && (
-              <View className="flex flex-row items-center gap-1 pt-1">
-                <MaterialCommunityIcons
-                  name="tag-outline"
-                  style={{ color: "#999999" }}
-                />
-                <Text>{props.entries[0].tags.join(", ")}</Text>
+              {props.project && (
+                <Text
+                  className="text-lg font-bold"
+                  style={{ color: props.project.color }}
+                >
+                  {props.project.name}
+                </Text>
+              )}
+            </View>
+            <View className="flex flex-grow flex-row justify-end pr-4 pt-2">
+              <View>
+                {props.entries[0].stop && (
+                  <Text className="pb-2 font-bold">
+                    {hours}:{minutes}:{seconds}
+                  </Text>
+                )}
+                {!props.entries[0].stop && (
+                  <TimerText
+                    startTime={new Date(props.entries[0].start)}
+                    className="pb-2 font-bold"
+                  />
+                )}
+                {props.entries[0].tags.length > 0 && (
+                  <View className="flex flex-row justify-end">
+                    <MaterialCommunityIcons
+                      name="tag-outline"
+                      style={{ color: "#999999" }}
+                    />
+                  </View>
+                )}
               </View>
-            )}
+            </View>
           </View>
-          <View className="flex flex-grow flex-row justify-end pr-4 pt-2">
-            {props.entries[0].stop && (
-              <Text className="font-bold">
-                {hours}:{minutes}:{seconds}
-              </Text>
-            )}
-            {!props.entries[0].stop && (
-              <TimerText
-                startTime={new Date(props.entries[0].start)}
-                className="font-bold"
-              />
-            )}
+        </TouchableNativeFeedback>
+      </View>
+      {props.entries.length > 1 && (
+        <>
+          <View className="absolute -bottom-1 -z-10 w-full px-0.5">
+            <View className="flex h-18 w-full flex-row rounded-xl bg-gray-100 shadow-sm shadow-black"></View>
           </View>
-        </View>
-      </TouchableNativeFeedback>
+          <View className="absolute -bottom-2 -z-20 w-full px-1">
+            <View className="flex h-18 w-full flex-row rounded-xl bg-gray-100 shadow-sm shadow-black"></View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
