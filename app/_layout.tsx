@@ -100,7 +100,7 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
-              name="reports"
+              name="reports/index"
               options={{
                 drawerLabel: "Reports",
                 headerTitle: "Reports",
