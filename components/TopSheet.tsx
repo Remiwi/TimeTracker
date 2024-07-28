@@ -1,24 +1,35 @@
-import { useRef } from "react";
+import React, { useRef } from "react";
 import { Animated, View } from "react-native";
 import { usePanHandlers, useAnimatedValue } from "@/hooks/animtedHooks";
 
-export default function TopSheet(props: {
-  children?: React.ReactNode;
-  // The heights at which the sheet should stabilize to
-  stableHeights: {
-    stabilizeTo: number;
-    whenAbove: number | null;
-  }[];
-  flickMultiplier?: number; // How much speed is multiplied by when adding to height
-  give: number; // How far beyond the edges of the stable points the user can drag
-  contentFixed?: boolean; // If content should move with sheet or be fixed to the screen
-  panBarColor?: string;
-  panBarBackgroundColor?: string;
-  onPanStart?: () => void;
-  onStabilize?: (height: number) => void;
-  disablePan?: boolean;
-  animatedValue?: Animated.Value;
-}) {
+type TopSheetRef = {
+  setHeightTo: (height: number) => void;
+};
+
+export namespace TopSheet {
+  export type Ref = TopSheetRef;
+}
+
+export const TopSheet = React.forwardRef(function (
+  props: {
+    children?: React.ReactNode;
+    // The heights at which the sheet should stabilize to
+    stableHeights: {
+      stabilizeTo: number;
+      whenAbove: number | null;
+    }[];
+    flickMultiplier?: number; // How much speed is multiplied by when adding to height
+    give: number; // How far beyond the edges of the stable points the user can drag
+    contentFixed?: boolean; // If content should move with sheet or be fixed to the screen
+    panBarColor?: string;
+    panBarBackgroundColor?: string;
+    onPanStart?: () => void;
+    onStabilize?: (height: number) => void;
+    disablePan?: boolean;
+    animatedValue?: Animated.Value;
+  },
+  ref: React.Ref<TopSheetRef>,
+) {
   const canGrab = useRef(true);
 
   const stableHeights = [...props.stableHeights];
@@ -81,6 +92,24 @@ export default function TopSheet(props: {
     },
   });
 
+  React.useImperativeHandle(ref, () => ({
+    setHeightTo: (height: number) => {
+      canGrab.current = false;
+      stableAt.current = height;
+      props.onStabilize?.(height);
+      transY.flattenOffset();
+      Animated.timing(transY, {
+        toValue: height,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        transY.extractOffset();
+        canGrab.current = true;
+        stableAt.current = height;
+      });
+    },
+  }));
+
   return (
     <Animated.View
       className="absolute flex w-full justify-end rounded-b-3xl bg-white shadow-md shadow-black"
@@ -130,4 +159,4 @@ export default function TopSheet(props: {
       </View>
     </Animated.View>
   );
-}
+});
