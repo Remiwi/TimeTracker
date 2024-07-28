@@ -82,3 +82,25 @@ export type Workspace = {
   id: number;
   name: string;
 };
+
+// Reports
+
+export type DBGroup = {
+  id: number;
+  name: string;
+  isGlobal: boolean; // Whether this group is owned by a report or is reusable across reports
+};
+
+export type Group = DBGroup & {
+  project_ids: (number | null)[] | undefined; // If defined, entry must have one of these project_ids to be included in this group
+};
+
+export type DBReport = {
+  id: number;
+  name: string;
+  type: "DailyBreakdown";
+};
+
+export type Report = DBReport & {
+  groups: Group[];
+};

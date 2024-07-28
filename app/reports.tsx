@@ -1,12 +1,22 @@
-import { Entry, EntryWithProject } from "@/apis/types";
+import { Entry, EntryWithProject, Group } from "@/apis/types";
+import { DailyBreakdown } from "@/components/reports/DailyBreakdown";
 import { useEntries } from "@/hooks/entryQueries";
+import { useProjects } from "@/hooks/projectQueries";
+import Colors from "@/utils/colors";
 import { Dates } from "@/utils/dates";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useMemo, useRef, useState } from "react";
-import { Text, TouchableNativeFeedback, View } from "react-native";
-import { BarChart, PieChart } from "react-native-chart-kit";
+import {
+  Text,
+  TouchableNativeFeedback,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
+import { BarChart } from "react-native-chart-kit";
 
 export default function Reports() {
+  const [isDayView, setDayView] = useState(true);
+
   const [weeksAgo, setWeeksAgo] = useState(2);
 
   const now = new Date();
@@ -60,6 +70,54 @@ export default function Reports() {
 
   return (
     <View className="flex gap-4 p-2">
+      <View className="w-full items-center justify-center">
+        <View className="flex-row overflow-hidden rounded-full bg-gray-200 shadow-sm shadow-black">
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setDayView(true);
+            }}
+            disabled={isDayView}
+          >
+            <View
+              className="w-32 py-2"
+              style={{
+                backgroundColor: isDayView ? "white" : undefined,
+              }}
+            >
+              <Text
+                className="text-center"
+                style={{
+                  color: isDayView ? undefined : "#999999",
+                }}
+              >
+                Day
+              </Text>
+            </View>
+          </TouchableWithoutFeedback>
+          <TouchableWithoutFeedback
+            onPress={() => {
+              setDayView(false);
+            }}
+            disabled={!isDayView}
+          >
+            <View
+              className="w-32 py-2"
+              style={{
+                backgroundColor: isDayView ? undefined : "white",
+              }}
+            >
+              <Text
+                className="text-center"
+                style={{
+                  color: isDayView ? "#999999" : undefined,
+                }}
+              >
+                Week
+              </Text>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </View>
       <View className="flex-row items-center justify-between px-4">
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback
@@ -86,8 +144,58 @@ export default function Reports() {
           </TouchableNativeFeedback>
         </View>
       </View>
-      <HoursPerDay entries={weekEntries} />
-      <HoursPerProject entries={weekEntries} />
+      {isDayView && <DayView />}
+      {!isDayView && <WeekView />}
+    </View>
+  );
+}
+
+function DayView() {
+  const projects = useProjects();
+  const blueProjects =
+    projects.data === undefined
+      ? []
+      : projects.data.filter((p) => {
+          return Colors.fromTogglHex(p.color)?.name === "blue";
+        });
+
+  const everything_group: Group = {
+    id: 0,
+    name: "Everything",
+    isGlobal: true,
+    project_ids: undefined,
+  };
+  const nothing_group: Group = {
+    id: 1,
+    name: "Nothing",
+    isGlobal: true,
+    project_ids: [],
+  };
+  const blue_group: Group = {
+    id: 2,
+    name: "Blue",
+    isGlobal: true,
+    project_ids: blueProjects.map((p) => p.id),
+  };
+
+  return (
+    <View>
+      <DailyBreakdown
+        report={{
+          id: 0,
+          name: "Daily project breakdown",
+          groups: [nothing_group],
+          type: "DailyBreakdown",
+        }}
+      />
+    </View>
+  );
+}
+
+function WeekView() {
+  return (
+    <View>
+      <Text>Week</Text>
     </View>
   );
 }
@@ -157,101 +265,6 @@ function HoursPerDay(props: { entries: Entry[] }) {
               backgroundGradientFromOpacity: 0,
               backgroundGradientToOpacity: 0,
               decimalPlaces: largest < 1 ? 1 : 0,
-            }}
-          />
-        </View>
-      )}
-      {props.entries.length === 0 && (
-        <View className="flex-grow items-center justify-center">
-          <Text
-            className="text-3xl font-bold"
-            style={{
-              color: primaryColor(0.5),
-            }}
-          >
-            No entries this week
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function HoursPerProject(props: { entries: EntryWithProject[] }) {
-  const [invertToRerender, rerender] = useState(false);
-  const chartDims = useRef({ width: 0, height: 0 });
-
-  const primaryColor = (opacity = 1) => `rgba(80, 80, 80, ${opacity})`;
-
-  const hoursPerProject = useMemo(() => {
-    const hours = new Map<
-      number | null,
-      {
-        name: string;
-        duration: number;
-        color: string;
-        legendFontColor: string;
-        legendFontSize: number;
-      }
-    >();
-
-    for (const entry of props.entries) {
-      const key = entry.project_id;
-      if (!hours.has(key)) {
-        hours.set(key, {
-          name: entry.project_name ?? "No Project",
-          duration: 0,
-          color: entry.project_color ?? "#cccccc",
-          legendFontColor: primaryColor(),
-          legendFontSize: 12,
-        });
-      }
-      hours.get(key)!.duration += entry.duration;
-    }
-    return hours;
-  }, [props.entries]);
-
-  const data = [...hoursPerProject.keys()].map((k) => ({
-    ...hoursPerProject.get(k)!,
-    duration:
-      Math.round((hoursPerProject.get(k)!.duration / 60 / 60) * 10) / 10,
-  }));
-
-  return (
-    <View className="h-80 w-full gap-4 rounded-2xl bg-gray-50 p-4 pb-2 shadow-md shadow-black">
-      <Text className="text-center text-xl font-bold">Hours By Project</Text>
-      {props.entries.length !== 0 && (
-        <View
-          className="h-full w-full flex-shrink"
-          onLayout={(e) => {
-            if (
-              chartDims.current.width === e.nativeEvent.layout.width &&
-              chartDims.current.height === e.nativeEvent.layout.height
-            ) {
-              return;
-            }
-            chartDims.current.width = e.nativeEvent.layout.width;
-            chartDims.current.height = e.nativeEvent.layout.height;
-            rerender(!invertToRerender);
-          }}
-        >
-          <PieChart
-            data={data}
-            accessor="duration"
-            backgroundColor="transparent"
-            paddingLeft="32"
-            center={[0, 0]}
-            width={chartDims.current.width}
-            height={chartDims.current.height}
-            fromZero={true}
-            absolute
-            chartConfig={{
-              color: primaryColor,
-              backgroundGradientFrom: "#000000",
-              backgroundGradientTo: "#000000",
-              backgroundGradientFromOpacity: 0,
-              backgroundGradientToOpacity: 0,
-              decimalPlaces: 1,
             }}
           />
         </View>
