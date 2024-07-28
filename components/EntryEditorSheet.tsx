@@ -133,7 +133,7 @@ export const EntryEditorSheet = React.forwardRef(function (
           }
         }
       }}
-      disablePan={!modalOpen && !ongoingQuery.data}
+      disablePan={!modalOpen && (!!props.entry || !ongoingQuery.data)}
       animatedValue={topSheetAnimatedValue}
     >
       <ConfirmModal
@@ -142,7 +142,7 @@ export const EntryEditorSheet = React.forwardRef(function (
         rightText="Save"
         visible={saveChangesModalVisible}
         onLeft={() => {
-          setDisplayEntry(ongoingQuery.data);
+          setDisplayEntry(props.entry ?? ongoingQuery.data);
           setSaveChangesModalVisible(false);
         }}
         onRight={() => {
@@ -188,7 +188,7 @@ export const EntryEditorSheet = React.forwardRef(function (
         }}
         onDiscard={() => {
           displayEntryHasChanges.current = false;
-          setDisplayEntry(ongoingQuery.data);
+          setDisplayEntry(props.entry ?? ongoingQuery.data);
           topSheetRef.current?.setHeightTo(closedHeight);
         }}
         onDelete={() => {
