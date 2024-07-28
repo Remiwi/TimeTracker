@@ -1,9 +1,8 @@
-import { Entry, TogglProject } from "@/apis/types";
+import { Entry, EntryWithProject, TogglProject } from "@/apis/types";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FlatList,
-  Modal,
   Text,
   TouchableNativeFeedback,
   Vibration,
@@ -11,34 +10,25 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { FlashList } from "@shopify/flash-list";
-import StyledTextInput from "@/components/TextInput";
-import MyDropDown from "@/components/DropDown";
-import MyTagInput from "@/components/TagInput";
 import { Data } from "@/apis/data";
 import TimerText from "@/components/TimerText";
 import { Dates } from "@/utils/dates";
 import { Tags } from "@/utils/tags";
+import { EntryEditorSheet } from "@/components/EntryEditorSheet";
+import { useEntries } from "@/hooks/entryQueries";
+import { useProjects } from "@/hooks/projectQueries";
 
 export default function Page() {
   const qc = useQueryClient();
 
-  const [showEntryEditModal, setShowEntryEditModal] = useState(false);
-  const [selectedEntry, setSelectedEntry] = useState<Entry | undefined>(
-    undefined,
-  );
-  const [entryCreationDate, setEntryCreationDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [entryEditorOpen, setEntryEditorOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<
+    EntryWithProject | undefined
+  >(undefined);
+  const entryEditorSheetRef = React.useRef<EntryEditorSheet.Ref | null>(null);
 
-  const entriesQuery = useQuery({
-    queryKey: ["entries"],
-    queryFn: Data.Entries.getAll,
-  });
-
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
+  const entriesQuery = useEntries();
+  const projectsQuery = useProjects();
 
   const syncMutation = useMutation({
     mutationFn: async () => {
@@ -61,47 +51,11 @@ export default function Page() {
     },
   });
 
-  const entryCreateMutation = useMutation({
-    mutationFn: async (entry: Partial<Entry> & { start: string }) => {
-      return await Data.Entries.create(entry);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      entriesQuery.refetch();
-    },
-  });
-
-  const entryEditMutation = useMutation({
-    mutationFn: async (entry: Partial<Entry> & { id: number }) => {
-      return await Data.Entries.edit(entry);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      entriesQuery.refetch();
-    },
-  });
-
-  const entryDeleteMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await Data.Entries.delete(id);
-    },
-    onError: (err) => {
-      console.error(err);
-    },
-    onSuccess: () => {
-      entriesQuery.refetch();
-    },
-  });
-
   const entries = entriesQuery.data || [];
 
   const entries_by_date: {
     date: string;
-    entries: Entry[];
+    entries: EntryWithProject[];
     latest_at: string;
   }[] = [];
   for (const entry of entries) {
@@ -130,29 +84,16 @@ export default function Page() {
 
   return (
     <View className="h-full w-full bg-gray-100">
-      {showEntryEditModal && (
-        <EntryEditModal
-          onCancel={() => {
-            setSelectedEntry(undefined);
-            setShowEntryEditModal(false);
-          }}
-          onCreate={(e) => {
-            entryCreateMutation.mutate(e);
-            setShowEntryEditModal(false);
-          }}
-          onEdit={(e) => {
-            entryEditMutation.mutate(e);
-            setShowEntryEditModal(false);
-          }}
-          onDelete={(id) => {
-            entryDeleteMutation.mutate(id);
-            setShowEntryEditModal(false);
-          }}
-          defaultEntry={selectedEntry}
-          day={entryCreationDate}
+      <View className="z-10">
+        <EntryEditorSheet
+          ref={entryEditorSheetRef}
+          onOpen={() => setEntryEditorOpen(true)}
+          onClose={() => setEntryEditorOpen(false)}
+          entry={selectedEntry}
+          hideTimerWhenClosed
         />
-      )}
-      {!showEntryEditModal && (
+      </View>
+      {!entryEditorOpen && (
         <FABs
           onSync={() => {
             Vibration.vibrate(50);
@@ -169,6 +110,7 @@ export default function Page() {
         </View>
       )}
       <FlashList
+        scrollEnabled={!entryEditorOpen}
         data={entries_by_date}
         keyExtractor={(item) => item.date}
         renderItem={({ item }) => (
@@ -180,12 +122,10 @@ export default function Page() {
             projects={projectsQuery.data}
             onEntryPress={(e) => {
               setSelectedEntry(e);
-              setShowEntryEditModal(true);
+              entryEditorSheetRef.current?.open();
             }}
             onEntryCreate={(date) => {
-              setEntryCreationDate(date);
-              setSelectedEntry(undefined);
-              setShowEntryEditModal(true);
+              console.log("Opening entry creator");
             }}
           />
         )}
@@ -197,11 +137,11 @@ export default function Page() {
 }
 
 function Day(props: {
-  entries: Entry[];
+  entries: EntryWithProject[];
   date: string;
   latest_at: string;
   projects?: TogglProject[];
-  onEntryPress?: (e: Entry) => void;
+  onEntryPress?: (e: EntryWithProject) => void;
   onEntryCreate?: (date: string) => void;
 }) {
   const today = new Date().toISOString().split("T")[0];
@@ -211,7 +151,7 @@ function Day(props: {
     description: string | null;
     project_id: number | null;
     tags: string;
-    entries: Entry[];
+    entries: EntryWithProject[];
   }[] = [];
 
   for (const entry of props.entries) {
@@ -282,9 +222,9 @@ function Day(props: {
 }
 
 function GroupedEntry(props: {
-  entries: Entry[];
+  entries: EntryWithProject[];
   project?: TogglProject;
-  onEntryPress?: (e: Entry) => void;
+  onEntryPress?: (e: EntryWithProject) => void;
 }) {
   const total_duration = props.entries.reduce(
     (acc, entry) => acc + entry.duration,
@@ -351,174 +291,6 @@ function GroupedEntry(props: {
         </View>
       </TouchableNativeFeedback>
     </View>
-  );
-}
-
-function EntryEditModal(props: {
-  onCancel: () => void;
-  onCreate: (e: Partial<Entry> & { start: string }) => void;
-  onEdit: (e: Partial<Entry> & { id: number }) => void;
-  onDelete: (id: number) => void;
-  day: string;
-  defaultEntry?: Entry;
-}) {
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: Data.Projects.getAll,
-  });
-
-  const day = new Date(props.day);
-  const defaultStart = new Date();
-  defaultStart.setUTCFullYear(
-    day.getUTCFullYear(),
-    day.getUTCMonth(),
-    day.getUTCDate(),
-  );
-  defaultStart.setTime(defaultStart.getTime() - 60 * 60 * 1000);
-  const defaultStop = new Date();
-  defaultStop.setUTCFullYear(
-    day.getUTCFullYear(),
-    day.getUTCMonth(),
-    day.getUTCDate(),
-  );
-
-  const [editEntry, setEditEntry] = useState<
-    Partial<Entry> & { start: string }
-  >(
-    props.defaultEntry || {
-      id: undefined,
-      description: undefined,
-      project_id: undefined,
-      tags: [],
-      start: Dates.toISOExtended(defaultStart),
-      stop: Dates.toISOExtended(defaultStop),
-    },
-  );
-
-  const onDone = () => {
-    if (props.defaultEntry === undefined) {
-      props.onCreate({ ...editEntry, start: editEntry.start! });
-    } else {
-      props.onEdit({ ...editEntry, id: props.defaultEntry.id });
-    }
-  };
-
-  const onDelete = () => {
-    if (props.defaultEntry !== undefined) {
-      props.onDelete(props.defaultEntry.id);
-    }
-  };
-
-  const updateStartTime = (time: string) => {
-    const oldDate = editEntry.start?.split("T")[0];
-    setEditEntry({ ...editEntry, start: `${oldDate}T${time}+00:00` });
-  };
-  const updateStopTime = (time: string) => {
-    const oldDate = editEntry.stop?.split("T")[0];
-    setEditEntry({ ...editEntry, stop: `${oldDate}T${time}+00:00` });
-  };
-  const updateStartDate = (date: string) => {
-    const oldTime = editEntry.start?.split("T")[1];
-    setEditEntry({ ...editEntry, start: `${date}T${oldTime}` });
-  };
-  const updateStopDate = (date: string) => {
-    const oldTime = editEntry.stop?.split("T")[1];
-    setEditEntry({ ...editEntry, stop: `${date}T${oldTime}` });
-  };
-
-  return (
-    <Modal animationType="slide" transparent>
-      <View
-        className="flex h-full w-full items-center justify-center p-16"
-        style={{ backgroundColor: "#00000088" }}
-      >
-        <View className="w-full rounded-2xl bg-gray-50 p-4">
-          {props.defaultEntry !== undefined && (
-            <View className="flex items-center pb-2">
-              <View className="w-44 overflow-hidden rounded-full shadow-sm shadow-slate-800">
-                <TouchableNativeFeedback onPress={onDelete}>
-                  <View className="flex w-full items-center rounded-full bg-slate-100 p-2">
-                    <Text className="font-bold">Delete Entry</Text>
-                  </View>
-                </TouchableNativeFeedback>
-              </View>
-            </View>
-          )}
-          <Text className="pb-4 text-lg">Entry Properties</Text>
-          <StyledTextInput
-            label="Description"
-            value={editEntry.description || undefined}
-            onChange={(t) => {
-              setEditEntry({ ...editEntry, description: t });
-            }}
-            className="pb-2"
-          />
-          <MyDropDown
-            placeholder="Select Project"
-            options={projectsQuery.data || []}
-            value={projectsQuery.data?.find(
-              (p) => p.id === editEntry.project_id,
-            )}
-            onChange={(item) => {
-              setEditEntry({ ...editEntry, project_id: item.id });
-            }}
-            itemToString={(item) => item.name}
-            className="z-40 pb-2"
-            placeholderColor={projectsQuery.isError ? "#884444" : undefined}
-          />
-          <MyTagInput
-            placeholder="Tags"
-            value={editEntry.tags}
-            onChange={(t) => setEditEntry({ ...editEntry, tags: t })}
-            className="pb-8"
-          />
-          <View className="flex flex-grow flex-row justify-between gap-4 pb-4">
-            <StyledTextInput
-              value={editEntry.start?.split("T")[0]}
-              onChange={updateStartDate}
-              className="flex-grow"
-              label="Start Date"
-            />
-            <StyledTextInput
-              value={editEntry.start?.split("T")[1].split("+")[0]}
-              onChange={updateStartTime}
-              className="flex-grow"
-              label="Start Time"
-            />
-          </View>
-          <View className="flex flex-grow flex-row justify-between gap-4 pb-4">
-            <StyledTextInput
-              value={editEntry.stop?.split("T")[0]}
-              onChange={updateStopDate}
-              className="flex-grow"
-              label="Stop Date"
-            />
-            <StyledTextInput
-              value={editEntry.stop?.split("T")[1].split("+")[0]}
-              onChange={updateStopTime}
-              className="flex-grow"
-              label="Stop Time"
-            />
-          </View>
-          <View className="flex flex-grow flex-row justify-between">
-            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
-              <TouchableNativeFeedback onPress={props.onCancel}>
-                <View className="flex w-28 items-center rounded-full bg-gray-100 p-2">
-                  <Text className="font-bold">Cancel</Text>
-                </View>
-              </TouchableNativeFeedback>
-            </View>
-            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
-              <TouchableNativeFeedback onPress={onDone}>
-                <View className="flex w-28 items-center rounded-full bg-slate-200 p-2">
-                  <Text className="font-bold">Done</Text>
-                </View>
-              </TouchableNativeFeedback>
-            </View>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
