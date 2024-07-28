@@ -1,37 +1,17 @@
 import { useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Text,
-  TouchableNativeFeedback,
-  View,
-  Vibration,
-} from "react-native";
+import { Modal, Text, TouchableNativeFeedback, View } from "react-native";
 import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
-import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Data } from "@/apis/data";
-import { Template, TemplateWithProject } from "@/apis/types";
-import { Dates } from "@/utils/dates";
-import { useAtom } from "jotai";
-import { templateMadeAtom, templatePageAtom } from "@/utils/atoms";
-import TopSheet from "@/components/TopSheet";
+import { Template } from "@/apis/types";
 import Timer from "@/components/index/Timer";
 import {
   useAddTemplateMutation,
-  useDeepest,
   useDeleteTemplateMutation,
   useEditTemplateMutation,
-  useTemplates,
 } from "@/hooks/templateQueries";
 import { useProjects } from "@/hooks/projectQueries";
-import { useStartTemplateMutation } from "@/hooks/entryQueries";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-import Paginated from "@/components/Paginated";
 import Templates from "@/components/index/Templates";
-import { IconSelector } from "@/components/IconSelector";
 
 export default function Screen() {
   const [templatesEnabled, setTemplatesEnabled] = useState(true);
