@@ -53,9 +53,11 @@ export default function Timer(props: {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const displayEntryRef = useStateAsRef(displayEntry);
-  const saveDisplayEntry = () => {
+  const saveDisplayEntry = (callback?: () => void) => {
     if (!displayEntryRef.current) return;
-    editEntryMutation.mutate(displayEntryRef.current);
+    editEntryMutation.mutate(displayEntryRef.current, {
+      onSettled: callback,
+    });
   };
 
   const topSheetAnimatedValue = useAnimatedValue(210);
@@ -127,7 +129,9 @@ export default function Timer(props: {
         onRight={() => {
           if (!displayEntry) return;
           topSheetRef.current?.setHeightTo(210);
-          deleteEntryMutation.mutate(displayEntry);
+          saveDisplayEntry(() => {
+            deleteEntryMutation.mutate(displayEntry);
+          });
           setDeleteModalVisible(false);
         }}
         rightClassName="text-red-500 text-xl font-bold"
