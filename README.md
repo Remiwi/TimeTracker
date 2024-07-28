@@ -12,14 +12,24 @@
 - [x] Projects screen
   - [x] Changing projects
   - [x] Project icons
-- [ ] Time entries
+- [x] Time entries
   - [x] Viewing time entries
   - [x] Editing time entries
   - [x] Creating arbitrary entries
 - [ ] Reports screen
-  - [ ] Overall project breakdowns
-  - [ ] Custom groupings of time entries
-  - [ ] Repeating goals (e.g. whether or not X hours of a specific group has been tracked)
+  - [ ] Totals reports
+    - [ ] Hours tracked per day of week (paginated by week)
+    - [ ] Hours tracked per week (scrollable)
+    - [ ] EXTRA: Hours tracked per day heatmap
+  - [ ] Breakdown reports
+    - [ ] Breakdown by project
+      - [ ] Daily
+      - [ ] Weekly
+      - [ ] EXTRA: Breakdown by description and tag too
+  - [ ] Goals
+    - [ ] Keep under goals
+    - [ ] Track over goals
+    - [ ] Daily and weekly goals
 - [ ] Settings screen
   - [ ] Better defined interface for adding API key and selecting workspace
   - [ ] Offline mode settings
