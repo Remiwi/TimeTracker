@@ -55,7 +55,7 @@ export const EntryEditorSheet = React.forwardRef(function (
   },
   ref: React.Ref<EntryEditorSheetRef>,
 ) {
-  const closedHeight = props.hideTimerWhenClosed ? 0 : 210;
+  const closedHeight = props.hideTimerWhenClosed ? -50 : 210;
   const openHeight = props.hideDeleteButton ? 610 : 650;
   const openThreshold = 400;
 
