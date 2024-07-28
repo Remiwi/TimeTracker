@@ -4,7 +4,7 @@ import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
 import { Template } from "@/apis/types";
-import Timer from "@/components/index/Timer";
+import EntryEditorSheet from "@/components/EntryEditorSheet";
 import {
   useAddTemplateMutation,
   useDeleteTemplateMutation,
@@ -59,7 +59,7 @@ export default function Screen() {
       )}
       <View className="relative flex h-full">
         <View className="z-50 h-52 w-full">
-          <Timer
+          <EntryEditorSheet
             onOpen={() => setTemplatesEnabled(false)}
             onClose={() => setTemplatesEnabled(true)}
           />

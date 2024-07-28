@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, Text, TouchableNativeFeedback, View } from "react-native";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Data } from "@/apis/data";
-import { Entry, EntryWithProject, Project } from "@/apis/types";
+import { useQueryClient } from "@tanstack/react-query";
+import { EntryWithProject, Project } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import ChipBar from "@/components/ChipBar";
 import ActionChip from "@/components/ActionChip";
@@ -26,15 +25,15 @@ import {
 } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
-import { TopSheet } from "../TopSheet";
-import { Icon } from "../Icon";
+import { TopSheet } from "./TopSheet";
+import { Icon } from "./Icon";
 import { useStateAsRef } from "@/hooks/misc";
-import ProjectChip from "../ProjectChip";
-import TagsChip from "../TagsChip";
+import ProjectChip from "./ProjectChip";
+import TagsChip from "./TagsChip";
 import { useAnimatedValue } from "@/hooks/animtedHooks";
-import ConfirmModal from "../ConfirmModal";
+import ConfirmModal from "./ConfirmModal";
 
-export default function Timer(props: {
+export default function EntryEditorSheet(props: {
   onOpen: () => void;
   onClose: () => void;
 }) {
