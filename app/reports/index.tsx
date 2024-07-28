@@ -1,4 +1,4 @@
-import { Entry, EntryWithProject, Group } from "@/apis/types";
+import { Entry, EntryWithProject, Group, Report } from "@/apis/types";
 import { DailyBreakdown } from "@/components/reports/DailyBreakdown";
 import { useEntries } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
@@ -162,32 +162,38 @@ function DayView() {
   const everything_group: Group = {
     id: 0,
     name: "Everything",
+    icon: null,
+    color: "red",
     isGlobal: true,
     project_ids: undefined,
   };
   const nothing_group: Group = {
     id: 1,
     name: "Nothing",
+    icon: null,
+    color: "black",
     isGlobal: true,
     project_ids: [],
   };
   const blue_group: Group = {
     id: 2,
     name: "Blue",
+    icon: null,
+    color: "blue",
     isGlobal: true,
     project_ids: blueProjects.map((p) => p.id),
   };
 
+  const report: Report = {
+    id: 0,
+    name: "Daily project breakdown",
+    groups: [everything_group, nothing_group, blue_group],
+    type: "DailyBreakdown",
+  };
+
   return (
     <View>
-      <DailyBreakdown
-        report={{
-          id: 0,
-          name: "Daily project breakdown",
-          groups: [nothing_group],
-          type: "DailyBreakdown",
-        }}
-      />
+      <DailyBreakdown report={report} />
     </View>
   );
 }

@@ -107,6 +107,13 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="reports/[id]"
+              options={{
+                headerTitle: "Report Config",
+                drawerItemStyle: { display: "none" },
+              }}
+            />
+            <Drawer.Screen
               name="+not-found"
               options={{
                 drawerItemStyle: { display: "none" },

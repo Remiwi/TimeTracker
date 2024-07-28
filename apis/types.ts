@@ -88,6 +88,8 @@ export type Workspace = {
 export type DBGroup = {
   id: number;
   name: string;
+  color: string;
+  icon: string | null;
   isGlobal: boolean; // Whether this group is owned by a report or is reusable across reports
 };
 

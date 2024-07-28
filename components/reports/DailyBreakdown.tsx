@@ -3,8 +3,9 @@ import { useEntries } from "@/hooks/entryQueries";
 import { useMemo, useRef, useState } from "react";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 import { PieChart } from "react-native-chart-kit";
+import { router } from "expo-router";
 
-export function DailyBreakdown(props: { report: Report }) {
+export function DailyBreakdown(props: { report: Report; className?: string }) {
   const allEntries = useEntries();
   const today = new Date();
 
@@ -84,70 +85,76 @@ export function DailyBreakdown(props: { report: Report }) {
   }));
 
   return (
-    <View className="overflow-hidden rounded-2xl shadow-md shadow-black">
-      <TouchableNativeFeedback>
-        <View className="h-80 w-full gap-4 bg-gray-50 p-4 pb-2">
-          <Text className="text-center text-xl font-bold">
-            {props.report.name}
-          </Text>
-          {filteredEntries.length !== 0 && (
-            <View
-              className="h-full w-full flex-shrink"
-              onLayout={(e) => {
-                if (
-                  chartDims.current.width === e.nativeEvent.layout.width &&
-                  chartDims.current.height === e.nativeEvent.layout.height
-                ) {
-                  return;
-                }
-                chartDims.current.width = e.nativeEvent.layout.width;
-                chartDims.current.height = e.nativeEvent.layout.height;
-                rerender(!invertToRerender);
-              }}
-            >
-              <PieChart
-                data={data}
-                accessor="duration"
-                backgroundColor="transparent"
-                paddingLeft="32"
-                center={[0, 0]}
-                width={chartDims.current.width}
-                height={chartDims.current.height}
-                fromZero={true}
-                absolute
-                chartConfig={{
-                  color: primaryColor,
-                  backgroundGradientFrom: "#000000",
-                  backgroundGradientTo: "#000000",
-                  backgroundGradientFromOpacity: 0,
-                  backgroundGradientToOpacity: 0,
-                  decimalPlaces: 1,
-                }}
-              />
-            </View>
-          )}
-          {filteredEntries.length === 0 && (
-            <View className="flex-grow items-center justify-center">
-              <Text
-                className="text-3xl font-bold"
-                style={{
-                  color: primaryColor(0.5),
+    <View className={props.className}>
+      <View className="overflow-hidden rounded-2xl shadow-md shadow-black">
+        <TouchableNativeFeedback
+          onPress={() => {
+            router.push(`/reports/${props.report.id}`);
+          }}
+        >
+          <View className="h-80 w-full gap-4 bg-gray-50 p-4 pb-2">
+            <Text className="text-center text-xl font-bold">
+              {props.report.name}
+            </Text>
+            {filteredEntries.length !== 0 && (
+              <View
+                className="h-full w-full flex-shrink"
+                onLayout={(e) => {
+                  if (
+                    chartDims.current.width === e.nativeEvent.layout.width &&
+                    chartDims.current.height === e.nativeEvent.layout.height
+                  ) {
+                    return;
+                  }
+                  chartDims.current.width = e.nativeEvent.layout.width;
+                  chartDims.current.height = e.nativeEvent.layout.height;
+                  rerender(!invertToRerender);
                 }}
               >
-                No entries today
-              </Text>
-              <Text
-                className="text-lg font-bold"
-                style={{
-                  color: primaryColor(0.5),
-                }}
-              >
-                Change filters?
-              </Text>
-            </View>
-          )}
-        </View>
-      </TouchableNativeFeedback>
+                <PieChart
+                  data={data}
+                  accessor="duration"
+                  backgroundColor="transparent"
+                  paddingLeft="32"
+                  center={[0, 0]}
+                  width={chartDims.current.width}
+                  height={chartDims.current.height}
+                  fromZero={true}
+                  absolute
+                  chartConfig={{
+                    color: primaryColor,
+                    backgroundGradientFrom: "#000000",
+                    backgroundGradientTo: "#000000",
+                    backgroundGradientFromOpacity: 0,
+                    backgroundGradientToOpacity: 0,
+                    decimalPlaces: 1,
+                  }}
+                />
+              </View>
+            )}
+            {filteredEntries.length === 0 && (
+              <View className="flex-grow items-center justify-center">
+                <Text
+                  className="text-3xl font-bold"
+                  style={{
+                    color: primaryColor(0.5),
+                  }}
+                >
+                  No entries today
+                </Text>
+                <Text
+                  className="text-lg font-bold"
+                  style={{
+                    color: primaryColor(0.5),
+                  }}
+                >
+                  Change filters?
+                </Text>
+              </View>
+            )}
+          </View>
+        </TouchableNativeFeedback>
+      </View>
     </View>
   );
 }
