@@ -26,12 +26,13 @@ import {
 } from "@/hooks/entryQueries";
 import { useProjects } from "@/hooks/projectQueries";
 import { useAddTemplateMutation } from "@/hooks/templateQueries";
-import TopSheet from "../TopSheet";
+import { TopSheet } from "../TopSheet";
 import { Icon } from "../Icon";
 import { useStateAsRef } from "@/hooks/misc";
 import ProjectChip from "../ProjectChip";
 import TagsChip from "../TagsChip";
 import { useAnimatedValue } from "@/hooks/animtedHooks";
+import ConfirmModal from "../ConfirmModal";
 
 export default function Timer(props: {
   onOpen: () => void;
@@ -41,19 +42,15 @@ export default function Timer(props: {
   const ongoingQuery = useOngoing();
 
   const editEntryMutation = useEditEntryMutation();
+  const deleteEntryMutation = useDeleteEntryMutation(true);
 
   const [displayEntry, setDisplayEntry] = useState(ongoingQuery.data);
   useEffect(() => {
     setDisplayEntry(ongoingQuery.data);
   }, [ongoingQuery.data?.id]);
-
-  const editEntry = (entry: Partial<EntryWithProject>) => {
-    if (!displayEntry) return;
-    setDisplayEntry({ ...displayEntry, ...entry });
-    if (!modalOpen) {
-      editEntryMutation.mutate({ ...displayEntry, ...entry });
-    }
-  };
+  const displayEntryHasChanges = useRef(false);
+  const [saveChangesModalVisible, setSaveChangesModalVisible] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
 
   const displayEntryRef = useStateAsRef(displayEntry);
   const saveDisplayEntry = () => {
@@ -69,8 +66,11 @@ export default function Timer(props: {
   });
   const [chipsEnabled, setChipsEnabled] = useState(true);
 
+  const topSheetRef = useRef<TopSheet.Ref | null>(null);
+
   return (
     <TopSheet
+      ref={topSheetRef}
       stableHeights={[
         {
           stabilizeTo: 210,
@@ -93,18 +93,72 @@ export default function Timer(props: {
           props.onOpen();
         } else {
           setChipsEnabled(true);
-          saveDisplayEntry();
           props.onClose();
+          if (displayEntryHasChanges.current) {
+            setSaveChangesModalVisible(true);
+          }
         }
       }}
       disablePan={!modalOpen && !ongoingQuery.data}
       animatedValue={topSheetAnimatedValue}
     >
+      <ConfirmModal
+        title="Save changes to entry?"
+        leftText="Discard"
+        rightText="Save"
+        visible={saveChangesModalVisible}
+        onLeft={() => {
+          setDisplayEntry(ongoingQuery.data);
+          setSaveChangesModalVisible(false);
+        }}
+        onRight={() => {
+          saveDisplayEntry();
+          setSaveChangesModalVisible(false);
+        }}
+      />
+      <ConfirmModal
+        title="Delete entry?"
+        leftText="Cancel"
+        rightText="Delete"
+        visible={deleteModalVisible}
+        onLeft={() => {
+          setDeleteModalVisible(false);
+        }}
+        onRight={() => {
+          if (!displayEntry) return;
+          topSheetRef.current?.setHeightTo(210);
+          deleteEntryMutation.mutate(displayEntry);
+          setDeleteModalVisible(false);
+        }}
+        rightClassName="text-red-500 text-xl font-bold"
+      />
       <TimerContent
         entry={displayEntry ?? null}
-        onEditEntry={editEntry}
+        onEditEntry={(entry: Partial<EntryWithProject>) => {
+          if (!displayEntry) return;
+          displayEntryHasChanges.current = true;
+          if (!modalOpen) {
+            editEntryMutation.mutate({ ...displayEntry, ...entry });
+          } else {
+            setDisplayEntry({ ...displayEntry, ...entry });
+          }
+        }}
         chipsAnimatedValue={chipsAnimatedValue}
         chipsEnabled={chipsEnabled}
+        onSave={() => {
+          displayEntryHasChanges.current = false;
+          saveDisplayEntry();
+          topSheetRef.current?.setHeightTo(210);
+        }}
+        onDiscard={() => {
+          displayEntryHasChanges.current = false;
+          setDisplayEntry(ongoingQuery.data);
+          topSheetRef.current?.setHeightTo(210);
+        }}
+        onDelete={() => {
+          displayEntryHasChanges.current = false;
+          setDeleteModalVisible(true);
+        }}
       />
     </TopSheet>
   );
@@ -115,6 +169,9 @@ function TimerContent(props: {
   onEditEntry: (entry: Partial<EntryWithProject>) => void;
   chipsAnimatedValue: Animated.AnimatedInterpolation<number>;
   chipsEnabled: boolean;
+  onSave: () => void;
+  onDiscard: () => void;
+  onDelete: () => void;
 }) {
   const stopEntry = () => {
     props.onEditEntry?.({ stop: Dates.toISOExtended(new Date()) });
@@ -287,7 +344,7 @@ function TimerContent(props: {
           </View>
           <View className="w-full flex-row justify-between">
             <View className="overflow-hidden rounded-full">
-              <TouchableNativeFeedback>
+              <TouchableNativeFeedback onPress={props.onDiscard}>
                 <View className="w-24 items-center justify-center py-2">
                   <Text className="text-lg font-semibold text-gray-700">
                     Discard
@@ -296,7 +353,7 @@ function TimerContent(props: {
               </TouchableNativeFeedback>
             </View>
             <View className="overflow-hidden rounded-full">
-              <TouchableNativeFeedback>
+              <TouchableNativeFeedback onPress={props.onSave}>
                 <View className="w-24 items-center justify-center py-2">
                   <Text className="text-lg font-bold">Save</Text>
                 </View>
@@ -305,7 +362,7 @@ function TimerContent(props: {
           </View>
           <View className="w-full flex-row items-center justify-center">
             <View className="overflow-hidden rounded-full">
-              <TouchableNativeFeedback>
+              <TouchableNativeFeedback onPress={props.onDelete}>
                 <View className="w-36 items-center justify-center py-2">
                   <Text className="text-lg font-bold text-red-600">
                     Delete Entry
