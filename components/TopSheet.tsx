@@ -3,7 +3,7 @@ import { Animated, View } from "react-native";
 import { usePanHandlers, useAnimatedValue } from "@/hooks/animtedHooks";
 
 type TopSheetRef = {
-  setHeightTo: (height: number) => void;
+  setHeightTo: (height: number, callback: () => void) => void;
 };
 
 export namespace TopSheet {
@@ -93,7 +93,7 @@ export const TopSheet = React.forwardRef(function (
   });
 
   React.useImperativeHandle(ref, () => ({
-    setHeightTo: (height: number) => {
+    setHeightTo: (height: number, callback?: () => void) => {
       canGrab.current = false;
       stableAt.current = height;
       props.onStabilize?.(height);
@@ -106,6 +106,7 @@ export const TopSheet = React.forwardRef(function (
         transY.extractOffset();
         canGrab.current = true;
         stableAt.current = height;
+        callback?.();
       });
     },
   }));
