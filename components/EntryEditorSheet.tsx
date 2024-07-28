@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Animated, Text, TouchableNativeFeedback, View } from "react-native";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
@@ -33,20 +33,40 @@ import TagsChip from "./TagsChip";
 import { useAnimatedValue } from "@/hooks/animtedHooks";
 import ConfirmModal from "./ConfirmModal";
 
-export default function EntryEditorSheet(props: {
-  onOpen: () => void;
-  onClose: () => void;
-}) {
+type EntryEditorSheetRef = {
+  open: () => void;
+  close: () => void;
+};
+
+export namespace EntryEditorSheet {
+  export type Ref = EntryEditorSheetRef;
+}
+
+export const EntryEditorSheet = React.forwardRef(function (
+  props: {
+    onOpen: () => void;
+    onClose: () => void;
+    entry?: EntryWithProject;
+    hideTimerWhenClosed?: boolean;
+  },
+  ref: React.Ref<EntryEditorSheetRef>,
+) {
+  const closedHeight = props.hideTimerWhenClosed ? 0 : 210;
+  const openHeight = 650;
+  const openThreshold = 400;
+
   const [modalOpen, setModalOpen] = useState(false);
   const ongoingQuery = useOngoing();
 
   const editEntryMutation = useEditEntryMutation();
   const deleteEntryMutation = useDeleteEntryMutation(true);
 
-  const [displayEntry, setDisplayEntry] = useState(ongoingQuery.data);
+  const [displayEntry, setDisplayEntry] = useState(
+    props.entry ?? ongoingQuery.data,
+  );
   useEffect(() => {
-    setDisplayEntry(ongoingQuery.data);
-  }, [ongoingQuery.data?.id]);
+    setDisplayEntry(props.entry ?? ongoingQuery.data);
+  }, [props.entry?.id ?? ongoingQuery.data?.id]);
   const displayEntryHasChanges = useRef(false);
   const [saveChangesModalVisible, setSaveChangesModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -59,9 +79,9 @@ export default function EntryEditorSheet(props: {
     });
   };
 
-  const topSheetAnimatedValue = useAnimatedValue(210);
+  const topSheetAnimatedValue = useAnimatedValue(closedHeight);
   const chipsAnimatedValue = topSheetAnimatedValue.interpolate({
-    inputRange: [210, 400],
+    inputRange: [closedHeight, openThreshold],
     outputRange: [0, 1],
     extrapolate: "clamp",
   });
@@ -69,17 +89,30 @@ export default function EntryEditorSheet(props: {
 
   const topSheetRef = useRef<TopSheet.Ref | null>(null);
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      open: () => {
+        topSheetRef.current?.setHeightTo(openHeight);
+      },
+      close: () => {
+        topSheetRef.current?.setHeightTo(closedHeight);
+      },
+    }),
+    [],
+  );
+
   return (
     <TopSheet
       ref={topSheetRef}
       stableHeights={[
         {
-          stabilizeTo: 210,
+          stabilizeTo: closedHeight,
           whenAbove: null,
         },
         {
-          stabilizeTo: 650,
-          whenAbove: 400,
+          stabilizeTo: openHeight,
+          whenAbove: openThreshold,
         },
       ]}
       flickMultiplier={200}
@@ -89,8 +122,8 @@ export default function EntryEditorSheet(props: {
         setChipsEnabled(false);
       }}
       onStabilize={(h) => {
-        setModalOpen(h > 210);
-        if (h > 210) {
+        setModalOpen(h > closedHeight);
+        if (h > closedHeight) {
           props.onOpen();
         } else {
           setChipsEnabled(true);
@@ -127,7 +160,7 @@ export default function EntryEditorSheet(props: {
         }}
         onRight={() => {
           if (!displayEntry) return;
-          topSheetRef.current?.setHeightTo(210);
+          topSheetRef.current?.setHeightTo(closedHeight);
           saveDisplayEntry(() => {
             deleteEntryMutation.mutate(displayEntry);
           });
@@ -151,12 +184,12 @@ export default function EntryEditorSheet(props: {
         onSave={() => {
           displayEntryHasChanges.current = false;
           saveDisplayEntry();
-          topSheetRef.current?.setHeightTo(210);
+          topSheetRef.current?.setHeightTo(closedHeight);
         }}
         onDiscard={() => {
           displayEntryHasChanges.current = false;
           setDisplayEntry(ongoingQuery.data);
-          topSheetRef.current?.setHeightTo(210);
+          topSheetRef.current?.setHeightTo(closedHeight);
         }}
         onDelete={() => {
           displayEntryHasChanges.current = false;
@@ -165,7 +198,7 @@ export default function EntryEditorSheet(props: {
       />
     </TopSheet>
   );
-}
+});
 
 function TimerContent(props: {
   entry: EntryWithProject | null;

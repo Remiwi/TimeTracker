@@ -4,7 +4,7 @@ import MyDropDown from "@/components/DropDown";
 import MyTextInput from "@/components/TextInput";
 import MyTagInput from "@/components/TagInput";
 import { Template } from "@/apis/types";
-import EntryEditorSheet from "@/components/EntryEditorSheet";
+import { EntryEditorSheet } from "@/components/EntryEditorSheet";
 import {
   useAddTemplateMutation,
   useDeleteTemplateMutation,
