@@ -15,6 +15,7 @@ import DateTimeEditor from "@/components/DatetimeEditor";
 import StatefulTextInput from "@/components/StatefulTextInput";
 import {
   useBin,
+  useCreateEntryMutation,
   useDeleteEntryMutation,
   useEditEntryMutation,
   useOngoing,
@@ -46,18 +47,22 @@ export const EntryEditorSheet = React.forwardRef(function (
   props: {
     onOpen: () => void;
     onClose: () => void;
-    entry?: EntryWithProject;
+    onSave?: () => void;
+    onDiscard?: () => void;
+    entry?: Omit<EntryWithProject, "id"> & { id: number | null };
     hideTimerWhenClosed?: boolean;
+    hideDeleteButton?: boolean;
   },
   ref: React.Ref<EntryEditorSheetRef>,
 ) {
   const closedHeight = props.hideTimerWhenClosed ? 0 : 210;
-  const openHeight = 650;
+  const openHeight = props.hideDeleteButton ? 610 : 650;
   const openThreshold = 400;
 
   const [modalOpen, setModalOpen] = useState(false);
   const ongoingQuery = useOngoing();
 
+  const createEntryMutation = useCreateEntryMutation();
   const editEntryMutation = useEditEntryMutation();
   const deleteEntryMutation = useDeleteEntryMutation(true);
 
@@ -66,7 +71,8 @@ export const EntryEditorSheet = React.forwardRef(function (
   );
   useEffect(() => {
     setDisplayEntry(props.entry ?? ongoingQuery.data);
-  }, [props.entry?.id ?? ongoingQuery.data?.id]);
+    displayEntryHasChanges.current = !!props.entry && props.entry.id === null;
+  }, [props.entry?.id ?? ongoingQuery.data?.id, props.entry === undefined]);
   const displayEntryHasChanges = useRef(false);
   const [saveChangesModalVisible, setSaveChangesModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -74,9 +80,15 @@ export const EntryEditorSheet = React.forwardRef(function (
   const displayEntryRef = useStateAsRef(displayEntry);
   const saveDisplayEntry = (callback?: () => void) => {
     if (!displayEntryRef.current) return;
-    editEntryMutation.mutate(displayEntryRef.current, {
-      onSettled: callback,
-    });
+    if (displayEntryRef.current.id === null) {
+      createEntryMutation.mutate(displayEntryRef.current as EntryWithProject, {
+        onSettled: callback,
+      });
+    } else {
+      editEntryMutation.mutate(displayEntryRef.current as EntryWithProject, {
+        onSettled: callback,
+      });
+    }
   };
 
   const topSheetAnimatedValue = useAnimatedValue(closedHeight);
@@ -144,9 +156,10 @@ export const EntryEditorSheet = React.forwardRef(function (
         onLeft={() => {
           setDisplayEntry(props.entry ?? ongoingQuery.data);
           setSaveChangesModalVisible(false);
+          props.onDiscard?.();
         }}
         onRight={() => {
-          saveDisplayEntry();
+          saveDisplayEntry(props.onSave);
           setSaveChangesModalVisible(false);
         }}
       />
@@ -159,22 +172,28 @@ export const EntryEditorSheet = React.forwardRef(function (
           setDeleteModalVisible(false);
         }}
         onRight={() => {
-          if (!displayEntry) return;
-          topSheetRef.current?.setHeightTo(closedHeight);
+          if (!displayEntry || displayEntry.id === null) return;
+          topSheetRef.current?.setHeightTo(closedHeight, props.onSave);
           saveDisplayEntry(() => {
-            deleteEntryMutation.mutate(displayEntry);
+            deleteEntryMutation.mutate(displayEntry as EntryWithProject);
           });
           setDeleteModalVisible(false);
         }}
         rightClassName="text-red-500 text-xl font-bold"
       />
       <TimerContent
-        entry={displayEntry ?? null}
+        hideDeleteButton={props.hideDeleteButton}
+        entry={displayEntry ? { ...displayEntry, id: 0 } : null}
         onEditEntry={(entry: Partial<EntryWithProject>) => {
           if (!displayEntry) return;
           displayEntryHasChanges.current = true;
           if (!modalOpen) {
-            editEntryMutation.mutate({ ...displayEntry, ...entry });
+            if (displayEntry.id !== null) {
+              editEntryMutation.mutate({
+                ...(displayEntry as EntryWithProject),
+                ...entry,
+              });
+            }
           } else {
             setDisplayEntry({ ...displayEntry, ...entry });
           }
@@ -184,12 +203,12 @@ export const EntryEditorSheet = React.forwardRef(function (
         onSave={() => {
           displayEntryHasChanges.current = false;
           saveDisplayEntry();
-          topSheetRef.current?.setHeightTo(closedHeight);
+          topSheetRef.current?.setHeightTo(closedHeight, props.onSave);
         }}
         onDiscard={() => {
           displayEntryHasChanges.current = false;
           setDisplayEntry(props.entry ?? ongoingQuery.data);
-          topSheetRef.current?.setHeightTo(closedHeight);
+          topSheetRef.current?.setHeightTo(closedHeight, props.onDiscard);
         }}
         onDelete={() => {
           displayEntryHasChanges.current = false;
@@ -208,6 +227,7 @@ function TimerContent(props: {
   onSave: () => void;
   onDiscard: () => void;
   onDelete: () => void;
+  hideDeleteButton?: boolean;
 }) {
   const stopEntry = () => {
     props.onEditEntry?.({ stop: Dates.toISOExtended(new Date()) });
@@ -396,17 +416,19 @@ function TimerContent(props: {
               </TouchableNativeFeedback>
             </View>
           </View>
-          <View className="w-full flex-row items-center justify-center">
-            <View className="overflow-hidden rounded-full">
-              <TouchableNativeFeedback onPress={props.onDelete}>
-                <View className="w-36 items-center justify-center py-2">
-                  <Text className="text-lg font-bold text-red-600">
-                    Delete Entry
-                  </Text>
-                </View>
-              </TouchableNativeFeedback>
+          {!props.hideDeleteButton && (
+            <View className="w-full flex-row items-center justify-center">
+              <View className="overflow-hidden rounded-full">
+                <TouchableNativeFeedback onPress={props.onDelete}>
+                  <View className="w-36 items-center justify-center py-2">
+                    <Text className="text-lg font-bold text-red-600">
+                      Delete Entry
+                    </Text>
+                  </View>
+                </TouchableNativeFeedback>
+              </View>
             </View>
-          </View>
+          )}
         </View>
       </View>
     </View>

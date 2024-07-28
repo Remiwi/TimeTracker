@@ -128,6 +128,25 @@ export function useStopCurrentMutation() {
   });
 }
 
+export function useCreateEntryMutation() {
+  const qc = useQueryClient();
+  const [_, setTemplateMade] = useAtom(templateMadeAtom);
+
+  return useMutation({
+    mutationKey: ["entries"],
+    mutationFn: Data.Entries.create,
+    onMutate: (entry: EntryWithProject) => {
+      setTemplateMade(false);
+      qc.setQueryData(["entries", entry.id], {
+        ...entry,
+      });
+    },
+    onError: (err) => {
+      console.error(err);
+    },
+  });
+}
+
 export function useEditEntryMutation() {
   const qc = useQueryClient();
   const [_, setTemplateMade] = useAtom(templateMadeAtom);

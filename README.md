@@ -8,14 +8,14 @@
   - [x] Basic timer functionality
   - [ ] Template organization
   - [ ] Timer quick-actions
-  - [ ] In-depth entry editor
+  - [x] In-depth entry editor
 - [x] Projects screen
   - [x] Changing projects
   - [x] Project icons
 - [ ] Time entries
   - [x] Viewing time entries
-  - [ ] Editing time entries
-  - [ ] Creating arbitrary entries
+  - [x] Editing time entries
+  - [x] Creating arbitrary entries
 - [ ] Reports screen
   - [ ] Overall project breakdowns
   - [ ] Custom groupings of time entries

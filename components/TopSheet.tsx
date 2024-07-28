@@ -3,7 +3,7 @@ import { Animated, View } from "react-native";
 import { usePanHandlers, useAnimatedValue } from "@/hooks/animtedHooks";
 
 type TopSheetRef = {
-  setHeightTo: (height: number, callback: () => void) => void;
+  setHeightTo: (height: number, callback?: () => void) => void;
 };
 
 export namespace TopSheet {

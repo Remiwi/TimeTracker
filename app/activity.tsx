@@ -23,7 +23,7 @@ export default function Page() {
 
   const [entryEditorOpen, setEntryEditorOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<
-    EntryWithProject | undefined
+    (Omit<EntryWithProject, "id"> & { id: number | null }) | undefined
   >(undefined);
   const entryEditorSheetRef = React.useRef<EntryEditorSheet.Ref | null>(null);
 
@@ -88,9 +88,18 @@ export default function Page() {
         <EntryEditorSheet
           ref={entryEditorSheetRef}
           onOpen={() => setEntryEditorOpen(true)}
-          onClose={() => setEntryEditorOpen(false)}
+          onClose={() => {
+            setEntryEditorOpen(false);
+          }}
+          onDiscard={() => {
+            setSelectedEntry(undefined);
+          }}
+          onSave={() => {
+            setSelectedEntry(undefined);
+          }}
           entry={selectedEntry}
           hideTimerWhenClosed
+          hideDeleteButton
         />
       </View>
       {!entryEditorOpen && (
@@ -124,8 +133,26 @@ export default function Page() {
               setSelectedEntry(e);
               entryEditorSheetRef.current?.open();
             }}
-            onEntryCreate={(date) => {
-              console.log("Opening entry creator");
+            onEntryCreate={(date, startDatetime) => {
+              const start =
+                startDatetime ?? Dates.toISOExtended(new Date(date));
+              const startDate = new Date(start);
+              const stopDate = new Date(start);
+              stopDate.setMinutes(stopDate.getMinutes() + 10);
+              setSelectedEntry({
+                id: null,
+                start: Dates.toISOExtended(startDate),
+                stop: Dates.toISOExtended(stopDate),
+                description: "",
+                project_id: null,
+                project_color: null,
+                project_name: null,
+                project_icon: null,
+                tags: [],
+                duration: 600,
+                at: Dates.toISOExtended(new Date()),
+              });
+              entryEditorSheetRef.current?.open();
             }}
           />
         )}
@@ -142,7 +169,7 @@ function Day(props: {
   latest_at: string;
   projects?: TogglProject[];
   onEntryPress?: (e: EntryWithProject) => void;
-  onEntryCreate?: (date: string) => void;
+  onEntryCreate?: (date: string, startDatetime: string | undefined) => void;
 }) {
   const today = new Date().toISOString().split("T")[0];
   const yesterday = Dates.daysAgo(1).toISOString().split("T")[0];
@@ -154,7 +181,19 @@ function Day(props: {
     entries: EntryWithProject[];
   }[] = [];
 
+  let latestEntryStop = undefined;
+
   for (const entry of props.entries) {
+    // Find latest entry stop
+    if (entry.stop) {
+      if (!latestEntryStop) {
+        latestEntryStop = entry.stop;
+      } else if (entry.stop > latestEntryStop) {
+        latestEntryStop = entry.stop;
+      }
+    }
+
+    // Construct the groups
     if (groups.length === 0) {
       groups.push({
         description: entry.description,
@@ -194,7 +233,7 @@ function Day(props: {
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback
             onPress={() => {
-              props.onEntryCreate?.(props.date);
+              props.onEntryCreate?.(props.date, latestEntryStop);
             }}
           >
             <View className="p-0.5">
