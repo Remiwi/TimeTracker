@@ -114,6 +114,13 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="groups/[id]"
+              options={{
+                headerTitle: "Group Config",
+                drawerItemStyle: { display: "none" },
+              }}
+            />
+            <Drawer.Screen
               name="+not-found"
               options={{
                 drawerItemStyle: { display: "none" },

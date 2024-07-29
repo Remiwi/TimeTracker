@@ -4,7 +4,7 @@ import StyledTextInput from "@/components/TextInput";
 import { DailyBreakdown } from "@/components/reports/DailyBreakdown";
 import { useProjects } from "@/hooks/projectQueries";
 import Colors from "@/utils/colors";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Text, TouchableNativeFeedback, View } from "react-native";
 
 export default function ReportConfigScreen() {
@@ -75,7 +75,11 @@ export default function ReportConfigScreen() {
             className="overflow-hidden rounded-xl shadow-md shadow-black"
             key={group.id}
           >
-            <TouchableNativeFeedback>
+            <TouchableNativeFeedback
+              onPress={() => {
+                router.push(`/groups/${group.id}`);
+              }}
+            >
               <View className="h-18 w-full flex-row items-center gap-4 bg-white pl-4 pr-1">
                 <View className="items-center justify-center">
                   <View
