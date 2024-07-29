@@ -15,6 +15,7 @@ import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
+import { DrawerHeaderProps } from "@react-navigation/drawer";
 
 const prevState = {
   isConnected: false as boolean | null,
@@ -118,6 +119,7 @@ export default function RootLayout() {
               options={{
                 headerTitle: "Group Config",
                 drawerItemStyle: { display: "none" },
+                headerShown: false,
               }}
             />
             <Drawer.Screen
