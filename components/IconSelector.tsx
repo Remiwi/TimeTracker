@@ -70,6 +70,7 @@ export function IconSelector(props: {
         ></TextInput>
       </View>
       <FlashList
+        nestedScrollEnabled
         onLayout={(e) => {
           setRowWidth(e.nativeEvent.layout.width);
           setNumCols(Math.floor(e.nativeEvent.layout.width / 64));
