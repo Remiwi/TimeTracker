@@ -23,7 +23,7 @@ export default function GroupConfigScreen() {
   return (
     <View className="pt-14">
       <View className="flex-row items-center justify-between border-b border-gray-100 px-1 pb-1">
-        <Text className="px-4 text-xl font-semibold">Config</Text>
+        <Text className="px-4 text-xl font-semibold">Group Config</Text>
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback>
             <View className="px-6 py-3">
