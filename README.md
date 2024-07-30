@@ -20,6 +20,8 @@
   - [ ] Better defined interface for adding API key and selecting workspace
   - [ ] Offline mode settings
   - [ ] Regular backup settings
+- [ ] Basic tutorial for new users
+- [ ] Report-a-bug page
 
 ### Future
 
