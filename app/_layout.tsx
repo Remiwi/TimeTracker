@@ -105,6 +105,7 @@ export default function RootLayout() {
               options={{
                 drawerLabel: "Reports",
                 headerTitle: "Reports",
+                drawerItemStyle: { display: "none" },
               }}
             />
             <Drawer.Screen
