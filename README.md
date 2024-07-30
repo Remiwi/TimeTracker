@@ -16,20 +16,6 @@
   - [x] Viewing time entries
   - [x] Editing time entries
   - [x] Creating arbitrary entries
-- [ ] Reports screen
-  - [ ] Totals reports
-    - [ ] Hours tracked per day of week (paginated by week)
-    - [ ] Hours tracked per week (scrollable)
-    - [ ] EXTRA: Hours tracked per day heatmap
-  - [ ] Breakdown reports
-    - [ ] Breakdown by project
-      - [ ] Daily
-      - [ ] Weekly
-      - [ ] EXTRA: Breakdown by description and tag too
-  - [ ] Goals
-    - [ ] Keep under goals
-    - [ ] Track over goals
-    - [ ] Daily and weekly goals
 - [ ] Settings screen
   - [ ] Better defined interface for adding API key and selecting workspace
   - [ ] Offline mode settings
@@ -46,3 +32,17 @@
   - [ ] Timer widget
   - [ ] Reports widget
 - [ ] Home-screen template shortcuts
+- [ ] Reports screen (Change to a good ORM first --- Drizzle?)
+  - [ ] Totals reports
+    - [ ] Hours tracked per day of week (paginated by week)
+    - [ ] Hours tracked per week (scrollable)
+    - [ ] EXTRA: Hours tracked per day heatmap
+  - [ ] Breakdown reports
+    - [ ] Breakdown by project
+      - [ ] Daily
+      - [ ] Weekly
+      - [ ] EXTRA: Breakdown by description and tag too
+  - [ ] Goals
+    - [ ] Keep under goals
+    - [ ] Track over goals
+    - [ ] Daily and weekly goals
