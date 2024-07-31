@@ -7,15 +7,14 @@ import {
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import "react-native-reanimated";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { qc } from "@/apis/queryclient";
 import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
-import { DrawerHeaderProps } from "@react-navigation/drawer";
 
 const prevState = {
   isConnected: false as boolean | null,
