@@ -36,14 +36,26 @@ function Sync() {
   const qc = useQueryClient();
 
   const [togglToken, setTogglToken] = useState<string>("");
-  const [tokenEntered, setTokenEntered] = useState<boolean>(false);
-  const setTokenEnteredTrue = () => {
-    qc.invalidateQueries({ queryKey: ["workspaces"] });
-    setTokenEntered(true);
-    setTimeout(() => {
-      setTokenEntered(false);
-    }, 3000);
-  };
+  const [tokenEntered, setTokenEntered] = useState(false);
+  const tokenMutation = useMutation({
+    mutationKey: ["togglToken"],
+    mutationFn: async (newToken: string | null) => {
+      qc.removeQueries({
+        queryKey: ["workspaces"],
+      });
+      workspaceMutation.mutate(null);
+      SecureStore.setItem("togglToken", newToken ?? "");
+      TogglConfig.token = newToken;
+      qc.invalidateQueries({ queryKey: ["workspaces"] });
+      setTogglToken("");
+      if (newToken !== null) {
+        setTokenEntered(true);
+        setTimeout(() => {
+          setTokenEntered(false);
+        }, 3000);
+      }
+    },
+  });
 
   const workspaces = useQuery({
     queryKey: ["workspaces"],
@@ -100,11 +112,7 @@ function Sync() {
           <TouchableNativeFeedback
             onPress={() => {
               if (togglToken === "") return;
-              SecureStore.setItem("togglToken", togglToken);
-              TogglConfig.token = togglToken;
-              setTogglToken("");
-              setTokenEnteredTrue();
-              workspaces.refetch();
+              tokenMutation.mutate(togglToken);
             }}
           >
             <View className="flex w-28 items-center justify-center bg-slate-200 p-2">
