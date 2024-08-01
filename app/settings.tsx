@@ -24,6 +24,15 @@ import ConfirmModal from "@/components/ConfirmModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Page() {
+  return (
+    <View className="pt-4">
+      <Sync />
+      <Backups />
+    </View>
+  );
+}
+
+function Sync() {
   const qc = useQueryClient();
 
   const [togglToken, setTogglToken] = useState<string>("");
@@ -75,8 +84,9 @@ export default function Page() {
   ) {
     workspaceMutation.mutate(workspaces.data[0].id);
   }
+
   return (
-    <View className="pt-4">
+    <>
       <Text className="px-4 pb-4 text-2xl font-bold">Sync</Text>
       <View className="flex-row items-center gap-2 px-2">
         <StyledTextInput
@@ -153,6 +163,13 @@ export default function Page() {
           </TouchableNativeFeedback>
         </View>
       </View>
+    </>
+  );
+}
+
+function Backups() {
+  return (
+    <>
       <Text className="px-4 pb-2 pt-4 text-2xl font-bold">Backups</Text>
       <View className="flex-row items-center">
         <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
@@ -174,7 +191,7 @@ export default function Page() {
       <View className="px-2">
         <BackupList />
       </View>
-    </View>
+    </>
   );
 }
 
