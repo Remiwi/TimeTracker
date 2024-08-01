@@ -54,7 +54,8 @@ export default function Templates(props: {
 }) {
   const templatesQuery = useTemplates();
   const templates = templatesQuery.data || [];
-  const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
+  // const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
+  const num_pages = 1;
 
   const [page, setPage] = useAtom(templatePageAtom);
 
