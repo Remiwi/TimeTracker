@@ -11,7 +11,12 @@ import {
 import { Toggl, TogglConfig } from "@/apis/toggl";
 import Database from "@/apis/db";
 import { Data } from "@/apis/data";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Mutation,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import MyDropDown from "@/components/DropDown";
 import { Workspace } from "@/apis/types";
 import { Icon } from "@/components/Icon";
@@ -24,6 +29,7 @@ export default function Page() {
   const [togglToken, setTogglToken] = useState<string>("");
   const [tokenEntered, setTokenEntered] = useState<boolean>(false);
   const setTokenEnteredTrue = () => {
+    qc.invalidateQueries({ queryKey: ["workspaces"] });
     setTokenEntered(true);
     setTimeout(() => {
       setTokenEntered(false);
@@ -34,75 +40,84 @@ export default function Page() {
     queryKey: ["workspaces"],
     queryFn: Toggl.Me.getWorkspaces,
   });
-
-  const [togglWorkspace, setTogglWorkspace] = useState<Workspace | null>(null);
+  const currentWorkspaceQuery = useQuery({
+    queryKey: ["workspaces", "current"],
+    queryFn: async () => {
+      const ws = SecureStore.getItem("togglWorkspace");
+      return ws === null || ws === "" ? null : Number(ws);
+    },
+  });
+  const currentWorkspace = currentWorkspaceQuery.isSuccess
+    ? (workspaces.data ?? []).find((w) => {
+        return w.id === currentWorkspaceQuery.data;
+      })
+    : undefined;
+  const workspaceMutation = useMutation({
+    mutationKey: ["workspaces", "current"],
+    mutationFn: async (ws: number | null) => {
+      SecureStore.setItem("togglWorkspace", ws === null ? "" : ws.toString());
+      if (ws !== null) {
+        setWorkspaceEntered(true);
+        setTimeout(() => {
+          setWorkspaceEntered(false);
+        }, 3000);
+      }
+    },
+  });
   const [workspaceEntered, setWorkspaceEntered] = useState<boolean>(false);
-  const setWorkspaceEnteredTrue = () => {
-    setWorkspaceEntered(true);
-    setTimeout(() => {
-      setWorkspaceEntered(false);
-    }, 3000);
-  };
 
-  useEffect(() => {
-    const current_ws = Number(SecureStore.getItem("togglWorkspace"));
-    const ws = workspaces.data?.find((w) => w.id === current_ws);
-    if (ws) {
-      setTogglWorkspace(ws);
-      return;
-    }
-    if (workspaces.data?.length === 1) {
-      setTogglWorkspace(workspaces.data[0]);
-      SecureStore.setItem("togglWorkspace", workspaces.data[0].id.toString());
-    }
-  }, [workspaces.data]);
-
+  if (
+    workspaces.isSuccess &&
+    workspaces.data.length >= 1 &&
+    !currentWorkspace &&
+    !workspaceMutation.isPending
+  ) {
+    workspaceMutation.mutate(workspaces.data[0].id);
+  }
   return (
-    <View>
-      <View className="p-4">
+    <View className="pt-4">
+      <Text className="px-4 pb-2 text-2xl font-bold">Sync</Text>
+      <View className="flex-row items-center gap-2 p-2">
         <StyledTextInput
+          className="flex-grow"
           label="Toggl Token"
           bgColor="white"
           value={togglToken}
           onChange={setTogglToken}
         />
-        <View className="flex w-full flex-row justify-end pt-4">
-          {tokenEntered && (
-            <View className="flex flex-grow justify-center">
-              <Text>Token entered</Text>
+        <View className="overflow-hidden rounded-full">
+          <TouchableNativeFeedback
+            onPress={() => {
+              if (togglToken === "") return;
+              SecureStore.setItem("togglToken", togglToken);
+              TogglConfig.token = togglToken;
+              setTogglToken("");
+              setTokenEnteredTrue();
+              workspaces.refetch();
+            }}
+          >
+            <View className="flex w-28 items-center justify-center bg-slate-200 p-2">
+              <Text className="text-lg">Enter</Text>
             </View>
-          )}
-          <View className="overflow-hidden rounded-full">
-            <TouchableNativeFeedback
-              onPress={() => {
-                if (togglToken === "") return;
-                SecureStore.setItem("togglToken", togglToken);
-                TogglConfig.token = togglToken;
-                setTogglToken("");
-                setTokenEnteredTrue();
-                workspaces.refetch();
-              }}
-            >
-              <View className="flex w-28 items-center justify-center rounded-full bg-slate-200 p-2">
-                <Text className="text-lg">Enter</Text>
-              </View>
-            </TouchableNativeFeedback>
-          </View>
+          </TouchableNativeFeedback>
         </View>
       </View>
-      <View className="p-4 pb-8">
+      <View className="flex flex-grow justify-center">
+        <Text className="px-4 text-gray-500">
+          {tokenEntered ? "Token entered" : ""}
+        </Text>
+      </View>
+      <View className="px-2 pb-8">
         <MyDropDown
           label="Toggl Workspace"
           bgColor="white"
           options={workspaces.data || []}
           itemToString={(item) => item?.name || ""}
           modalColor="#eeeeee"
-          value={togglWorkspace}
+          value={currentWorkspace}
           onChange={(w) => {
             if (!w) return;
-            setTogglWorkspace(w);
-            SecureStore.setItem("togglWorkspace", w.id.toString());
-            setWorkspaceEnteredTrue();
+            workspaceMutation.mutate(w.id);
           }}
         />
         <View className="flex w-full flex-row justify-end pt-4">
@@ -124,8 +139,9 @@ export default function Page() {
               TogglConfig.token = "";
               TogglConfig.workspace = "";
               setTogglToken("");
-              setTogglWorkspace(null);
+              workspaceMutation.mutate(null);
               qc.setQueryData(["workspaces"], []);
+              qc.setQueryData(["workspaces", "current"], null);
             }}
           >
             <View className="flex items-center justify-center rounded-full bg-red-600 p-2 px-6">
