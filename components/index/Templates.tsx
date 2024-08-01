@@ -314,12 +314,16 @@ function Item(props: {
       // TODO: Make sure this can't be out of bounds!
       const horizUnits = Math.round(dx / viewDimensions.width);
       const vertUnits = Math.round(dy / viewDimensions.height);
+
+      const finalX = Math.min(Math.max(props.pos.x + horizUnits, 0), 2);
+      const finalY = Math.max(props.pos.y + vertUnits, 0);
+
       setMovingItem({
         id: props.template.id,
         from: { ...props.pos, page: props.page },
         to: {
-          x: props.pos.x + horizUnits,
-          y: props.pos.y + vertUnits,
+          x: finalX,
+          y: finalY,
           page: pageRef.current,
         },
       });
@@ -328,8 +332,8 @@ function Item(props: {
         duration: 200,
         easing: Easing.exp,
         toValue: {
-          x: horizUnits * viewDimensions.width,
-          y: vertUnits * viewDimensions.height,
+          x: (finalX - props.pos.x) * viewDimensions.width,
+          y: (finalY - props.pos.y) * viewDimensions.height,
         },
         useNativeDriver: true,
       }).start(() => {
