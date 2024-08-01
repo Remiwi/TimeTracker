@@ -6,7 +6,7 @@
   - [x] Offline mode
 - [ ] Timer screen
   - [x] Basic timer functionality
-  - [ ] Template organization
+  - [x] Template organization
   - [ ] Timer quick-actions
   - [x] In-depth entry editor
   - [ ] Make template add/edit modal nicer
