@@ -27,7 +27,6 @@ export default function MyDropDown<T>(props: {
 }) {
   const { height, width } = useWindowDimensions();
   const [optionsShown, setOptionsShown] = useState(false);
-  const containerRef = useRef<View>(null);
   const [layout, setLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
 
   const above = layout.y + layout.height + 240 > height;
@@ -44,11 +43,8 @@ export default function MyDropDown<T>(props: {
                 }
               : {},
           ]}
-          ref={containerRef}
           onLayout={(event) => {
-            // var { width, height } = event.nativeEvent.layout;
-            if (containerRef.current === null) return;
-            containerRef.current.measure((rx, ry, width, height, x, y) => {
+            event.target.measure((rx, ry, width, height, x, y) => {
               setLayout({ x, y, width, height });
             });
           }}
@@ -105,11 +101,11 @@ export default function MyDropDown<T>(props: {
             <TouchableWithoutFeedback onPress={() => setOptionsShown(false)}>
               <View className="relative h-full w-full">
                 <View
-                  className="asbolute h-60 w-full rounded-md"
+                  className="asbolute max-h-60 w-full rounded-md"
                   style={{
                     backgroundColor: props.modalColor || "white",
                     width: layout.width,
-                    top: above ? layout.y - 210 : layout.y + layout.height,
+                    top: above ? layout.y - 210 : layout.y + 4,
                     left: layout.x,
                   }}
                 >
