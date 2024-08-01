@@ -141,7 +141,7 @@ export default function Page() {
         <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
         <RegularBackups />
       </View>
-      <Text className="pb-8 pl-6 pr-2 text-end text-sm">
+      <Text className="pb-8 pl-6 pr-2 text-sm">
         <Text className="font-semibold">Note:</Text> Currently regular backups
         are only performed immediately before a sync. They will never happen
         when the app is not open.
