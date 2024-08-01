@@ -57,15 +57,6 @@ export default function Page() {
     }
   }, [workspaces.data]);
 
-  const backupMutation = useMutation({
-    mutationFn: async (data?: { email?: string; overwrite?: boolean }) => {
-      await Data.Backups.backup(data?.email, data?.overwrite);
-    },
-    onError: (e) => {
-      console.error(e);
-    },
-  });
-
   return (
     <View>
       <View className="p-4">
@@ -384,12 +375,12 @@ function ManualBackup() {
         onLeft={() => setConfirmModalVisible(false)}
         onRight={() => {
           setConfirmModalVisible(false);
-          backupMutation.mutate({ email: "test", overwrite: true });
+          backupMutation.mutate({ email: "", overwrite: true });
         }}
       />
       <TouchableNativeFeedback
         onPress={() => {
-          backupMutation.mutate({ email: "test", overwrite: false });
+          backupMutation.mutate({ email: "", overwrite: false });
         }}
       >
         <View className="bg-gray-200 px-6 py-3">
