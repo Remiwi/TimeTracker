@@ -126,7 +126,7 @@ function Sync() {
           {tokenEntered ? "Token entered" : ""}
         </Text>
       </View>
-      <View className="px-2 pb-8">
+      <View className="px-2 pb-2">
         <MyDropDown
           label="Toggl Workspace"
           bgColor="white"
@@ -139,12 +139,10 @@ function Sync() {
             workspaceMutation.mutate(w.id);
           }}
         />
-        <View className="flex w-full flex-row justify-end pt-4">
-          {workspaceEntered && (
-            <View className="flex flex-grow justify-center">
-              <Text>Token entered</Text>
-            </View>
-          )}
+        <View className="w-full flex-row justify-end pb-2">
+          <Text className="px-4 text-gray-500">
+            {workspaceEntered ? "Workspace entered" : ""}
+          </Text>
         </View>
       </View>
       <View className="flex w-full items-center border-b border-gray-200 pb-6">
