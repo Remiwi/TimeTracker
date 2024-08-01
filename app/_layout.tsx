@@ -95,6 +95,13 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="settings"
+              options={{
+                drawerLabel: "Settings",
+                headerTitle: "Settings",
+              }}
+            />
+            <Drawer.Screen
               name="reports/index"
               options={{
                 drawerLabel: "Reports",
