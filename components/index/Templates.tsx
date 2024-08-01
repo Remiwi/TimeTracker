@@ -108,6 +108,7 @@ export default function Templates(props: {
                     templates={templates.filter((t) => t.page === i)}
                     interactionsEnabled={props.interactionsEnabled}
                     makeNewTemplate={props.onTemplateCreate}
+                    editTemplate={props.onTemplateEdit}
                   />
                 </Page>
               ))}
@@ -123,6 +124,7 @@ function Grid(props: {
   templates: TemplateWithProject[];
   interactionsEnabled?: boolean;
   makeNewTemplate: (pos: { x: number; y: number }) => void;
+  editTemplate: (template: TemplateWithProject) => void;
 }) {
   const screenDimensions = useWindowDimensions();
 
@@ -201,6 +203,9 @@ function Grid(props: {
                             50 -
                             props.page * screenDimensions.width,
                         }}
+                        onLongPress={() => {
+                          props.editTemplate(template);
+                        }}
                       />
                     )}
                     {!template && (
@@ -255,10 +260,12 @@ function Item(props: {
   const boundsRef = useStateAsRef(props.scrollBounds);
   const panStartScroll = useRef(0);
   const requestPageTurn = useRef<NodeJS.Timeout | null>(null);
+  const isPanning = useRef(false);
   const panHandlers = usePanHandlers({
     onMoveShouldSetPanResponder: () => shouldPanRef.current,
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: () => {
+      isPanning.current = true;
       const scrollHeight = ctx.getScrollAmount(pageRef.current);
       animPos.setOffset({ x: 0, y: -scrollHeight });
       panStartScroll.current = scrollHeight;
@@ -308,6 +315,8 @@ function Item(props: {
       setShouldScroll(0);
     },
     onPanResponderRelease: (_, gestureState) => {
+      isPanning.current = false;
+
       const scrollDelta =
         (ctx.getScrollAmount(pageRef.current) ?? 0) - panStartScroll.current;
       const dx = gestureState.dx;
@@ -353,6 +362,9 @@ function Item(props: {
         ]);
         setMovingItem(null);
       });
+    },
+    onPanResponderTerminate: () => {
+      isPanning.current = false;
     },
   });
 
@@ -479,12 +491,14 @@ function Item(props: {
             startEntryMutation.mutate(props.template);
           }}
           onLongPress={() => {
-            //props.onLongPress
             Vibration.vibrate(80);
             shouldPanRef.current = true;
           }}
           onPressOut={() => {
             shouldPanRef.current = false;
+            if (isPanning.current === false) {
+              props.onLongPress?.();
+            }
           }}
           disabled={props.disabled}
         >
