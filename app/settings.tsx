@@ -35,6 +35,7 @@ export default function Page() {
 
 function Sync() {
   const [wsChangeModalVisible, setWsChangeModalVisible] = useState(false);
+  const [deleteDataMovalVisible, setDeleteDataModalVisible] = useState(false);
 
   const qc = useQueryClient();
 
@@ -224,12 +225,26 @@ function Sync() {
           </Text>
         </View>
       </View>
+      <ConfirmModal
+        visible={deleteDataMovalVisible}
+        title="Delete Internal Data"
+        description="This will not delete the data on toggl, it will only locally. Your Toggl Token will also be forgotten."
+        leftText="Cancel"
+        rightText="Delete"
+        onLeft={() => {
+          setDeleteDataModalVisible(false);
+        }}
+        onRight={() => {
+          setDeleteDataModalVisible(false);
+          deleteInternalDatabases();
+          removeTogglToken();
+        }}
+      />
       <View className="flex w-full items-center border-b border-gray-200 pb-6">
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback
             onPress={() => {
-              deleteInternalDatabases();
-              removeTogglToken();
+              setDeleteDataModalVisible(true);
             }}
           >
             <View className="flex items-center justify-center rounded-full bg-red-600 p-2 px-6">
