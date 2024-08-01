@@ -137,7 +137,7 @@ export default function Page() {
         </View>
       </View>
       <Text className="px-4 pb-2 pt-4 text-2xl font-bold">Backups</Text>
-      <View className="flex-row">
+      <View className="flex-row items-center">
         <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
         <RegularBackups />
       </View>
