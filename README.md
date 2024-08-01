@@ -16,9 +16,9 @@
   - [x] Viewing time entries
   - [x] Editing time entries
   - [x] Creating arbitrary entries
-- [ ] Settings screen
-  - [ ] Better defined interface for adding API key and selecting workspace
-  - [ ] Offline mode settings
+- [x] Settings screen
+  - [x] Better defined interface for adding API key and selecting workspace
+  - [x] Offline mode settings
   - [x] Regular backup settings
 - [ ] Basic tutorial for new users
 - [ ] Report-a-bug page
