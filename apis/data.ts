@@ -5,6 +5,9 @@ import { qc } from "./queryclient";
 import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 import { Dates } from "@/utils/dates";
 import { Tags } from "@/utils/tags";
+import * as FileSystem from "expo-file-system";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
@@ -56,6 +59,263 @@ function getNewerEntry(a: DBEntry, b: Entry) {
 }
 
 export const Data = {
+  Backups: {
+    nameBackup: (oldest: Date, newest: Date) => {
+      const today = new Date();
+      const oldestDate = `${oldest.getFullYear()}-${(oldest.getMonth() + 1).toString().padStart(2, "0")}-${oldest.getDate().toString().padStart(2, "0")}`;
+      const newestDate = `${newest.getFullYear()}-${(newest.getMonth() + 1).toString().padStart(2, "0")}-${newest.getDate().toString().padStart(2, "0")}`;
+      const todayDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, "0")}-${today.getDate().toString().padStart(2, "0")}`;
+      return `EntriesBackupFrom_${oldestDate}_To_${newestDate}_Generated_${todayDate}.csv`;
+    },
+
+    parseName: (filename: string) => {
+      const parts = filename.split("_");
+      const oldest = new Date(parts[1]);
+      const newest = new Date(parts[3]);
+      const generated = new Date(parts[5].split(".")[0]);
+      return { filename, oldest, newest, generated };
+    },
+
+    setExternalBackupDirectory: async () => {
+      const oldExternalDirectory = await AsyncStorage.getItem(
+        "externalBackupDirectory",
+      );
+
+      const perm =
+        await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (!perm.granted) {
+        throw Error("Permission denied");
+      }
+
+      const externalDirFiles =
+        await FileSystem.StorageAccessFramework.readDirectoryAsync(
+          perm.directoryUri,
+        );
+      if (externalDirFiles.length > 0) {
+        throw Error("Directory must be empty");
+      }
+
+      await AsyncStorage.setItem("externalBackupDirectory", perm.directoryUri);
+      const path = perm.directoryUri;
+
+      // If the directory was already set, move the files to the new directory
+      if (oldExternalDirectory === null) {
+        if (FileSystem.documentDirectory === null) {
+          throw Error("Document directory is null");
+        }
+        const backupdir = FileSystem.documentDirectory + "backups/";
+        const files = await FileSystem.readDirectoryAsync(backupdir).catch(
+          async (e) => {
+            if (
+              e instanceof Error &&
+              e.message.endsWith("doesn't exist or isn't a directory")
+            ) {
+              return null;
+            }
+            throw e;
+          },
+        );
+        if (files === null) {
+          return path;
+        }
+
+        files.forEach(async (file) => {
+          const data = await FileSystem.readAsStringAsync(backupdir + file, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+          const uri = await FileSystem.StorageAccessFramework.createFileAsync(
+            perm.directoryUri,
+            file,
+            "text/csv",
+          );
+          await FileSystem.StorageAccessFramework.writeAsStringAsync(
+            uri,
+            data,
+            {
+              encoding: FileSystem.EncodingType.UTF8,
+            },
+          );
+          await FileSystem.deleteAsync(backupdir + file);
+        });
+      }
+
+      return path;
+    },
+
+    getExternalBackupDirectory: async () => {
+      const raw = await AsyncStorage.getItem("externalBackupDirectory");
+      return raw === null ? null : decodeURIComponent(raw);
+    },
+
+    clearExternalBackupDirectory: async () => {
+      await AsyncStorage.removeItem("externalBackupDirectory");
+    },
+
+    backup: async (email = "", overwrite = false) => {
+      const entries = await Data.Entries.getAll();
+      let csv_content = `"Email","Project","Description","Start date","Start time","Duration","Tags","Timezone"\n`;
+      for (const entry of entries) {
+        if (entry.stop === null) {
+          console.warn("Entry is running during a backup, entry ignored");
+          continue;
+        }
+        const project = entry.project_name ?? "";
+        const description = entry.description ?? "";
+        const tags = entry.tags.join(", ");
+        const start = new Date(entry.start);
+        const monthStr = (start.getMonth() + 1).toString().padStart(2, "0");
+        const dayStr = start.getDate().toString().padStart(2, "0");
+        const startDate = `${start.getFullYear()}-${monthStr}-${dayStr}`;
+        const minutesStr = start.getMinutes().toString().padStart(2, "0");
+        const secondsStr = start.getSeconds().toString().padStart(2, "0");
+        const startTime = `${start.getHours()}:${minutesStr}:${secondsStr}`;
+        const stop = new Date(entry.stop);
+        const durTotalMS = stop.getTime() - start.getTime();
+        const durSeconds = Math.floor(durTotalMS / 1000) % 60;
+        const durSecondsStr = durSeconds.toString().padStart(2, "0");
+        const durMinutes = Math.floor(durTotalMS / 1000 / 60) % 60;
+        const durMinutesStr = durMinutes.toString().padStart(2, "0");
+        const durHours = Math.floor(durTotalMS / 1000 / 60 / 60);
+        const duration = `${durHours}:${durMinutesStr}:${durSecondsStr}`;
+        const offset = start.getTimezoneOffset();
+        const behind = offset > 0;
+        const offsetHours = Math.floor(Math.abs(offset) / 60);
+        const offsetMinutes = Math.abs(offset) % 60;
+        const offsetMinutesStr = offsetMinutes.toString().padStart(2, "0");
+        const timezone = `${offset === 0 ? "" : behind ? "-" : "+"}${offsetHours}:${offsetMinutesStr}`;
+
+        const row = `"${email}","${project}","${description}","${startDate}","${startTime}","${duration}","${tags}","${timezone}"\n`;
+        csv_content += row;
+      }
+      const oldestStart = new Date(entries[entries.length - 1].start);
+      const newestStart = new Date(entries[0].start);
+      const filename = Data.Backups.nameBackup(oldestStart, newestStart);
+
+      const externalBackupDir = await AsyncStorage.getItem(
+        "externalBackupDirectory",
+      );
+
+      if (externalBackupDir === null) {
+        if (FileSystem.documentDirectory === null) {
+          throw Error("Document directory is null");
+        }
+        const backupdir = FileSystem.documentDirectory + "backups/";
+
+        const files = await FileSystem.readDirectoryAsync(backupdir).catch(
+          async (e) => {
+            if (
+              e instanceof Error &&
+              e.message.endsWith("doesn't exist or isn't a directory")
+            ) {
+              console.log("Creating directory");
+              await FileSystem.makeDirectoryAsync(backupdir);
+            }
+            throw e;
+          },
+        );
+
+        if (files.includes(filename) && !overwrite) {
+          throw Error("Backup already exists");
+        }
+
+        await FileSystem.writeAsStringAsync(backupdir + filename, csv_content, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+      } else {
+        const externalFiles =
+          await FileSystem.StorageAccessFramework.readDirectoryAsync(
+            externalBackupDir,
+          );
+        const files = externalFiles.map((f) => {
+          const decoded = decodeURIComponent(f);
+          return decoded.substring(decoded.lastIndexOf("/") + 1);
+        });
+
+        if (files.includes(filename) && !overwrite) {
+          throw Error("Backup already exists");
+        }
+
+        const uri = await FileSystem.StorageAccessFramework.createFileAsync(
+          externalBackupDir,
+          filename,
+          "text/csv",
+        );
+
+        await FileSystem.StorageAccessFramework.writeAsStringAsync(
+          uri,
+          csv_content,
+          {
+            encoding: FileSystem.EncodingType.UTF8,
+          },
+        );
+      }
+
+      return Data.Backups.parseName(filename);
+    },
+
+    delete: async (filename: string) => {
+      const externalBackupDir = await AsyncStorage.getItem(
+        "externalBackupDirectory",
+      );
+
+      if (externalBackupDir === null) {
+        if (FileSystem.documentDirectory === null) {
+          throw Error("Document directory is null");
+        }
+        const backupdir = FileSystem.documentDirectory + "backups/";
+        await FileSystem.deleteAsync(backupdir + filename);
+      } else {
+        const externalFiles =
+          await FileSystem.StorageAccessFramework.readDirectoryAsync(
+            externalBackupDir,
+          );
+        const found = externalFiles.find((f) => {
+          const decoded = decodeURIComponent(f);
+          return decoded.substring(decoded.lastIndexOf("/") + 1) === filename;
+        });
+        if (found === undefined) {
+          throw Error("File not found");
+        }
+        await FileSystem.StorageAccessFramework.deleteAsync(found);
+      }
+    },
+
+    getAll: async () => {
+      const externalBackupDir = await AsyncStorage.getItem(
+        "externalBackupDirectory",
+      );
+
+      if (externalBackupDir === null) {
+        if (FileSystem.documentDirectory === null) {
+          throw Error("Document directory is null");
+        }
+        const backupdir = FileSystem.documentDirectory + "backups/";
+        const files = await FileSystem.readDirectoryAsync(backupdir);
+        return files
+          .filter(
+            (f) => f.startsWith("EntriesBackupFrom_") && f.endsWith(".csv"),
+          )
+          .map((f) => {
+            return Data.Backups.parseName(f);
+          });
+      } else {
+        const externalFiles =
+          await FileSystem.StorageAccessFramework.readDirectoryAsync(
+            externalBackupDir,
+          );
+        const filenames = externalFiles.map((f) => {
+          const decoded = decodeURIComponent(f);
+          return decoded.substring(decoded.lastIndexOf("/") + 1);
+        });
+        return filenames
+          .filter(
+            (f) => f.startsWith("EntriesBackupFrom_") && f.endsWith(".csv"),
+          )
+          .map((f) => Data.Backups.parseName(f));
+      }
+    },
+  },
+
   Projects: {
     sync: async () =>
       projectSyncLock

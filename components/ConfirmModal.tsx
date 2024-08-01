@@ -8,6 +8,7 @@ import {
 
 export default function ConfirmModal(props: {
   title: string;
+  description?: string;
   leftText: string;
   rightText: string;
   visible: boolean;
@@ -31,6 +32,11 @@ export default function ConfirmModal(props: {
                   {props.title}
                 </Text>
               </View>
+              {props.description && (
+                <View className="w-full items-center justify-center pb-12">
+                  <Text>{props.description}</Text>
+                </View>
+              )}
               <View className="flex-row justify-between">
                 <View className="overflow-hidden rounded-full">
                   <TouchableNativeFeedback onPress={props.onLeft}>

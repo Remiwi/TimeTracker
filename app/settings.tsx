@@ -1,12 +1,20 @@
 import * as SecureStore from "expo-secure-store";
 import StyledTextInput from "@/components/TextInput";
-import { useEffect, useState } from "react";
-import { Text, TouchableNativeFeedback, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Text,
+  ToastAndroid,
+  TouchableNativeFeedback,
+  View,
+} from "react-native";
 import { Toggl, TogglConfig } from "@/apis/toggl";
 import Database from "@/apis/db";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Data } from "@/apis/data";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MyDropDown from "@/components/DropDown";
 import { Workspace } from "@/apis/types";
+import { Icon } from "@/components/Icon";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function Page() {
   const qc = useQueryClient();
@@ -47,6 +55,15 @@ export default function Page() {
     }
   }, [workspaces.data]);
 
+  const backupMutation = useMutation({
+    mutationFn: async (data?: { email?: string; overwrite?: boolean }) => {
+      await Data.Backups.backup(data?.email, data?.overwrite);
+    },
+    onError: (e) => {
+      console.error(e);
+    },
+  });
+
   return (
     <View>
       <View className="p-4">
@@ -83,6 +100,7 @@ export default function Page() {
       <View className="p-4 pb-8">
         <MyDropDown
           label="Toggl Workspace"
+          bgColor="white"
           options={workspaces.data || []}
           itemToString={(item) => item?.name || ""}
           modalColor="#eeeeee"
@@ -125,6 +143,242 @@ export default function Page() {
           </TouchableNativeFeedback>
         </View>
       </View>
+      <View className="flex w-full items-center pb-4 pt-4">
+        <View className="overflow-hidden rounded-full">
+          <TouchableNativeFeedback
+            onPress={() => backupMutation.mutate({ email: "email :O" })}
+          >
+            <View className="flex items-center justify-center rounded-full bg-gray-500 p-2 px-6">
+              <Text className="text-lg text-white">Backup Test</Text>
+            </View>
+          </TouchableNativeFeedback>
+        </View>
+      </View>
+      <Text className="px-4 pb-2 text-2xl font-bold">Backups</Text>
+      <View className="px-2 pb-2">
+        <BackupExternalDir />
+      </View>
+      <View className="px-2">
+        <BackupList />
+      </View>
+    </View>
+  );
+}
+
+function BackupExternalDir() {
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+
+  const qc = useQueryClient();
+
+  const externalDir = useQuery({
+    queryKey: ["backups", "externalDir"],
+    queryFn: Data.Backups.getExternalBackupDirectory,
+  });
+
+  const externalDirMutation = useMutation({
+    mutationKey: ["backups"],
+    mutationFn: Data.Backups.setExternalBackupDirectory,
+    onError: (e) => {
+      setErrorText(e.message);
+    },
+    onSuccess: (data) => {
+      setErrorText(null);
+      qc.setQueryData(["backups", "externalDir"], data);
+      qc.invalidateQueries({ queryKey: ["backups"] });
+    },
+  });
+  const clearExternalDirMutation = useMutation({
+    mutationKey: ["backups"],
+    mutationFn: Data.Backups.clearExternalBackupDirectory,
+    onError: (e) => {
+      console.error(e);
+    },
+    onSuccess: () => {
+      qc.setQueryData(["backups", "externalDir"], null);
+    },
+  });
+
+  let externalDirText = "Loading...";
+  if (externalDir.isSuccess && externalDir.data !== null) {
+    externalDirText = "[External]/" + externalDir.data.split("primary:")[1];
+  }
+  if (externalDir.isSuccess && externalDir.data === null) {
+    externalDirText = "No External Backup Directory";
+  }
+
+  return (
+    <View className="relative rounded-md">
+      <ConfirmModal
+        visible={confirmModalVisible}
+        title="Remove External Backup Directory?"
+        description={[
+          "The folder will still exist in your storage, and the backups will stay there, but backups will not be saved there.",
+          "Backups can still be created manually and automatically, but they will be saved to the app's internal storage.",
+        ].join(" ")}
+        leftText="Cancel"
+        rightText="Confirm"
+        onLeft={() => {
+          setConfirmModalVisible(false);
+        }}
+        onRight={() => {
+          setConfirmModalVisible(false);
+          clearExternalDirMutation.mutate();
+        }}
+      />
+      <Text className="absolute -top-3 left-2 z-10 bg-white px-1 text-sm text-slate-600">
+        External Directory
+      </Text>
+      <TouchableNativeFeedback
+        onPress={() => {
+          externalDirMutation.mutate();
+        }}
+      >
+        <View className="flex-row justify-between rounded-md border-2 border-gray-500 px-2">
+          <Text
+            className="px-2 py-2"
+            style={{
+              color:
+                (errorText && "#d44") ||
+                (!externalDir.data && "#bbb") ||
+                undefined,
+            }}
+          >
+            {errorText ?? externalDirText}
+          </Text>
+          {externalDir.isSuccess && externalDir.data !== null && (
+            <View className="overflow-hidden rounded-full">
+              <TouchableNativeFeedback
+                onPress={() => {
+                  setConfirmModalVisible(true);
+                }}
+              >
+                <View className="items-center justify-center p-2">
+                  <Icon name="material/close" size={20} />
+                </View>
+              </TouchableNativeFeedback>
+            </View>
+          )}
+        </View>
+      </TouchableNativeFeedback>
+    </View>
+  );
+}
+
+function BackupList() {
+  const [confirmModalVisible, setConfirmModalVisible] =
+    useState<boolean>(false);
+  const toDeleteRef = useRef<string | null>(null);
+
+  const backups = useQuery({
+    queryKey: ["backups"],
+    queryFn: Data.Backups.getAll,
+  });
+  const externalDir = useQuery({
+    queryKey: ["backups", "externalDir"],
+    queryFn: Data.Backups.getExternalBackupDirectory,
+  });
+
+  const deleteBackupMutation = useMutation({
+    mutationKey: ["backups"],
+    mutationFn: Data.Backups.delete,
+    onError: (e) => {
+      console.error(e);
+    },
+  });
+
+  return (
+    <View className="overflow-hidden rounded-md border-2 border-gray-500">
+      <ConfirmModal
+        visible={confirmModalVisible}
+        title="Delete Backup?"
+        leftText="Cancel"
+        rightText="Delete"
+        onLeft={() => {
+          setConfirmModalVisible(false);
+          toDeleteRef.current = null;
+        }}
+        onRight={() => {
+          setConfirmModalVisible(false);
+          if (toDeleteRef.current === null) return;
+          deleteBackupMutation.mutate(toDeleteRef.current);
+          toDeleteRef.current = null;
+        }}
+        rightClassName="text-red-600 text-lg font-bold"
+      />
+      <View className="h-6 flex-row items-center bg-gray-100">
+        <Text className="w-1/4 border-r border-gray-500 px-2 font-semibold">
+          Created
+        </Text>
+        <Text className="w-1/4 border-r border-gray-500 px-2">From</Text>
+        <Text className="w-1/4 border-r border-gray-500 px-2">To</Text>
+        <View className="w-1/4" />
+      </View>
+      {!backups.isError &&
+        (backups.data ?? []).map((b) => (
+          <View
+            className="h-10 flex-row items-center border-t border-gray-500"
+            key={b.filename}
+          >
+            <View className="h-full w-1/4 justify-center border-r border-gray-500 px-2">
+              <Text className="font-semibold">
+                {b.generated.toISOString().split("T")[0]}
+              </Text>
+            </View>
+            <View className="h-full w-1/4 justify-center border-r border-gray-500 px-2">
+              <Text>{b.oldest.toISOString().split("T")[0]}</Text>
+            </View>
+            <View className="h-full w-1/4 justify-center border-r border-gray-500 px-2">
+              <Text>{b.newest.toISOString().split("T")[0]}</Text>
+            </View>
+            <View className="h-full w-1/4 flex-row items-center justify-center gap-3">
+              <View className="overflow-hidden rounded-full">
+                <TouchableNativeFeedback>
+                  <View className="items-center justify-center p-2">
+                    <Icon name="material/share" size={20} />
+                  </View>
+                </TouchableNativeFeedback>
+              </View>
+              <View className="overflow-hidden rounded-full">
+                <TouchableNativeFeedback
+                  onPress={() => {
+                    if (externalDir.isSuccess && externalDir.data === null) {
+                      toDeleteRef.current = b.filename;
+                      setConfirmModalVisible(true);
+                    } else if (externalDir.isSuccess) {
+                      ToastAndroid.show(
+                        "External storage is being used, delete using your file manager",
+                        ToastAndroid.SHORT,
+                      );
+                    } else {
+                      ToastAndroid.show(
+                        "Checking if external storage is being used, please try again",
+                        ToastAndroid.SHORT,
+                      );
+                    }
+                  }}
+                >
+                  <View className="items-center justify-center p-2">
+                    <Icon
+                      name="material-community/trash-can"
+                      size={20}
+                      color={
+                        externalDir.isSuccess && externalDir.data === null
+                          ? "black"
+                          : "#ccc"
+                      }
+                    />
+                  </View>
+                </TouchableNativeFeedback>
+              </View>
+            </View>
+          </View>
+        ))}
+      {backups.isError && (
+        <View className="h-16 w-full items-center justify-center border-t border-gray-500">
+          <Text className="text-xl text-red-700">Error reading backups</Text>
+        </View>
+      )}
     </View>
   );
 }
