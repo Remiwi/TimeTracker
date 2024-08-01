@@ -247,12 +247,20 @@ export const Data = {
         if (files.includes(filename) && !overwrite) {
           throw Error("Backup already exists");
         }
-
-        const uri = await FileSystem.StorageAccessFramework.createFileAsync(
-          externalBackupDir,
-          filename,
-          "text/csv",
-        );
+        let uri = "";
+        if (!files.includes(filename)) {
+          uri = await FileSystem.StorageAccessFramework.createFileAsync(
+            externalBackupDir,
+            filename,
+            "text/csv",
+          );
+        } else {
+          const index = files.findIndex((f) => f === filename);
+          uri = externalFiles[index];
+        }
+        if (uri === "") {
+          throw Error("Could not find URI to overwrite");
+        }
 
         await FileSystem.StorageAccessFramework.writeAsStringAsync(
           uri,
