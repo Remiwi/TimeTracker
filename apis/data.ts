@@ -153,6 +153,9 @@ export const Data = {
 
     backup: async (email = "", overwrite = false) => {
       const entries = await Data.Entries.getAll();
+      if (entries.length === 0) {
+        return null;
+      }
       let csv_content = `"Email","Project","Description","Start date","Start time","Duration","Tags","Timezone"\n`;
       for (const entry of entries) {
         if (entry.stop === null) {
