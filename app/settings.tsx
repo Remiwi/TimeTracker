@@ -56,6 +56,7 @@ export default function Page() {
     mutationKey: ["workspaces", "current"],
     mutationFn: async (ws: number | null) => {
       SecureStore.setItem("togglWorkspace", ws === null ? "" : ws.toString());
+      TogglConfig.workspace = ws?.toString() ?? null;
       if (ws !== null) {
         setWorkspaceEntered(true);
         setTimeout(() => {
