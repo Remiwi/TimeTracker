@@ -54,7 +54,7 @@ export const Paginated = React.forwardRef(function (
         });
       } else if (
         gestureState.dx < -threshold &&
-        (props.maxPage ? page.current < props.maxPage : true)
+        (props.maxPage !== undefined ? page.current < props.maxPage : true)
       ) {
         page.current += 1;
         Animated.spring(scrollX, {
