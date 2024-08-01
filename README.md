@@ -9,6 +9,7 @@
   - [ ] Template organization
   - [ ] Timer quick-actions
   - [x] In-depth entry editor
+  - [ ] Make template add/edit modal nicer
 - [x] Projects screen
   - [x] Changing projects
   - [x] Project icons
