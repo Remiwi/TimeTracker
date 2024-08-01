@@ -76,8 +76,8 @@ export default function Page() {
   }
   return (
     <View className="pt-4">
-      <Text className="px-4 pb-2 text-2xl font-bold">Sync</Text>
-      <View className="flex-row items-center gap-2 p-2">
+      <Text className="px-4 pb-4 text-2xl font-bold">Sync</Text>
+      <View className="flex-row items-center gap-2 px-2">
         <StyledTextInput
           className="flex-grow"
           label="Toggl Token"
@@ -102,7 +102,7 @@ export default function Page() {
           </TouchableNativeFeedback>
         </View>
       </View>
-      <View className="flex flex-grow justify-center">
+      <View className="w-full flex-row justify-end pb-2">
         <Text className="px-4 text-gray-500">
           {tokenEntered ? "Token entered" : ""}
         </Text>
