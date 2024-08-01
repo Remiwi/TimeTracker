@@ -21,6 +21,9 @@ const prevState = {
 };
 
 const sync = async () => {
+  if (await Data.Backups.autoBackup()) {
+    console.log("Created backup");
+  }
   await Data.Projects.sync();
   await Data.Entries.sync();
 };

@@ -314,6 +314,40 @@ export const Data = {
           .map((f) => Data.Backups.parseName(f));
       }
     },
+
+    autoBackup: async () => {
+      const backups = await Data.Backups.getAll();
+      backups.sort((a, b) => {
+        if (a.generated < b.generated) {
+          return -1;
+        }
+        if (b.generated > a.generated) {
+          return 1;
+        }
+        return 0;
+      });
+      const mostRecent = backups[backups.length - 1];
+      if (mostRecent === undefined) {
+        await Data.Backups.backup("", false);
+        return true;
+      }
+
+      const autoBackupFreq =
+        (await AsyncStorage.getItem("backupsFrequency")) ?? "weekly";
+      if (autoBackupFreq === "never") return false;
+
+      const msSinceLastBackup =
+        new Date().getTime() - new Date(mostRecent.generated).getTime();
+
+      let threshold = 1000 * 60 * 60 * 24;
+      if (autoBackupFreq === "weekly") threshold *= 7;
+
+      if (msSinceLastBackup >= threshold) {
+        await Data.Backups.backup("", false);
+        return true;
+      }
+      return false;
+    },
   },
 
   Projects: {
