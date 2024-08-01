@@ -59,6 +59,16 @@ function getNewerEntry(a: DBEntry, b: Entry) {
 }
 
 export const Data = {
+  Sync: {
+    sync: async () => {
+      if (await Data.Backups.autoBackup()) {
+        console.log("Creating backup");
+      }
+      Data.Projects.sync();
+      Data.Entries.sync();
+    },
+  },
+
   Backups: {
     nameBackup: (oldest: Date, newest: Date) => {
       const today = new Date();

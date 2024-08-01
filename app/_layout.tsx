@@ -20,14 +20,6 @@ const prevState = {
   isConnected: false as boolean | null,
 };
 
-const sync = async () => {
-  if (await Data.Backups.autoBackup()) {
-    console.log("Created backup");
-  }
-  await Data.Projects.sync();
-  await Data.Entries.sync();
-};
-
 setInterval(
   async () =>
     await NetInfo.fetch().then(async (state) => {
@@ -36,7 +28,7 @@ setInterval(
         let i = 0;
         while (i < 3) {
           try {
-            await sync();
+            await Data.Sync.sync();
             i = 3;
           } catch (e) {
             console.error(e);
