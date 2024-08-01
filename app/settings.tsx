@@ -205,7 +205,7 @@ function Sync() {
           {tokenEntered ? "Token entered" : ""}
         </Text>
       </View>
-      <View className="px-2 pb-2">
+      <View className="px-2">
         <MyDropDown
           label="Toggl Workspace"
           bgColor="white"
@@ -233,9 +233,7 @@ function Sync() {
             }}
           >
             <View className="flex items-center justify-center rounded-full bg-red-600 p-2 px-6">
-              <Text className="text-lg text-white">
-                Delete Interal Databases
-              </Text>
+              <Text className="text-lg text-white">Delete Internal Data</Text>
             </View>
           </TouchableNativeFeedback>
         </View>
