@@ -16,6 +16,7 @@ export default function ConfirmModal(props: {
   onRight: () => void;
   leftClassName?: string;
   rightClassName?: string;
+  buttonWidth?: number;
 }) {
   if (!props.visible) return <></>;
   return (
@@ -40,7 +41,16 @@ export default function ConfirmModal(props: {
               <View className="flex-row justify-between">
                 <View className="overflow-hidden rounded-full">
                   <TouchableNativeFeedback onPress={props.onLeft}>
-                    <View className="w-28 flex-row justify-center p-2">
+                    <View
+                      className="w-28 flex-row justify-center p-2"
+                      style={
+                        props.buttonWidth !== undefined
+                          ? {
+                              width: props.buttonWidth,
+                            }
+                          : undefined
+                      }
+                    >
                       <Text
                         className={props.leftClassName ?? "text-lg font-bold"}
                       >
@@ -51,7 +61,16 @@ export default function ConfirmModal(props: {
                 </View>
                 <View className="overflow-hidden rounded-full">
                   <TouchableNativeFeedback onPress={props.onRight}>
-                    <View className="w-28 flex-row justify-center p-2">
+                    <View
+                      className="w-28 flex-row justify-center p-2"
+                      style={
+                        props.buttonWidth !== undefined
+                          ? {
+                              width: props.buttonWidth,
+                            }
+                          : undefined
+                      }
+                    >
                       <Text
                         className={props.rightClassName ?? "text-lg font-bold"}
                       >
