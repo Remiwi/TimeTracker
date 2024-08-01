@@ -122,7 +122,7 @@ export default function Page() {
           )}
         </View>
       </View>
-      <View className="flex w-full items-center">
+      <View className="flex w-full items-center border-b border-gray-200 pb-6">
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback
             onPress={() => {
@@ -145,18 +145,7 @@ export default function Page() {
           </TouchableNativeFeedback>
         </View>
       </View>
-      <View className="flex w-full items-center pb-4 pt-4">
-        <View className="overflow-hidden rounded-full">
-          <TouchableNativeFeedback
-            onPress={() => backupMutation.mutate({ email: "email :O" })}
-          >
-            <View className="flex items-center justify-center rounded-full bg-gray-500 p-2 px-6">
-              <Text className="text-lg text-white">Backup Test</Text>
-            </View>
-          </TouchableNativeFeedback>
-        </View>
-      </View>
-      <Text className="px-4 pb-2 text-2xl font-bold">Backups</Text>
+      <Text className="px-4 pb-2 pt-4 text-2xl font-bold">Backups</Text>
       <View className="flex-row">
         <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
         <RegularBackups />
@@ -370,19 +359,37 @@ function BackupExternalDir() {
 }
 
 function ManualBackup() {
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+
   const backupMutation = useMutation({
     mutationKey: ["backups"],
-    mutationFn: Data.Backups.backup,
+    mutationFn: async (data: { email: string; overwrite: boolean }) =>
+      Data.Backups.backup(data.email, data.overwrite),
     onError: (e) => {
+      if (e instanceof Error && e.message === "Backup already exists") {
+        setConfirmModalVisible(true);
+        return;
+      }
       console.error(e);
     },
   });
 
   return (
     <View className="overflow-hidden rounded-full">
+      <ConfirmModal
+        visible={confirmModalVisible}
+        title="Overwrite today's existing backup?"
+        leftText="No"
+        rightText="Yes"
+        onLeft={() => setConfirmModalVisible(false)}
+        onRight={() => {
+          setConfirmModalVisible(false);
+          backupMutation.mutate({ email: "test", overwrite: true });
+        }}
+      />
       <TouchableNativeFeedback
         onPress={() => {
-          backupMutation.mutate("test");
+          backupMutation.mutate({ email: "test", overwrite: false });
         }}
       >
         <View className="bg-gray-200 px-6 py-3">
