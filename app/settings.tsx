@@ -157,15 +157,23 @@ export default function Page() {
         </View>
       </View>
       <Text className="px-4 pb-2 text-2xl font-bold">Backups</Text>
-      <View className="flex-row pb-4">
+      <View className="flex-row">
         <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
         <RegularBackups />
       </View>
-      {Platform.OS === "android" && (
-        <View className="px-2 pb-2">
-          <BackupExternalDir />
-        </View>
-      )}
+      <Text className="pb-8 pl-6 pr-2 text-end text-sm">
+        <Text className="font-semibold">Note:</Text> Currently regular backups
+        are only performed immediately before a sync. They will never happen
+        when the app is not open.
+      </Text>
+      <View className="w-full flex-row items-start justify-center gap-4 px-2 pb-2">
+        {Platform.OS === "android" && (
+          <View className="flex-grow pb-2">
+            <BackupExternalDir />
+          </View>
+        )}
+        <ManualBackup />
+      </View>
       <View className="px-2">
         <BackupList />
       </View>
@@ -189,7 +197,7 @@ function RegularBackups() {
     (frequency.data === null ||
       !["daily", "weekly", "never"].includes(frequency.data))
   ) {
-    frequencyMutation.mutate("daily");
+    frequencyMutation.mutate("weekly");
   }
 
   return (
@@ -361,6 +369,30 @@ function BackupExternalDir() {
   );
 }
 
+function ManualBackup() {
+  const backupMutation = useMutation({
+    mutationKey: ["backups"],
+    mutationFn: Data.Backups.backup,
+    onError: (e) => {
+      console.error(e);
+    },
+  });
+
+  return (
+    <View className="overflow-hidden rounded-full">
+      <TouchableNativeFeedback
+        onPress={() => {
+          backupMutation.mutate("test");
+        }}
+      >
+        <View className="bg-gray-200 px-6 py-3">
+          <Text className="font-bold">Manual Backup</Text>
+        </View>
+      </TouchableNativeFeedback>
+    </View>
+  );
+}
+
 function BackupList() {
   const [confirmModalVisible, setConfirmModalVisible] =
     useState<boolean>(false);
@@ -473,6 +505,11 @@ function BackupList() {
       {backups.isError && (
         <View className="h-16 w-full items-center justify-center border-t border-gray-500">
           <Text className="text-xl text-red-700">Error reading backups</Text>
+        </View>
+      )}
+      {backups.data?.length === 0 && (
+        <View className="h-16 w-full items-center justify-center border-t border-gray-500">
+          <Text className="text-xl font-bold text-gray-400">No backups</Text>
         </View>
       )}
     </View>
