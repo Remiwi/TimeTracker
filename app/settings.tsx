@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import StyledTextInput from "@/components/TextInput";
 import { useEffect, useRef, useState } from "react";
 import {
+  Platform,
   Text,
   ToastAndroid,
   TouchableNativeFeedback,
@@ -15,6 +16,7 @@ import MyDropDown from "@/components/DropDown";
 import { Workspace } from "@/apis/types";
 import { Icon } from "@/components/Icon";
 import ConfirmModal from "@/components/ConfirmModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Page() {
   const qc = useQueryClient();
@@ -155,12 +157,106 @@ export default function Page() {
         </View>
       </View>
       <Text className="px-4 pb-2 text-2xl font-bold">Backups</Text>
-      <View className="px-2 pb-2">
-        <BackupExternalDir />
+      <View className="flex-row pb-4">
+        <Text className="px-2 text-lg font-semibold">Regular backups:</Text>
+        <RegularBackups />
       </View>
+      {Platform.OS === "android" && (
+        <View className="px-2 pb-2">
+          <BackupExternalDir />
+        </View>
+      )}
       <View className="px-2">
         <BackupList />
       </View>
+    </View>
+  );
+}
+
+function RegularBackups() {
+  const frequency = useQuery({
+    queryKey: ["backups", "frequency"],
+    queryFn: async () => AsyncStorage.getItem("backupsFrequency"),
+  });
+  const frequencyMutation = useMutation({
+    mutationKey: ["backups", "frequency"],
+    mutationFn: async (freq: string) =>
+      AsyncStorage.setItem("backupsFrequency", freq),
+  });
+
+  if (
+    frequency.isSuccess &&
+    (frequency.data === null ||
+      !["daily", "weekly", "never"].includes(frequency.data))
+  ) {
+    frequencyMutation.mutate("daily");
+  }
+
+  return (
+    <View className="flex-row overflow-hidden rounded-full border border-gray-300 bg-gray-200">
+      <TouchableNativeFeedback
+        onPress={() => {
+          frequencyMutation.mutate("daily");
+        }}
+      >
+        <View
+          className="w-20 items-center justify-center py-2"
+          style={
+            frequency.data === "daily"
+              ? { backgroundColor: "#d1d5db" }
+              : undefined
+          }
+        >
+          <Text
+            className="text-gray-500"
+            style={frequency.data === "daily" ? { color: "black" } : undefined}
+          >
+            Daily
+          </Text>
+        </View>
+      </TouchableNativeFeedback>
+      <TouchableNativeFeedback
+        onPress={() => {
+          frequencyMutation.mutate("weekly");
+        }}
+      >
+        <View
+          className="w-20 items-center justify-center py-2"
+          style={
+            frequency.data === "weekly"
+              ? { backgroundColor: "#d1d5db" }
+              : undefined
+          }
+        >
+          <Text
+            className="text-gray-500"
+            style={frequency.data === "weekly" ? { color: "black" } : undefined}
+          >
+            Weekly
+          </Text>
+        </View>
+      </TouchableNativeFeedback>
+      <TouchableNativeFeedback
+        onPress={() => {
+          frequencyMutation.mutate("never");
+        }}
+      >
+        <View
+          className="w-20 items-center justify-center py-2"
+          style={
+            frequency.data === "never"
+              ? { backgroundColor: "#d1d5db" }
+              : undefined
+          }
+        >
+          <Text
+            className="text-gray-500"
+            style={frequency.data === "never" ? { color: "black" } : undefined}
+          >
+            Never
+          </Text>
+        </View>
+      </TouchableNativeFeedback>
     </View>
   );
 }
