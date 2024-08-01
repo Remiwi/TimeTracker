@@ -413,6 +413,14 @@ function BackupList() {
     },
   });
 
+  const shareMutation = useMutation({
+    mutationFn: Data.Backups.share,
+    onError: (e) => {
+      console.error(e);
+      ToastAndroid.show(e.message, ToastAndroid.SHORT);
+    },
+  });
+
   return (
     <View className="overflow-hidden rounded-md border-2 border-gray-500">
       <ConfirmModal
@@ -459,7 +467,9 @@ function BackupList() {
             </View>
             <View className="h-full w-1/4 flex-row items-center justify-center gap-3">
               <View className="overflow-hidden rounded-full">
-                <TouchableNativeFeedback>
+                <TouchableNativeFeedback
+                  onPress={() => shareMutation.mutate(b.filename)}
+                >
                   <View className="items-center justify-center p-2">
                     <Icon name="material/share" size={20} />
                   </View>

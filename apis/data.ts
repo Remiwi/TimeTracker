@@ -6,8 +6,8 @@ import { tryAcquire, Mutex, E_ALREADY_LOCKED } from "async-mutex";
 import { Dates } from "@/utils/dates";
 import { Tags } from "@/utils/tags";
 import * as FileSystem from "expo-file-system";
+import * as Sharing from "expo-sharing";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 
 const projectSyncLock = tryAcquire(new Mutex());
 const entrySyncLock = tryAcquire(new Mutex());
@@ -280,6 +280,48 @@ export const Data = {
           throw Error("File not found");
         }
         await FileSystem.StorageAccessFramework.deleteAsync(found);
+      }
+    },
+
+    share: async (filename: string) => {
+      if (!(await Sharing.isAvailableAsync())) {
+        throw Error("Sharing not available");
+      }
+
+      const externalBackupDir = await AsyncStorage.getItem(
+        "externalBackupDirectory",
+      );
+
+      if (externalBackupDir === null) {
+        if (FileSystem.documentDirectory === null) {
+          throw Error("Document directory is null");
+        }
+        const path = FileSystem.documentDirectory + "backups/" + filename;
+        await Sharing.shareAsync(path);
+      } else {
+        if (FileSystem.cacheDirectory === null) {
+          throw Error("Cache directory is null");
+        }
+
+        const externalFiles =
+          await FileSystem.StorageAccessFramework.readDirectoryAsync(
+            externalBackupDir,
+          );
+        const found = externalFiles.find((f) => {
+          const decoded = decodeURIComponent(f);
+          return decoded.substring(decoded.lastIndexOf("/") + 1) === filename;
+        });
+        if (found === undefined) {
+          throw Error("File not found");
+        }
+
+        const cachedFilename = FileSystem.cacheDirectory + filename;
+        FileSystem.copyAsync({
+          from: found,
+          to: cachedFilename,
+        });
+        await Sharing.shareAsync(cachedFilename);
+        await FileSystem.deleteAsync(cachedFilename);
       }
     },
 
