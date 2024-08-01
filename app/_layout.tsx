@@ -15,6 +15,7 @@ import { Drawer } from "expo-router/drawer";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const prevState = {
   isConnected: false as boolean | null,
@@ -23,7 +24,9 @@ const prevState = {
 setInterval(
   async () =>
     await NetInfo.fetch().then(async (state) => {
-      if (state.isConnected && !prevState.isConnected) {
+      const syncEnabled =
+        (await AsyncStorage.getItem("syncEnabled")) === "true";
+      if (syncEnabled && state.isConnected && !prevState.isConnected) {
         console.log("Syncing");
         let i = 0;
         while (i < 3) {
@@ -38,7 +41,7 @@ setInterval(
       }
       prevState.isConnected = state.isConnected;
     }),
-  1_000,
+  10_000,
 );
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

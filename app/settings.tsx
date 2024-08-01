@@ -22,6 +22,7 @@ import { Workspace } from "@/apis/types";
 import { Icon } from "@/components/Icon";
 import ConfirmModal from "@/components/ConfirmModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import CheckBox from "@/components/CheckBox";
 
 export default function Page() {
   return (
@@ -34,6 +35,19 @@ export default function Page() {
 
 function Sync() {
   const qc = useQueryClient();
+
+  const syncEnabled = useQuery({
+    queryKey: ["syncEnabled"],
+    queryFn: async () => {
+      const item = await AsyncStorage.getItem("syncEnabled");
+      return item === "true";
+    },
+  });
+  const syncEnabledMutation = useMutation({
+    mutationKey: ["syncEnabled"],
+    mutationFn: async (enabled: boolean) =>
+      AsyncStorage.setItem("syncEnabled", enabled ? "true" : "false"),
+  });
 
   const [togglToken, setTogglToken] = useState<string>("");
   const [tokenEntered, setTokenEntered] = useState(false);
@@ -99,7 +113,15 @@ function Sync() {
 
   return (
     <>
-      <Text className="px-4 pb-4 text-2xl font-bold">Sync</Text>
+      <Text className="px-4 text-2xl font-bold">Sync</Text>
+      <View className="flex-row items-center justify-between px-4 pb-2">
+        <Text className="text-lg font-semibold">Sync Enabled</Text>
+        <CheckBox
+          value={syncEnabled.data === true}
+          onChange={(enabled) => syncEnabledMutation.mutate(enabled)}
+          offStyle={{ borderStyle: "solid", borderWidth: 2 }}
+        />
+      </View>
       <View className="flex-row items-center gap-2 px-2">
         <StyledTextInput
           className="flex-grow"
