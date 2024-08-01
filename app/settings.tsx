@@ -34,6 +34,8 @@ export default function Page() {
 }
 
 function Sync() {
+  const [wsChangeModalVisible, setWsChangeModalVisible] = useState(false);
+
   const qc = useQueryClient();
 
   const syncEnabled = useQuery({
@@ -97,6 +99,12 @@ function Sync() {
         setTimeout(() => {
           setWorkspaceEntered(false);
         }, 3000);
+
+        if ((await Data.Entries.getAll()).length > 0) {
+          setWsChangeModalVisible(true);
+        } else {
+          syncMutation.mutate();
+        }
       }
     },
   });
@@ -111,8 +119,57 @@ function Sync() {
     workspaceMutation.mutate(workspaces.data[0].id);
   }
 
+  const deleteInternalDatabases = () => {
+    Database.Manage.dropAllTablesSync();
+    Database.Manage.intializeDBSync();
+    qc.resetQueries();
+  };
+
+  const removeTogglToken = () => {
+    SecureStore.deleteItemAsync("togglToken");
+    SecureStore.deleteItemAsync("togglWorkspace");
+    TogglConfig.token = "";
+    TogglConfig.workspace = "";
+    workspaceMutation.mutate(null);
+    setTogglToken("");
+    qc.resetQueries({ queryKey: ["togglToken"] });
+    qc.resetQueries({ queryKey: ["workspaces"] });
+  };
+
+  const syncMutation = useMutation({
+    mutationFn: Data.Sync.sync,
+    onMutate: () => {
+      qc.invalidateQueries();
+    },
+  });
+
   return (
     <>
+      <ConfirmModal
+        visible={wsChangeModalVisible}
+        title="Remove old workspace entries before syncing?"
+        description={[
+          "All local-only entries will be pushed to the new workspace, and all entries from the new workspace will be copied locally.",
+          "If there are any entries on this app right now, this could result in undesired entry mixing or duplication.",
+          "To avoid this, disable syncing or remove all entries from this app.",
+          "Otherwise, select 'Disable Sync', then re-enable and re-launch app.",
+          "\n\nIf you're not sure, select 'Remove Entries'.",
+        ].join("")}
+        leftText="Remove Entries"
+        rightText="Disable Sync"
+        onLeft={() => {
+          setWsChangeModalVisible(false);
+          deleteInternalDatabases();
+          syncMutation.mutate();
+        }}
+        onRight={() => {
+          setWsChangeModalVisible(false);
+          syncEnabledMutation.mutate(false);
+        }}
+        leftClassName="font-bold text-lg text-center"
+        rightClassName="font-bold text-lg text-center"
+        buttonWidth={128}
+      />
       <Text className="px-4 text-2xl font-bold">Sync</Text>
       <View className="flex-row items-center justify-between px-4 pb-2">
         <Text className="text-lg font-semibold">Sync Enabled</Text>
@@ -171,16 +228,8 @@ function Sync() {
         <View className="overflow-hidden rounded-full">
           <TouchableNativeFeedback
             onPress={() => {
-              Database.Manage.dropAllTablesSync();
-              Database.Manage.intializeDBSync();
-              SecureStore.deleteItemAsync("togglToken");
-              SecureStore.deleteItemAsync("togglWorkspace");
-              TogglConfig.token = "";
-              TogglConfig.workspace = "";
-              setTogglToken("");
-              workspaceMutation.mutate(null);
-              qc.setQueryData(["workspaces"], []);
-              qc.setQueryData(["workspaces", "current"], null);
+              deleteInternalDatabases();
+              removeTogglToken();
             }}
           >
             <View className="flex items-center justify-center rounded-full bg-red-600 p-2 px-6">
