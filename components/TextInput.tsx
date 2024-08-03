@@ -11,6 +11,8 @@ export default function StyledTextInput(props: {
   textColor?: string;
   placeholderColor?: string;
   className?: string;
+  textMinHeight?: number;
+  multiline?: boolean;
 }) {
   return (
     <View className={props.className}>
@@ -48,6 +50,11 @@ export default function StyledTextInput(props: {
           placeholderTextColor={props.placeholderColor || "#aaaaaa"}
           value={props.value}
           onChangeText={props.onChange}
+          multiline={props.multiline}
+          style={{
+            minHeight: props.textMinHeight,
+            textAlignVertical: "top",
+          }}
         />
       </View>
     </View>
