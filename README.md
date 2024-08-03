@@ -4,10 +4,10 @@
 
 - [x] Toggl Interface
   - [x] Offline mode
-- [ ] Timer screen
+- [x] Timer screen
   - [x] Basic timer functionality
   - [x] Template organization
-  - [ ] Timer quick-actions
+  - [x] Timer quick-actions
   - [x] In-depth entry editor
   - [x] Make template add/edit modal nicer
 - [x] Projects screen
