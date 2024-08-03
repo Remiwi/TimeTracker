@@ -144,17 +144,6 @@ function TemplateEditModal(props: {
         style={{ backgroundColor: "#00000088" }}
       >
         <View className="w-full rounded-2xl bg-gray-50 p-4">
-          {props.defaultTemplate !== undefined && (
-            <View className="flex items-center pb-2">
-              <View className="w-44 overflow-hidden rounded-full shadow-sm shadow-slate-800">
-                <TouchableNativeFeedback onPress={onDelete}>
-                  <View className="flex w-full items-center rounded-full bg-slate-100 p-2">
-                    <Text className="font-bold">Delete Template</Text>
-                  </View>
-                </TouchableNativeFeedback>
-              </View>
-            </View>
-          )}
           <Text className="pb-4 text-xl">Template Properties</Text>
           <MyTextInput
             label="Name"
@@ -163,7 +152,7 @@ function TemplateEditModal(props: {
             onChange={setName}
             className="pb-2"
           />
-          <View className="flex flex-grow items-center justify-center pb-4 pt-8">
+          <View className="flex flex-grow items-center justify-center pb-4 pt-6">
             <View className="h-0.5 w-full rounded-full bg-gray-300" />
           </View>
           <Text className="pb-4 text-lg">Entry Properties</Text>
@@ -269,22 +258,35 @@ function TemplateEditModal(props: {
             onChange={setTags}
             className="pb-4"
           />
-          <View className="flex flex-grow flex-row justify-between">
-            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
+          <View className="flex flex-grow flex-row justify-between pb-2">
+            <View className="overflow-hidden rounded-full">
               <TouchableNativeFeedback onPress={props.onCancel}>
-                <View className="flex w-28 items-center rounded-full bg-gray-100 p-2">
-                  <Text className="font-bold">Cancel</Text>
+                <View className="flex w-28 items-center rounded-full p-2">
+                  <Text className="font-bold text-gray-600">Cancel</Text>
                 </View>
               </TouchableNativeFeedback>
             </View>
-            <View className="overflow-hidden rounded-full shadow-sm shadow-slate-800">
+            <View className="overflow-hidden rounded-full">
               <TouchableNativeFeedback onPress={onDone}>
-                <View className="flex w-28 items-center rounded-full bg-slate-200 p-2">
-                  <Text className="font-bold">Done</Text>
+                <View className="flex w-28 items-center rounded-full p-2">
+                  <Text className="font-bold text-gray-600">Done</Text>
                 </View>
               </TouchableNativeFeedback>
             </View>
           </View>
+          {props.defaultTemplate !== undefined && (
+            <View className="flex items-center pb-0">
+              <View className="w-44 overflow-hidden rounded-full">
+                <TouchableNativeFeedback onPress={onDelete}>
+                  <View className="flex w-full items-center rounded-full p-2">
+                    <Text className="font-bold text-red-500">
+                      Delete Template
+                    </Text>
+                  </View>
+                </TouchableNativeFeedback>
+              </View>
+            </View>
+          )}
         </View>
       </View>
     </Modal>
