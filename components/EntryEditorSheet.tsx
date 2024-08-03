@@ -2,7 +2,7 @@ import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Animated, Text, TouchableNativeFeedback, View } from "react-native";
 import TimerText from "@/components/TimerText";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EntryWithProject, Project } from "@/apis/types";
 import { Dates } from "@/utils/dates";
 import ChipBar from "@/components/ChipBar";
@@ -33,6 +33,7 @@ import ProjectChip from "./ProjectChip";
 import TagsChip from "./TagsChip";
 import { useAnimatedValue } from "@/hooks/animtedHooks";
 import ConfirmModal from "./ConfirmModal";
+import { Data } from "@/apis/data";
 
 type EntryEditorSheetRef = {
   open: () => void;
@@ -237,6 +238,17 @@ function TimerContent(props: {
   const stopEntry = () => {
     props.onEditEntry?.({ stop: Dates.toISOExtended(new Date()) });
   };
+  const prevEntry = useQuery({
+    queryKey: ["entries", props.entry?.id || null, "prev"],
+    queryFn: async () => {
+      if (!props.entry) return null;
+      return Data.Entries.getLastStopped(props.entry.start);
+    },
+  });
+  const setStartToLastStop = () => {
+    if (!prevEntry.data || !prevEntry.data.stop) return;
+    props.onEditEntry?.({ start: prevEntry.data.stop });
+  };
 
   return (
     <View className="pt-4">
@@ -373,7 +385,7 @@ function TimerContent(props: {
           />
           <View className="flex w-full items-end">
             <View className="overflow-hidden rounded-sm">
-              <TouchableNativeFeedback>
+              <TouchableNativeFeedback onPress={setStartToLastStop}>
                 <View>
                   <Text className="px-2 py-0.5 text-sm font-semibold text-slate-600">
                     Fill to last stop
