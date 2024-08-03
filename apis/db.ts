@@ -511,7 +511,7 @@ const Database = {
         `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
         FROM entries
         LEFT JOIN projects ON entries.project_id = projects.id
-        WHERE duration != -1 AND to_delete = 0 ORDER BY start DESC LIMIT 1;`,
+        WHERE duration != -1 AND entries.to_delete = 0 ORDER BY start DESC LIMIT 1;`,
         [],
       );
     },
