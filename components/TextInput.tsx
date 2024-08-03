@@ -1,10 +1,19 @@
-import { Text, View, TextInput, KeyboardTypeOptions } from "react-native";
+import {
+  Text,
+  View,
+  TextInput,
+  KeyboardTypeOptions,
+  ReturnKeyType,
+  EnterKeyHintType,
+  EnterKeyHintTypeOptions,
+} from "react-native";
 
 export default function StyledTextInput(props: {
   label?: string;
   placeholder?: string;
   value?: string;
   onChange?: (text: string) => void;
+  obSubmitEditing?: () => void;
   bgColor?: string;
   labelColor?: string;
   borderColor?: string;
@@ -14,6 +23,8 @@ export default function StyledTextInput(props: {
   textMinHeight?: number;
   multiline?: boolean;
   keyboardType?: KeyboardTypeOptions;
+  returnKeyType?: ReturnKeyType;
+  enterKeyHint?: EnterKeyHintTypeOptions;
 }) {
   return (
     <View className={props.className}>
@@ -57,6 +68,9 @@ export default function StyledTextInput(props: {
             textAlignVertical: "top",
           }}
           keyboardType={props.keyboardType}
+          returnKeyType={props.returnKeyType}
+          enterKeyHint={props.enterKeyHint}
+          onSubmitEditing={props.obSubmitEditing}
         />
       </View>
     </View>
