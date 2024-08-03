@@ -242,6 +242,8 @@ function Item(props: {
   disabled?: boolean;
   scrollBounds?: { top: number; bottom: number; left: number; right: number };
 }) {
+  const wasLongPressed = useRef(false);
+
   const viewDimensions = useRef({ width: 0, height: 0 }).current;
 
   const ctx = useContext(GridsContext);
@@ -488,16 +490,21 @@ function Item(props: {
       <View className="overflow-hidden rounded-lg">
         <TouchableNativeFeedback
           onPress={() => {
+            wasLongPressed.current = false;
             startEntryMutation.mutate(props.template);
           }}
           onLongPress={() => {
+            wasLongPressed.current = true;
             Vibration.vibrate(80);
             shouldPanRef.current = true;
           }}
           onPressOut={() => {
             shouldPanRef.current = false;
-            if (isPanning.current === false) {
-              props.onLongPress?.();
+            if (wasLongPressed.current) {
+              wasLongPressed.current = false;
+              if (isPanning.current === false) {
+                props.onLongPress?.();
+              }
             }
           }}
           disabled={props.disabled}

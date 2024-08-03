@@ -25,7 +25,6 @@
 - [ ] Report-a-bug page
 - [ ] Bug fixes
   - [ ] Templates not ending up in the right places after moves
-  - [ ] Trying to scroll on a template open template editor
 
 ### Future
 
