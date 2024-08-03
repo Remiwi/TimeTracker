@@ -28,7 +28,7 @@ export function useOngoing() {
 export function usePrevious() {
   return useQuery({
     queryKey: ["entries", "previous"],
-    queryFn: Data.Entries.getLastStopped,
+    queryFn: async () => Data.Entries.getLastStopped(),
   });
 }
 

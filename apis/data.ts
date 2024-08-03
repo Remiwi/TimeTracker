@@ -783,8 +783,8 @@ export const Data = {
 
     // Convenience
 
-    getLastStopped: async () => {
-      const last = await Database.Entries.getLastStoppedWithProject();
+    getLastStopped: async (before?: string) => {
+      const last = await Database.Entries.getLastStoppedWithProject(before);
       if (last === null) return null;
       return {
         ...last,
@@ -793,9 +793,9 @@ export const Data = {
     },
 
     // Deprecated
-    getLastStoppedWithProject: async () => {
+    getLastStoppedWithProject: async (before?: string) => {
       console.warn("Deprecated: Use Data.Entries.getLastStopped instead");
-      const last = await Database.Entries.getLastStoppedWithProject();
+      const last = await Database.Entries.getLastStoppedWithProject(before);
       if (last === null) return null;
       return {
         ...last,

@@ -506,13 +506,15 @@ const Database = {
       );
     },
 
-    getLastStoppedWithProject: async () => {
+    getLastStoppedWithProject: async (before?: string) => {
       return await db.getFirstAsync<DBEntryWithProject>(
         `SELECT entries.*, projects.name AS project_name, projects.color AS project_color, projects.icon AS project_icon
         FROM entries
         LEFT JOIN projects ON entries.project_id = projects.id
-        WHERE duration != -1 AND entries.to_delete = 0 ORDER BY start DESC LIMIT 1;`,
-        [],
+        WHERE duration != -1 AND entries.to_delete = 0
+        ${before ? " AND start < ?" : ""}
+        ORDER BY start DESC LIMIT 1;`,
+        [before ?? ""],
       );
     },
 
