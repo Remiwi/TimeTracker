@@ -1,31 +1,35 @@
+import React from "react";
 import {
   Text,
   View,
   TextInput,
   KeyboardTypeOptions,
   ReturnKeyType,
-  EnterKeyHintType,
   EnterKeyHintTypeOptions,
 } from "react-native";
 
-export default function StyledTextInput(props: {
-  label?: string;
-  placeholder?: string;
-  value?: string;
-  onChange?: (text: string) => void;
-  obSubmitEditing?: () => void;
-  bgColor?: string;
-  labelColor?: string;
-  borderColor?: string;
-  textColor?: string;
-  placeholderColor?: string;
-  className?: string;
-  textMinHeight?: number;
-  multiline?: boolean;
-  keyboardType?: KeyboardTypeOptions;
-  returnKeyType?: ReturnKeyType;
-  enterKeyHint?: EnterKeyHintTypeOptions;
-}) {
+const StyledTextInput = React.forwardRef(function (
+  props: {
+    label?: string;
+    placeholder?: string;
+    value?: string;
+    onChange?: (text: string) => void;
+    onSubmitEditing?: () => void;
+    bgColor?: string;
+    labelColor?: string;
+    borderColor?: string;
+    textColor?: string;
+    placeholderColor?: string;
+    className?: string;
+    textMinHeight?: number;
+    multiline?: boolean;
+    keyboardType?: KeyboardTypeOptions;
+    returnKeyType?: ReturnKeyType;
+    enterKeyHint?: EnterKeyHintTypeOptions;
+    blurOnSubmit?: boolean;
+  },
+  ref: React.Ref<TextInput>,
+) {
   return (
     <View className={props.className}>
       <View
@@ -58,6 +62,7 @@ export default function StyledTextInput(props: {
           </Text>
         )}
         <TextInput
+          ref={ref}
           placeholder={props.placeholder}
           placeholderTextColor={props.placeholderColor || "#aaaaaa"}
           value={props.value}
@@ -70,9 +75,12 @@ export default function StyledTextInput(props: {
           keyboardType={props.keyboardType}
           returnKeyType={props.returnKeyType}
           enterKeyHint={props.enterKeyHint}
-          onSubmitEditing={props.obSubmitEditing}
+          onSubmitEditing={props.onSubmitEditing}
+          blurOnSubmit={props.blurOnSubmit}
         />
       </View>
     </View>
   );
-}
+});
+
+export default StyledTextInput;
