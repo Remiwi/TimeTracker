@@ -23,8 +23,6 @@
   - [x] Regular backup settings
 - [ ] Basic tutorial for new users
 - [ ] Report-a-bug page
-- [ ] Bug fixes
-  - [ ] Templates not ending up in the right places after moves
 
 ### Future
 

@@ -52,6 +52,11 @@ export default function Templates(props: {
   onTemplateCreate: (pos: { x: number; y: number }) => void;
   onTemplateEdit: (t: TemplateWithProject) => void;
 }) {
+  // This is a debug thing to force a completely new render/state after the entries change. To make sure entries moving doesn't become buggy
+  // It's hacky but for some reason it just works lol. Hopefully when I rewrite this it won't be so bad
+  const numRenders = useRef(0);
+  numRenders.current++;
+
   const templatesQuery = useTemplates();
   const templates = templatesQuery.data || [];
   // const num_pages = templates.reduce((acc, t) => Math.max(acc, t.page), 0) + 1;
@@ -76,7 +81,7 @@ export default function Templates(props: {
 
   return (
     <GridsContext.Provider value={ctx}>
-      <View className="h-full flex-shrink pt-6">
+      <View className="h-full flex-shrink pt-6" key={numRenders.current}>
         <View className="h-8 flex-row items-center justify-center">
           <View className="flex-row justify-center gap-2">
             {Array(num_pages)
@@ -422,6 +427,7 @@ function Item(props: {
         moveManyTemplatesMutation.mutate(moves);
       });
       setMovingItem(null);
+      movingItemRef.current = null;
     }
     // Otherwise move to the last position of this page
     else {
@@ -444,6 +450,7 @@ function Item(props: {
         moveManyTemplatesMutation.mutate(moves);
       });
       setMovingItem(null);
+      movingItemRef.current = null;
     }
   }, [movingItem]);
 
