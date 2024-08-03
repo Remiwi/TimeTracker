@@ -98,6 +98,13 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="contact"
+              options={{
+                drawerLabel: "Contact",
+                headerTitle: "Contact",
+              }}
+            />
+            <Drawer.Screen
               name="settings"
               options={{
                 drawerLabel: "Settings",

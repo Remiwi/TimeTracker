@@ -22,7 +22,7 @@
   - [x] Offline mode settings
   - [x] Regular backup settings
 - [ ] Basic tutorial for new users
-- [ ] Report-a-bug page
+- [x] Contact page
 
 ### Future
 
