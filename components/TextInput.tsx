@@ -1,4 +1,4 @@
-import { Text, View, TextInput } from "react-native";
+import { Text, View, TextInput, KeyboardTypeOptions } from "react-native";
 
 export default function StyledTextInput(props: {
   label?: string;
@@ -13,6 +13,7 @@ export default function StyledTextInput(props: {
   className?: string;
   textMinHeight?: number;
   multiline?: boolean;
+  keyboardType?: KeyboardTypeOptions;
 }) {
   return (
     <View className={props.className}>
@@ -55,6 +56,7 @@ export default function StyledTextInput(props: {
             minHeight: props.textMinHeight,
             textAlignVertical: "top",
           }}
+          keyboardType={props.keyboardType}
         />
       </View>
     </View>
