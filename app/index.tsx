@@ -60,7 +60,7 @@ export default function Screen() {
         />
       )}
       <View className="relative flex h-full">
-        <View className="z-50 h-52 w-full">
+        <View className="z-50 h-56 w-full">
           <EntryEditorSheet
             onOpen={() => setTemplatesEnabled(false)}
             onClose={() => setTemplatesEnabled(true)}
