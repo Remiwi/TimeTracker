@@ -414,6 +414,7 @@ function GroupedEntry(props: {
                 <TouchableNativeFeedback
                   disabled={!(props.interactionsEnabled ?? true)}
                   onPress={() => props.onEntryPress?.(entry)}
+                  key={entry.id}
                 >
                   <View className="flex h-18 flex-row border-t border-gray-300 py-2">
                     <View className="flex-row items-center justify-center gap-4 px-4">
