@@ -14,6 +14,7 @@ import { useProjects } from "@/hooks/projectQueries";
 import Templates from "@/components/index/Templates";
 import ListModal from "@/components/ListModal";
 import { Icon } from "@/components/Icon";
+import Tutorial from "@/components/Tutorial";
 
 export default function Screen() {
   const [templatesEnabled, setTemplatesEnabled] = useState(true);
@@ -32,6 +33,7 @@ export default function Screen() {
   const small = true;
   return (
     <View className="bg-gray-100">
+      <Tutorial />
       {templateModalShown && (
         <TemplateEditModal
           defaultTemplate={selectedTemplate}
