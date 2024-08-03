@@ -733,6 +733,7 @@ function ClosedChips(props: { enabled: boolean }) {
               text="Template"
               leadingIcon="add-circle"
               onPress={() => {
+                setTemplateMade(true);
                 addTemplateMutation.mutate({
                   template: {
                     name: "",
