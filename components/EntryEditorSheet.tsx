@@ -72,7 +72,12 @@ export const EntryEditorSheet = React.forwardRef(function (
   useEffect(() => {
     setDisplayEntry(props.entry ?? ongoingQuery.data);
     displayEntryHasChanges.current = !!props.entry && props.entry.id === null;
-  }, [props.entry?.id ?? ongoingQuery.data?.id, props.entry === undefined]);
+  }, [
+    props.entry?.id ?? ongoingQuery.data?.id,
+    props.entry === undefined,
+    ongoingQuery.data?.at,
+    props.entry?.at,
+  ]);
   const displayEntryHasChanges = useRef(false);
   const [saveChangesModalVisible, setSaveChangesModalVisible] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
