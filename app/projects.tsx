@@ -176,15 +176,11 @@ function ProjectModal(props: {
       onClose={props.onCancel}
       scrollEnabled={modalScrollEnabled}
       flickMultiplier={200}
-      initialHeight={45}
+      initialHeight={0}
       stableHeights={[
         {
           stabilizeTo: 0,
           whenAbove: null,
-        },
-        {
-          stabilizeTo: 45,
-          whenAbove: 10,
         },
         {
           stabilizeTo: 700,
