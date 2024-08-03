@@ -98,6 +98,14 @@ export default function RootLayout() {
               }}
             />
             <Drawer.Screen
+              name="reportsteaser"
+              options={{
+                drawerLabel: "Reports [WIP]",
+                headerTitle: "Reports [WIP]",
+                drawerLabelStyle: { color: "#bbb" },
+              }}
+            />
+            <Drawer.Screen
               name="contact"
               options={{
                 drawerLabel: "Contact",
