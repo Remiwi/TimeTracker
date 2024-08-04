@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "test-watch": "jest --watchAll",
     "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand --bail",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "eas-build-post-install": "tailwindcss -i ./app/global.css -o ./node_modules/.cache/nativewind/app/global.css.native.css"    
   },
   "jest": {
     "preset": "jest-expo",
@@ -62,7 +63,8 @@
     "react-tag-input-component": "^2.0.2",
     "sqlite": "^5.1.1",
     "tailwindcss": "^3.4.4",
-    "@react-native-async-storage/async-storage": "1.23.1"
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "expo-dev-client": "~4.0.21"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TimeTracker",
+    "name": "Temporal",
     "slug": "TimeTracker",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.remiwi.Temporal"
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +32,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e4f86b03-31fd-4741-b30c-1adee47b9708"
+      }
     }
   }
 }
