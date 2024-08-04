@@ -23,7 +23,7 @@
   - [x] Regular backup settings
 - [x] Basic tutorial for new users
 - [x] Contact page
-- [ ] Make app icon
+- [x] Make app icon
 - [ ] Decide on final name!
 
 ### Future
