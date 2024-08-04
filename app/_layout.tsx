@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Data } from "@/apis/data";
 import NetInfo from "@react-native-community/netinfo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { StatusBar } from "expo-status-bar";
 
 const prevState = {
   isConnected: false as boolean | null,
@@ -64,6 +65,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar style="dark" />
       <QueryClientProvider client={qc}>
         <ThemeProvider value={DefaultTheme}>
           <Drawer
