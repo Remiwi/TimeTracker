@@ -24,6 +24,7 @@
 - [x] Basic tutorial for new users
 - [x] Contact page
 - [x] Make app icon
+- [ ] Fix visual bug where top bar stuff is not visible
 - [ ] Decide on final name!
 
 ### Future
