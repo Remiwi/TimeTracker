@@ -5,7 +5,7 @@ export default function Teaser() {
   const router = useRouter();
 
   return (
-    <View className="h-full w-full items-center justify-center">
+    <View className="h-full w-full items-center justify-center bg-white">
       <Text className="text-4xl font-bold">Coming soon!</Text>
       <Text className="px-2 pt-6 text-justify text-lg">
         There isn't currently any way in this app to see reports on how you've

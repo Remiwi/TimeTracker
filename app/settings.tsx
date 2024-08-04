@@ -26,7 +26,7 @@ import CheckBox from "@/components/CheckBox";
 
 export default function Page() {
   return (
-    <View className="pt-4">
+    <View className="h-full bg-white pt-4">
       <Sync />
       <Backups />
     </View>

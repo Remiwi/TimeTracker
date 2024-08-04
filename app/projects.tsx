@@ -94,6 +94,8 @@ export default function Page() {
       )}
       <FlatList
         data={projectsQuery.data}
+        className="bg-white"
+        contentContainerClassName="bg-white"
         renderItem={({ item }) => (
           <ProjectRow
             key={item.id}

@@ -33,7 +33,7 @@ export default function Contact() {
   const bodyRef = useRef<null | TextInput>(null);
 
   return (
-    <View className="h-full gap-4 p-2">
+    <View className="h-full w-full gap-4 bg-white p-2">
       <StyledTextInput
         bgColor="white"
         label="Title"
