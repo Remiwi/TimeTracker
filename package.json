@@ -11,7 +11,8 @@
     "test-watch": "jest --watchAll",
     "test": "dotenvx run --env-file=.env.test.local -- npx jest --runInBand --bail",
     "lint": "expo lint",
-    "eas-build-post-install": "tailwindcss -i ./app/global.css -o ./node_modules/.cache/nativewind/app/global.css.native.css"    
+    "eas-build-post-install": "tailwindcss -i ./app/global.css -o ./node_modules/.cache/nativewind/app/global.css.native.css",
+    "build-preview": "eas build -p android --profile preview"
   },
   "jest": {
     "preset": "jest-expo",
