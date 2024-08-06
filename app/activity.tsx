@@ -63,7 +63,10 @@ export default function Page() {
   for (const entry of entries) {
     if (entry.stop === null) continue;
 
-    const date = entry.start.split("T")[0];
+    // const date = entry.start.split("T")[0];
+    const start = new Date(entry.start);
+    const date = `${start.getFullYear()}-${(start.getMonth() + 1).toString().padStart(2, "0")}-${start.getDate().toString().padStart(2, "0")}`;
+
     if (entries_by_date.length === 0) {
       entries_by_date.push({ date, entries: [entry], latest_at: entry.at });
       continue;
