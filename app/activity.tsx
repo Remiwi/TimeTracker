@@ -212,12 +212,18 @@ function Day(props: {
       }
     }
 
+    // Construct the groups
     const desc = entry.description ?? "";
     const project = entry.project_id ?? null;
     const tags = Tags.toString(entry.tags);
 
-    // Construct the groups
-    if (groups.length === 0) {
+    const group = groups.find((g) => {
+      return (
+        g.description === desc && g.project_id === project && g.tags === tags
+      );
+    });
+
+    if (group === undefined) {
       groups.push({
         description: desc,
         project_id: project,
@@ -225,23 +231,16 @@ function Day(props: {
         entries: [entry],
       });
       continue;
-    }
-    const prev_group = groups[groups.length - 1];
-    if (
-      prev_group.description === desc &&
-      prev_group.project_id === project &&
-      prev_group.tags === tags
-    ) {
-      prev_group.entries.push(entry);
     } else {
-      groups.push({
-        description: desc,
-        project_id: project,
-        tags: tags,
-        entries: [entry],
-      });
+      group.entries.push(entry);
     }
   }
+
+  groups.sort((a, b) => {
+    if (a.entries[0].start > b.entries[0].start) return -1;
+    if (a.entries[0].start < b.entries[0].start) return 1;
+    return 0;
+  });
 
   return (
     <View className="pb-12">
