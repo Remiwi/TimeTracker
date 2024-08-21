@@ -1,31 +1,20 @@
 # TODOS
 
-### V1
+### Bug fixes
 
-- [x] Toggl Interface
-  - [x] Offline mode
-- [x] Timer screen
-  - [x] Basic timer functionality
-  - [x] Template organization
-  - [x] Timer quick-actions
-  - [x] In-depth entry editor
-  - [x] Make template add/edit modal nicer
-- [x] Projects screen
-  - [x] Changing projects
-  - [x] Project icons
-- [x] Time entries
-  - [x] Viewing time entries
-  - [x] Editing time entries
-  - [x] Creating arbitrary entries
-- [x] Settings screen
-  - [x] Better defined interface for adding API key and selecting workspace
-  - [x] Offline mode settings
-  - [x] Regular backup settings
-- [x] Basic tutorial for new users
-- [x] Contact page
-- [x] Make app icon
-- [ ] Fix visual bug where top bar stuff is not visible
-- [ ] Decide on final name!
+- [ ] Can't make template in last column of new row when first 4 rows are filled
+- [ ] Text inputs are not centered
+- [ ] App sometimes stops responding on the settings screen, mainly when opening sync settings from tutorial
+- [ ] When a timer was running, I started a new one but it didn't get synced with Toggl. I then started another new one that did get synced. The First entry lasted until the start of the Third entry, as did the second.
+- [ ] Data doesn't get deleted from contact page after sending email
+- [ ] Days in the activity screen are decided by UTC... also the grouping of entries is lowkey ugly
+- [ ] long entry description makes icon fly away!
+
+### Features
+
+- [ ] Not letting me just change the time to something invalid for a second is annoying.
+- [ ] Make the sync thing happen when you pull down, and make it work in the main screen. Also add an indicator or something for whenever syncing is happening
+- [ ] Add a quick action for starting an entry identical to the previous entry
 
 ### Future
 
