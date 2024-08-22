@@ -6,7 +6,6 @@
 - [ ] Text inputs are not centered
 - [ ] App sometimes stops responding on the settings screen, mainly when opening sync settings from tutorial
 - [ ] When a timer was running, I started a new one but it didn't get synced with Toggl. I then started another new one that did get synced. The First entry lasted until the start of the Third entry, as did the second.
-- [ ] Data doesn't get deleted from contact page after sending email
 - [ ] Days in the activity screen are decided by UTC... also the grouping of entries is lowkey ugly
 - [ ] long entry description makes icon fly away!
 
