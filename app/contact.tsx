@@ -27,6 +27,9 @@ export default function Contact() {
     await Linking.openURL(
       `mailto:${mailto}?subject=${title}&body=From: ${replyTo !== "[]" ? replyTo : "[no email given]"}\n\n${body}`,
     );
+    setTitle("");
+    setReplyTo("");
+    setBody("");
   };
 
   const emailRef = useRef<null | TextInput>(null);
